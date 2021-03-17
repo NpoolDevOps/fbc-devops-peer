@@ -1,6 +1,8 @@
 package main
 
 import (
+	machspec "github.com/EntropyPool/machine-spec"
+	_ "github.com/NpoolDevOps/fbc-devops-client/runtime"
 	"time"
 )
 
@@ -10,14 +12,19 @@ type DevopsConfig struct {
 }
 
 type DevopsClient struct {
-	config   *DevopsConfig
-	peerDesc PeerDesc
+	config     *DevopsConfig
+	peerDesc   PeerDesc
+	peerErrors []error
 }
 
 func NewDevopsClient(config *DevopsConfig) *DevopsClient {
 	cli := &DevopsClient{
 		config: config,
 	}
+
+	spec := machspec.NewMachineSpec()
+	spec.PrepareLowLevel()
+	cli.peerDesc.MySpec = spec.SN()
 
 	go cli.reportMySelf()
 

@@ -21,16 +21,16 @@ type PeerHardware struct {
 }
 
 type PeerDesc struct {
-	MySpec       string `json:"my_spec"`
-	HardwareInfo PeerHardware
-	PeerConfig
+	MySpec       string        `json:"my_spec"`
+	HardwareInfo *PeerHardware `json:"hardware_info"`
+	PeerConfig   *PeerConfig   `json:"peer_config"`
 }
 
 type PeerConfig struct {
-	MainRole   string
-	SubRole    string
-	ParentSpec string `json:"parent_spec"`
-	PeerHardware
+	MainRole       string        `json:"main_role"`
+	SubRole        string        `json:"sub_role"`
+	ParentSpec     string        `json:"parent_spec"`
+	HardwareConfig *PeerHardware `json:"hardware_config"`
 }
 
 type BasenodeConfig struct {

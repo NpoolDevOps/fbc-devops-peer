@@ -38,10 +38,11 @@ func main() {
 				MainRole:   cctx.String("main-role"),
 				SubRole:    cctx.String("sub-role"),
 				ParentSpec: cctx.String("parent-spec"),
+				HardwareConfig: &PeerHardware{
+					NvmeCount: cctx.Int("nvme-count"),
+					GpuCount:  cctx.Int("gpu-count"),
+				},
 			}
-
-			config.NvmeCount = cctx.Int("nvme-count")
-			config.GpuCount = cctx.Int("gpu-count")
 
 			switch config.MainRole {
 			case FullNode:
