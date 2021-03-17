@@ -1,5 +1,10 @@
 package main
 
+const (
+	FullnodeWallet     = "wallet"
+	FullnodeAccounting = "accounting"
+)
+
 type Fullnode struct {
 }
 

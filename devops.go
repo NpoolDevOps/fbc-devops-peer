@@ -2,8 +2,17 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
+	log "github.com/EntropyPool/entropy-logger"
+	types "github.com/NpoolDevOps/fbc-devops-service/types"
+	httpdaemon "github.com/NpoolRD/http-daemon"
 	"time"
 )
+
+type DevopsMsg struct {
+	Api string
+	Msg interface{}
+}
 
 type DevopsConfig struct {
 	PeerReportAPI string
@@ -11,13 +20,13 @@ type DevopsConfig struct {
 
 type DevopsClient struct {
 	config *DevopsConfig
-	newMsg chan string
+	newMsg chan *DevopsMsg
 }
 
 func NewDevopsClient(config *DevopsConfig) *DevopsClient {
 	cli := &DevopsClient{
 		config: config,
-		newMsg: make(chan string, 10),
+		newMsg: make(chan *DevopsMsg, 10),
 	}
 
 	go cli.reporter()
@@ -25,17 +34,33 @@ func NewDevopsClient(config *DevopsConfig) *DevopsClient {
 	return cli
 }
 
+func (c *DevopsClient) onMessage(msg *DevopsMsg) {
+	b, _ := json.Marshal(msg.Msg)
+	resp, err := httpdaemon.R().
+		SetHeader("Content-Type", "application/json").
+		SetBody(b).
+		Post(fmt.Sprintf("%v%v", c.config.PeerReportAPI, msg.Api))
+	if err != nil {
+		log.Errorf(log.Fields{}, "fail to report message")
+	}
+}
+
 func (c *DevopsClient) reporter() {
 	ticker := time.NewTicker(3 * time.Minute)
 	for {
 		select {
-		case <-c.newMsg:
+		case msg := <-c.newMsg:
+			c.onMessage(msg)
 		case <-ticker.C:
 		}
 	}
 }
 
-func (c *DevopsClient) FeedMsg(msg interface{}) {
-	b, _ := json.Marshal(msg)
-	go func() { c.newMsg <- string(b) }()
+func (c *DevopsClient) FeedMsg(api string, msg interface{}) {
+	go func() {
+		c.newMsg <- &DevopsMsg{
+			Api: api,
+			Msg: msg,
+		}
+	}()
 }
