@@ -2,10 +2,13 @@ package main
 
 import (
 	log "github.com/EntropyPool/entropy-logger"
+	machspec "github.com/EntropyPool/machine-spec"
+	runtime "github.com/NpoolDevOps/fbc-devops-client/runtime"
 )
 
 type Basenode struct {
-	devopsClient *DevopsClient
+	DevopsClient *DevopsClient
+	PeerDesc     *PeerDesc
 }
 
 const (
@@ -35,19 +38,36 @@ type PeerConfig struct {
 
 type BasenodeConfig struct {
 	DevopsConfig *DevopsConfig
+	PeerConfig   *PeerConfig
 }
 
 const peerReportAPI = "https://report.npool.top"
 
 func NewBasenode(config *BasenodeConfig) *Basenode {
-	basenode := &Basenode{}
+	basenode := &Basenode{
+		PeerDesc: &PeerDesc{
+			PeerConfig: config.PeerConfig,
+		},
+	}
 
 	config.DevopsConfig.PeerReportAPI = peerReportAPI
 
-	basenode.devopsClient = NewDevopsClient(config.DevopsConfig)
-	if basenode.devopsClient == nil {
+	basenode.DevopsClient = NewDevopsClient(config.DevopsConfig)
+	if basenode.DevopsClient == nil {
 		log.Errorf(log.Fields{}, "fail to create devops client")
 		return nil
+	}
+
+	spec := machspec.NewMachineSpec()
+	spec.PrepareLowLevel()
+	basenode.PeerDesc.MySpec = spec.SN()
+
+	nvmes, _ := runtime.GetNvmeCount()
+	gpus, _ := runtime.GetGpuCount()
+
+	basenode.PeerDesc.HardwareInfo = &PeerHardware{
+		NvmeCount: nvmes,
+		GpuCount:  gpus,
 	}
 
 	return basenode

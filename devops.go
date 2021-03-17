@@ -1,39 +1,36 @@
 package main
 
 import (
-	machspec "github.com/EntropyPool/machine-spec"
-	_ "github.com/NpoolDevOps/fbc-devops-client/runtime"
 	"time"
 )
 
 type DevopsConfig struct {
 	PeerReportAPI string
-	PeerConfig    *PeerConfig
 }
 
 type DevopsClient struct {
-	config     *DevopsConfig
-	peerDesc   PeerDesc
-	peerErrors []error
+	config *DevopsConfig
+	newMsg chan string
 }
 
 func NewDevopsClient(config *DevopsConfig) *DevopsClient {
 	cli := &DevopsClient{
 		config: config,
+		newMsg: make(chan string, 10),
 	}
 
-	spec := machspec.NewMachineSpec()
-	spec.PrepareLowLevel()
-	cli.peerDesc.MySpec = spec.SN()
-
-	go cli.reportMySelf()
+	go cli.reporter()
 
 	return cli
 }
 
-func (c *DevopsClient) reportMySelf() {
+func (c *DevopsClient) reporter() {
 	ticker := time.NewTicker(3 * time.Minute)
 	for {
 		<-ticker.C
 	}
+}
+
+func (c *DevopsClient) FeedMsg(msg string) {
+	go func() { c.newMsg <- msg }()
 }

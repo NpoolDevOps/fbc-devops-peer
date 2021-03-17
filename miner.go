@@ -2,6 +2,7 @@ package main
 
 import (
 	log "github.com/EntropyPool/entropy-logger"
+	"time"
 )
 
 type Miner struct {
@@ -12,9 +13,7 @@ func NewMinerPeer(config *PeerConfig) *Miner {
 	miner := &Miner{}
 
 	miner.basenode = NewBasenode(&BasenodeConfig{
-		DevopsConfig: &DevopsConfig{
-			PeerConfig: config,
-		},
+		PeerConfig: config,
 	})
 	if miner.basenode == nil {
 		log.Errorf(log.Fields{}, "fail to create devops client")
@@ -24,5 +23,8 @@ func NewMinerPeer(config *PeerConfig) *Miner {
 }
 
 func (n *Miner) Run() error {
-	return nil
+	ticker := time.NewTicker(3 * time.Minute)
+	for {
+		<-ticker.C
+	}
 }
