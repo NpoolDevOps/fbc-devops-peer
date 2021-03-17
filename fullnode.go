@@ -3,7 +3,7 @@ package main
 type Fullnode struct {
 }
 
-func NewFullnodePeer(config *PeerConfig) *Fullnode {
+func NewFullnodePeer(config *BasenodeConfig) *Fullnode {
 	return &Fullnode{}
 }
 

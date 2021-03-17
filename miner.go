@@ -9,12 +9,10 @@ type Miner struct {
 	basenode *Basenode
 }
 
-func NewMinerPeer(config *PeerConfig) *Miner {
+func NewMinerPeer(config *BasenodeConfig) *Miner {
 	miner := &Miner{}
 
-	miner.basenode = NewBasenode(&BasenodeConfig{
-		PeerConfig: config,
-	})
+	miner.basenode = NewBasenode(config)
 	if miner.basenode == nil {
 		log.Errorf(log.Fields{}, "fail to create devops client")
 		return nil

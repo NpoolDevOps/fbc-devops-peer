@@ -26,6 +26,9 @@ func main() {
 				Name:  "parent-spec",
 				Usage: "Hardware spec of parent node",
 			},
+			&cli.StringFlag{
+				Name: "report-host",
+			},
 			&cli.IntFlag{
 				Name: "nvme-count",
 			},
@@ -34,17 +37,20 @@ func main() {
 			},
 		},
 		Action: func(cctx *cli.Context) error {
-			config := &PeerConfig{
-				MainRole:   cctx.String("main-role"),
-				SubRole:    cctx.String("sub-role"),
-				ParentSpec: cctx.String("parent-spec"),
-				HardwareConfig: &PeerHardware{
-					NvmeCount: cctx.Int("nvme-count"),
-					GpuCount:  cctx.Int("gpu-count"),
+			config := &BasenodeConfig{
+				PeerConfig: &PeerConfig{
+					MainRole:   cctx.String("main-role"),
+					SubRole:    cctx.String("sub-role"),
+					ParentSpec: cctx.String("parent-spec"),
+					HardwareConfig: &PeerHardware{
+						NvmeCount: cctx.Int("nvme-count"),
+						GpuCount:  cctx.Int("gpu-count"),
+					},
 				},
+				PeerReportAPI: cctx.String("report-host"),
 			}
 
-			switch config.MainRole {
+			switch config.PeerConfig.MainRole {
 			case FullNode:
 				return NewFullnodePeer(config).Run()
 			case MinerNode:
@@ -54,7 +60,7 @@ func main() {
 			case StorageNode:
 				return NewStoragePeer(config).Run()
 			default:
-				return xerrors.Errorf("Unknow main role %v", config.MainRole)
+				return xerrors.Errorf("Unknow main role %v", config.PeerConfig.MainRole)
 			}
 		},
 	}

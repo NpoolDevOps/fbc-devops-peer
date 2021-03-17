@@ -6,10 +6,17 @@ const (
 	StorageOsdNode = "osd"
 )
 
+const (
+	StorageVendorUcloud   = "ucloud"
+	StorageVendorQiniu    = "qiniu"
+	StorageVendorLangchao = "langchao"
+	StorageVendorShuguang = "shuguang"
+)
+
 type Storage struct {
 }
 
-func NewStoragePeer(config *PeerConfig) *Storage {
+func NewStoragePeer(config *BasenodeConfig) *Storage {
 	return &Storage{}
 }
 

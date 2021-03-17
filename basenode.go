@@ -37,10 +37,9 @@ type PeerConfig struct {
 }
 
 type BasenodeConfig struct {
-	PeerConfig *PeerConfig
+	PeerReportAPI string
+	PeerConfig    *PeerConfig
 }
-
-const peerReportAPI = "https://report.npool.top"
 
 func NewBasenode(config *BasenodeConfig) *Basenode {
 	basenode := &Basenode{
@@ -50,7 +49,7 @@ func NewBasenode(config *BasenodeConfig) *Basenode {
 	}
 
 	basenode.DevopsClient = NewDevopsClient(&DevopsConfig{
-		PeerReportAPI: peerReportAPI,
+		PeerReportAPI: config.PeerReportAPI,
 	})
 	if basenode.DevopsClient == nil {
 		log.Errorf(log.Fields{}, "fail to create devops client")

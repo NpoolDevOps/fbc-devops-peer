@@ -3,7 +3,7 @@ package main
 type Worker struct {
 }
 
-func NewWorkerPeer(config *PeerConfig) *Worker {
+func NewWorkerPeer(config *BasenodeConfig) *Worker {
 	return &Worker{}
 }
 
