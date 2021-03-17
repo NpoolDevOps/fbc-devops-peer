@@ -1,9 +1,15 @@
 package main
 
+const (
+	StorageMgrNode = "mgr"
+	StorageMdsNode = "mds"
+	StorageOsdNode = "osd"
+)
+
 type Storage struct {
 }
 
-func NewStoragePeer(subRole string, parentSpec string) *Storage {
+func NewStoragePeer(config *PeerConfig) *Storage {
 	return &Storage{}
 }
 

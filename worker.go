@@ -3,7 +3,7 @@ package main
 type Worker struct {
 }
 
-func NewWorkerPeer(subRole string, parentSpec string) *Worker {
+func NewWorkerPeer(config *PeerConfig) *Worker {
 	return &Worker{}
 }
 

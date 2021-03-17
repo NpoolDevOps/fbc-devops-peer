@@ -3,7 +3,7 @@ package main
 type Fullnode struct {
 }
 
-func NewFullnodePeer(subRole string, parentSpec string) *Fullnode {
+func NewFullnodePeer(config *PeerConfig) *Fullnode {
 	return &Fullnode{}
 }
 
