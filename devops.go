@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	log "github.com/EntropyPool/entropy-logger"
 	"time"
 )
 
@@ -30,7 +29,7 @@ func (c *DevopsClient) reporter() {
 	ticker := time.NewTicker(3 * time.Minute)
 	for {
 		select {
-		case msg := <-c.newMsg:
+		case <-c.newMsg:
 		case <-ticker.C:
 		}
 	}

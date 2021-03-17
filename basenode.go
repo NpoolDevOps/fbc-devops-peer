@@ -19,8 +19,8 @@ const (
 )
 
 type PeerHardware struct {
-	NvmeCount int `json:"nvme_should_count"`
-	GpuCount  int `json:"gpu_should_count"`
+	NvmeCount int `json:"nvme_count"`
+	GpuCount  int `json:"gpu_count"`
 }
 
 type PeerDesc struct {
