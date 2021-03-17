@@ -1,6 +1,8 @@
 package main
 
 import (
+	"encoding/json"
+	log "github.com/EntropyPool/entropy-logger"
 	"time"
 )
 
@@ -27,10 +29,14 @@ func NewDevopsClient(config *DevopsConfig) *DevopsClient {
 func (c *DevopsClient) reporter() {
 	ticker := time.NewTicker(3 * time.Minute)
 	for {
-		<-ticker.C
+		select {
+		case msg := <-c.newMsg:
+		case <-ticker.C:
+		}
 	}
 }
 
-func (c *DevopsClient) FeedMsg(msg string) {
-	go func() { c.newMsg <- msg }()
+func (c *DevopsClient) FeedMsg(msg interface{}) {
+	b, _ := json.Marshal(msg)
+	go func() { c.newMsg <- string(b) }()
 }
