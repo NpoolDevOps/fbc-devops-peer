@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	log "github.com/EntropyPool/entropy-logger"
-	types "github.com/NpoolDevOps/fbc-devops-service/types"
 	httpdaemon "github.com/NpoolRD/http-daemon"
 	"time"
 )
@@ -42,6 +41,18 @@ func (c *DevopsClient) onMessage(msg *DevopsMsg) {
 		Post(fmt.Sprintf("%v%v", c.config.PeerReportAPI, msg.Api))
 	if err != nil {
 		log.Errorf(log.Fields{}, "fail to report message")
+		go func() {
+			time.Sleep(10 * time.Second)
+			c.newMsg <- msg
+		}()
+		return
+	}
+	if resp.StatusCode() != 200 {
+		go func() {
+			time.Sleep(10 * time.Second)
+			c.newMsg <- msg
+		}()
+		return
 	}
 }
 

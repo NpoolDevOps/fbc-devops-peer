@@ -10,6 +10,7 @@ import (
 type Basenode struct {
 	DevopsClient *DevopsClient
 	PeerDesc     *PeerDesc
+	Owner        string
 }
 
 const (
@@ -21,17 +22,17 @@ const (
 )
 
 type PeerHardware struct {
-	NvmeCount   int    `json:"nvme_count"`
-	NvmeDesc    string `json:"nvme_desc"`
-	GpuCount    int    `json:"gpu_count"`
-	GpuDesc     string `json:"gpu_desc"`
-	MemoryCount int    `json:"memory_count"`
-	MemorySize  uint64 `json:"memory_size"`
-	MemoryDesc  string `json:"memory_desc"`
-	CpuCount    int    `json:"cpu_count"`
-	CpuDesc     string `json:"cpu_desc"`
-	HddCount    int    `json:"hdd_count"`
-	HddDesc     string `json:"hdd_count"`
+	NvmeCount   int      `json:"nvme_count"`
+	NvmeDesc    []string `json:"nvme_desc"`
+	GpuCount    int      `json:"gpu_count"`
+	GpuDesc     []string `json:"gpu_desc"`
+	MemoryCount int      `json:"memory_count"`
+	MemorySize  uint64   `json:"memory_size"`
+	MemoryDesc  []string `json:"memory_desc"`
+	CpuCount    int      `json:"cpu_count"`
+	CpuDesc     []string `json:"cpu_desc"`
+	HddCount    int      `json:"hdd_count"`
+	HddDesc     []string `json:"hdd_count"`
 }
 
 type PeerDesc struct {
@@ -58,6 +59,7 @@ func NewBasenode(config *BasenodeConfig) *Basenode {
 		PeerDesc: &PeerDesc{
 			PeerConfig: config.PeerConfig,
 		},
+		Owner: config.Owner,
 	}
 
 	basenode.DevopsClient = NewDevopsClient(&DevopsConfig{
@@ -80,24 +82,24 @@ func NewBasenode(config *BasenodeConfig) *Basenode {
 	return basenode
 }
 
-func (n *Basenode) ToDeviceRegisterInput() *DeviceRegisterInput {
+func (n *Basenode) ToDeviceRegisterInput() *types.DeviceRegisterInput {
 	return &types.DeviceRegisterInput{
-		Spec:        basenode.PeerDesc.MySpec,
-		ParentSpec:  basenode.PeerDesc.PeerConfig.ParentSpec,
-		Role:        basenode.PeerDesc.PeerConfig.MainRole,
-		SubRole:     basenode.PeerDesc.PeerConfig.SubRole,
-		Owner:       basenode.Owner,
-		NvmeCount:   basenode.PeerDesc.HardwareInfo.NvmeCount,
-		NvmeDesc:    basenode.PeerDesc.HardwareInfo.NvmeDesc,
-		GpuCount:    basenode.PeerDesc.HardwareInfo.GpuCount,
-		GpuDesc:     basenode.PeerDesc.HardwareInfo.GpuDesc,
-		MemoryCount: basenode.PeerDesc.HardwareInfo.MemoryCount,
-		MemorySize:  basenode.PeerDesc.HardwareInfo.MemorySize,
-		MemoryDesc:  basenode.PeerDesc.HardwareInfo.MemoryDesc,
-		CpuCount:    basenode.PeerDesc.HardwareInfo.CpuCount,
-		CpuDesc:     basenode.PeerDesc.HardwareInfo.CpuDesc,
-		HddCount:    basenode.PeerDesc.HardwareInfo.HddCount,
-		HddDesc:     basenode.PeerDesc.HardwareInfo.HddDesc,
+		Spec:        n.PeerDesc.MySpec,
+		ParentSpec:  n.PeerDesc.PeerConfig.ParentSpec,
+		Role:        n.PeerDesc.PeerConfig.MainRole,
+		SubRole:     n.PeerDesc.PeerConfig.SubRole,
+		Owner:       n.Owner,
+		NvmeCount:   n.PeerDesc.HardwareInfo.NvmeCount,
+		NvmeDesc:    n.PeerDesc.HardwareInfo.NvmeDesc,
+		GpuCount:    n.PeerDesc.HardwareInfo.GpuCount,
+		GpuDesc:     n.PeerDesc.HardwareInfo.GpuDesc,
+		MemoryCount: n.PeerDesc.HardwareInfo.MemoryCount,
+		MemorySize:  n.PeerDesc.HardwareInfo.MemorySize,
+		MemoryDesc:  n.PeerDesc.HardwareInfo.MemoryDesc,
+		CpuCount:    n.PeerDesc.HardwareInfo.CpuCount,
+		CpuDesc:     n.PeerDesc.HardwareInfo.CpuDesc,
+		HddCount:    n.PeerDesc.HardwareInfo.HddCount,
+		HddDesc:     n.PeerDesc.HardwareInfo.HddDesc,
 	}
 }
 
@@ -110,6 +112,9 @@ func (h *PeerHardware) UpdatePeerInfo() error {
 
 	h.NvmeCount = nvmes
 	h.NvmeDesc = nvmeDesc
+
+	h.GpuCount = gpus
+	h.GpuDesc = gpuDesc
 
 	return nil
 }

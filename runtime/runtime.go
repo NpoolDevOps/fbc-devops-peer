@@ -13,5 +13,5 @@ func GetGpuCount() (int, error) {
 }
 
 func GetGpuDesc() ([]string, error) {
-
+	return nil, nil
 }
