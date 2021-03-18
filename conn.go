@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+	machspec "github.com/EntropyPool/machine-spec"
 	"github.com/NpoolRD/http-daemon"
 	"net/http"
 )
@@ -20,7 +22,11 @@ const (
 )
 
 func (s *PeerConnection) ParentSpecGetRequest(w http.ResponseWriter, req *http.Request) (interface{}, string, int) {
-	return nil, "", 0
+	spec := machspec.NewMachineSpec()
+	spec.PrepareLowLevel()
+	return GetParentSpecOutput{
+		ParentSpec: spec.SN(),
+	}, "", 0
 }
 
 func (s *PeerConnection) ParentSpecPostRequest(w http.ResponseWriter, req *http.Request) (interface{}, string, int) {
@@ -42,6 +48,19 @@ func (p *PeerConnection) Run() {
 }
 
 func (p *PeerConnection) GetParentSpec(parentPeer string) (string, error) {
+	resp, err := httpdaemon.R().
+		SetHeader("Content-Type", "application/json").
+		Get(fmt.Sprintf("%v%v", parentPeer, ParentSpecAPI))
+	if err != nil {
+		return "", err
+	}
+	if resp.StatusCode() != 200 {
+		return "", err
+	}
+	return string(resp.Body()), nil
+}
+
+func (p *PeerConnection) GetNotifiedParentSpec() (string, error) {
 	return "", nil
 }
 

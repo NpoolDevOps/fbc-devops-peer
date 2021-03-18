@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"io/ioutil"
 	"os"
+	"time"
 )
 
 type Basenode struct {
@@ -92,11 +93,6 @@ func NewBasenode(config *BasenodeConfig) *Basenode {
 	basenode.GenerateUuid()
 
 	basenode.PeerConnection.Run()
-	GetParentSpec(basenode.PeerConnection, func(parentSpec string) {
-		basenode.PeerDesc.PeerConfig.ParentSpec = parentSpec
-		basenode.DevopsClient.FeedMsg(types.DeviceRegisterAPI, basenode.ToDeviceRegisterInput())
-	})
-
 	basenode.DevopsClient.FeedMsg(types.DeviceRegisterAPI, basenode.ToDeviceRegisterInput())
 
 	return basenode
@@ -171,4 +167,51 @@ func (h *PeerHardware) UpdatePeerInfo() error {
 	h.GpuDesc = gpuDesc
 
 	return nil
+}
+
+func (n *Basenode) ReportParentSpec(parentIpParser func() (string, error)) {
+	go func() {
+		ticker := time.NewTicker(10 * time.Second)
+
+		for {
+			var parentIp string
+			var err error
+
+			for {
+				if parentIpParser != nil {
+					parentIp, err = parentIpParser()
+					if err != nil {
+						<-ticker.C
+						continue
+					}
+				}
+				break
+			}
+
+			var parentSpec string
+
+			for {
+				var spec string
+				var err error
+
+				if parentIpParser != nil {
+					spec, err = n.PeerConnection.GetParentSpec(fmt.Sprintf("http://%v", parentIp))
+				} else {
+					spec, err = n.PeerConnection.GetNotifiedParentSpec()
+				}
+				if err != nil || spec == parentSpec {
+					<-ticker.C
+					continue
+				}
+				parentSpec = spec
+				break
+			}
+
+			n.PeerDesc.PeerConfig.ParentSpec = parentSpec
+			n.DevopsClient.FeedMsg(types.DeviceRegisterAPI, n.ToDeviceRegisterInput())
+
+			<-ticker.C
+			continue
+		}
+	}()
 }
