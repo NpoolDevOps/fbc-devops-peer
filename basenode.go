@@ -8,9 +8,10 @@ import (
 )
 
 type Basenode struct {
-	DevopsClient *DevopsClient
-	PeerDesc     *PeerDesc
-	Owner        string
+	DevopsClient   *DevopsClient
+	PeerDesc       *PeerDesc
+	Owner          string
+	PeerConnection *PeerConnection
 }
 
 const (
@@ -76,6 +77,17 @@ func NewBasenode(config *BasenodeConfig) *Basenode {
 
 	basenode.PeerDesc.HardwareInfo = &PeerHardware{}
 	basenode.PeerDesc.HardwareInfo.UpdatePeerInfo()
+
+	basenode.PeerConnection = NewPeerConnection()
+	if basenode.PeerConnection == nil {
+		return nil
+	}
+
+	basenode.PeerConnection.Run()
+	GetParentSpec(basenode.PeerConnection, func(parentSpec string) {
+		basenode.PeerDesc.PeerConfig.ParentSpec = parentSpec
+		basenode.DevopsClient.FeedMsg(types.DeviceRegisterAPI, basenode.ToDeviceRegisterInput())
+	})
 
 	basenode.DevopsClient.FeedMsg(types.DeviceRegisterAPI, basenode.ToDeviceRegisterInput())
 

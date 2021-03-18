@@ -35,6 +35,9 @@ func main() {
 			&cli.IntFlag{
 				Name: "gpu-count",
 			},
+			&cli.StringFlag{
+				Name: "device-owner",
+			},
 		},
 		Action: func(cctx *cli.Context) error {
 			config := &BasenodeConfig{
@@ -48,6 +51,7 @@ func main() {
 					},
 				},
 				PeerReportAPI: cctx.String("report-host"),
+				Owner:         cctx.String("device-owner"),
 			}
 
 			switch config.PeerConfig.MainRole {
