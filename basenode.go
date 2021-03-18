@@ -195,7 +195,7 @@ func (n *Basenode) ReportParentSpec(parentIpParser func() (string, error)) {
 				var err error
 
 				if parentIpParser != nil {
-					spec, err = n.PeerConnection.GetParentSpec(fmt.Sprintf("http://%v", parentIp))
+					spec, err = n.PeerConnection.GetParentSpec(parentIp)
 				} else {
 					spec, err = n.PeerConnection.GetNotifiedParentSpec()
 				}

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	machspec "github.com/EntropyPool/machine-spec"
 	"github.com/NpoolRD/http-daemon"
+	"golang.org/x/xerrors"
 	"net/http"
 )
 
@@ -50,7 +51,7 @@ func (p *PeerConnection) Run() {
 func (p *PeerConnection) GetParentSpec(parentPeer string) (string, error) {
 	resp, err := httpdaemon.R().
 		SetHeader("Content-Type", "application/json").
-		Get(fmt.Sprintf("%v%v", parentPeer, ParentSpecAPI))
+		Get(fmt.Sprintf("http://%v%v", parentPeer, ParentSpecAPI))
 	if err != nil {
 		return "", err
 	}
@@ -64,6 +65,20 @@ func (p *PeerConnection) GetNotifiedParentSpec() (string, error) {
 	return "", nil
 }
 
-func (p *PeerConnection) NotifyParentSpec(childPeer string, parentSpec string) error {
+func (p *PeerConnection) NotifyParentSpec(childPeer string) error {
+	spec := machspec.NewMachineSpec()
+	spec.PrepareLowLevel()
+	resp, err := httpdaemon.R().
+		SetHeader("Content-Type", "application/json").
+		SetBody(GetParentSpecInput{
+			ParentSpec: spec.SN(),
+		}).
+		Post(fmt.Sprintf("http://%v%v", childPeer, ParentSpecAPI))
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode() != 200 {
+		return xerrors.Errorf("http response error")
+	}
 	return nil
 }

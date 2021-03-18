@@ -1,6 +1,8 @@
 package main
 
 import (
+	"encoding/json"
+	"fmt"
 	log "github.com/EntropyPool/entropy-logger"
 	"golang.org/x/xerrors"
 	"io/ioutil"
@@ -48,8 +50,50 @@ func NewMinerPeer(config *BasenodeConfig) *Miner {
 	}
 
 	miner.basenode.ReportParentSpec(parseParentIP)
+	go miner.NotifyChild()
 
 	return miner
+}
+
+func (n *Miner) repoPath() (string, error) {
+	return "", nil
+}
+
+func (n *Miner) NotifyChild() {
+	ticker := time.NewTicker(10 * time.Second)
+	for {
+		repoPath, err := n.repoPath()
+		if err == nil {
+			b, err := ioutil.ReadFile(fmt.Sprintf("%v/storage.json", repoPath))
+			if err == nil {
+				type minerPath struct {
+					Path string
+				}
+				type minerStorage struct {
+					StoragePaths []minerPath
+				}
+				storage := minerStorage{}
+				json.Unmarshal(b, &storage)
+				for _, p := range storage.StoragePaths {
+					type ossInfo struct {
+						URL string
+					}
+					type minerStore struct {
+						OssInfo ossInfo
+					}
+					store := minerStore{}
+					b, err = ioutil.ReadFile(fmt.Sprintf("%v/sectorstore.json", p))
+					if err == nil {
+						json.Unmarshal(b, &store)
+						s := strings.Replace(store.OssInfo.URL, "http://", "", -1)
+						s = strings.Split(s, ":")[0]
+						n.basenode.PeerConnection.NotifyParentSpec(s)
+					}
+				}
+			}
+		}
+		<-ticker.C
+	}
 }
 
 func (n *Miner) Run() error {
