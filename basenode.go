@@ -13,15 +13,25 @@ type Basenode struct {
 }
 
 const (
-	FullNode    = "fullnode"
-	MinerNode   = "miner"
-	WorkerNode  = "worker"
-	StorageNode = "storage"
+	FullNode      = "fullnode"
+	MinerNode     = "miner"
+	FullMinerNode = "fullminer"
+	WorkerNode    = "worker"
+	StorageNode   = "storage"
 )
 
 type PeerHardware struct {
-	NvmeCount int `json:"nvme_count"`
-	GpuCount  int `json:"gpu_count"`
+	NvmeCount   int    `json:"nvme_count"`
+	NvmeDesc    string `json:"nvme_desc"`
+	GpuCount    int    `json:"gpu_count"`
+	GpuDesc     string `json:"gpu_desc"`
+	MemoryCount int    `json:"memory_count"`
+	MemorySize  uint64 `json:"memory_size"`
+	MemoryDesc  string `json:"memory_desc"`
+	CpuCount    int    `json:"cpu_count"`
+	CpuDesc     string `json:"cpu_desc"`
+	HddCount    int    `json:"hdd_count"`
+	HddDesc     string `json:"hdd_count"`
 }
 
 type PeerDesc struct {
@@ -40,6 +50,7 @@ type PeerConfig struct {
 type BasenodeConfig struct {
 	PeerReportAPI string
 	PeerConfig    *PeerConfig
+	Owner         string
 }
 
 func NewBasenode(config *BasenodeConfig) *Basenode {
@@ -61,34 +72,44 @@ func NewBasenode(config *BasenodeConfig) *Basenode {
 	spec.PrepareLowLevel()
 	basenode.PeerDesc.MySpec = spec.SN()
 
-	nvmes, _ := runtime.GetNvmeCount()
-	gpus, _ := runtime.GetGpuCount()
+	basenode.PeerDesc.HardwareInfo = &PeerHardware{}
+	basenode.PeerDesc.HardwareInfo.UpdatePeerInfo()
 
-	basenode.PeerDesc.HardwareInfo = &PeerHardware{
-		NvmeCount: nvmes,
-		GpuCount:  gpus,
-	}
-
-	basenode.DevopsClient.FeedMsg(types.DeviceRegisterAPI, types.DeviceRegisterInput {
-	Spec        string    `gorm:"column:spec" json:"spec"`
-	ParentSpec  string    `gorm:"column:parent_spec" json:"parent_spec"`
-	Role        string    `gorm:"column:role" json:"role"`
-	SubRole     string    `gorm:"column:sub_role" json:"sub_role"`
-	Owner       string    `gorm:"column:owner" json:"owner"`
-	CurrentUser string    `gorm:"column:current_user" json:"current_user"`
-	Manager     string    `gorm:"column:manager" json:"manager"`
-	NvmeCount   int       `gorm:"column:nvme_count" json:"nvme_count"`
-	NvmeDesc    string    `gorm:"column:nvme_desc" json:"nvme_desc"`
-	GpuCount    int       `gorm:"column:gpu_count" json:"gpu_count"`
-	GpuDesc     string    `gorm:"column:gpu_desc" json:"gpu_desc"`
-	MemoryCount int       `gorm:"column:memory_count" json:"memory_count"`
-	MemorySize  uint64    `gorm:"column:memory_size" json:"memory_size"`
-	MemoryDesc  string    `gorm:"column:memory_desc" json:"memory_desc"`
-	CpuCount    int       `gorm:"column:cpu_count" json:"cpu_count"`
-	CpuDesc     string    `gorm:"column:cpu_desc" json:"cpu_desc"`
-	HddCount    int       `gorm:"column:hdd_count" json:"hdd_count"`
-	HddDesc     string    `gorm:"column:hdd_desc" json:"hdd_desc"`
-	})
+	basenode.DevopsClient.FeedMsg(types.DeviceRegisterAPI, basenode.ToDeviceRegisterInput())
 
 	return basenode
+}
+
+func (n *Basenode) ToDeviceRegisterInput() *DeviceRegisterInput {
+	return &types.DeviceRegisterInput{
+		Spec:        basenode.PeerDesc.MySpec,
+		ParentSpec:  basenode.PeerDesc.PeerConfig.ParentSpec,
+		Role:        basenode.PeerDesc.PeerConfig.MainRole,
+		SubRole:     basenode.PeerDesc.PeerConfig.SubRole,
+		Owner:       basenode.Owner,
+		NvmeCount:   basenode.PeerDesc.HardwareInfo.NvmeCount,
+		NvmeDesc:    basenode.PeerDesc.HardwareInfo.NvmeDesc,
+		GpuCount:    basenode.PeerDesc.HardwareInfo.GpuCount,
+		GpuDesc:     basenode.PeerDesc.HardwareInfo.GpuDesc,
+		MemoryCount: basenode.PeerDesc.HardwareInfo.MemoryCount,
+		MemorySize:  basenode.PeerDesc.HardwareInfo.MemorySize,
+		MemoryDesc:  basenode.PeerDesc.HardwareInfo.MemoryDesc,
+		CpuCount:    basenode.PeerDesc.HardwareInfo.CpuCount,
+		CpuDesc:     basenode.PeerDesc.HardwareInfo.CpuDesc,
+		HddCount:    basenode.PeerDesc.HardwareInfo.HddCount,
+		HddDesc:     basenode.PeerDesc.HardwareInfo.HddDesc,
+	}
+}
+
+func (h *PeerHardware) UpdatePeerInfo() error {
+	nvmes, _ := runtime.GetNvmeCount()
+	nvmeDesc, _ := runtime.GetNvmeDesc()
+
+	gpus, _ := runtime.GetGpuCount()
+	gpuDesc, _ := runtime.GetGpuDesc()
+
+	h.NvmeCount = nvmes
+	h.NvmeDesc = nvmeDesc
+
+	return nil
 }
