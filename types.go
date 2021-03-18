@@ -1,6 +1,6 @@
 package main
 
-type GetParentSpecInput struct {
+type NotifyParentSpecInput struct {
 	ParentSpec string
 }
 

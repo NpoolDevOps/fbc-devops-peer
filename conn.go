@@ -1,16 +1,19 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	machspec "github.com/EntropyPool/machine-spec"
 	"github.com/NpoolRD/http-daemon"
 	"golang.org/x/xerrors"
+	"io/ioutil"
 	"net/http"
 )
 
 const peerHttpPort = 52375
 
 type PeerConnection struct {
+	NotifiedParentSpec string
 }
 
 func NewPeerConnection() *PeerConnection {
@@ -22,7 +25,7 @@ const (
 	ParentSpecAPI = "/api/v0/peer/parentspec"
 )
 
-func (s *PeerConnection) ParentSpecGetRequest(w http.ResponseWriter, req *http.Request) (interface{}, string, int) {
+func (p *PeerConnection) ParentSpecGetRequest(w http.ResponseWriter, req *http.Request) (interface{}, string, int) {
 	spec := machspec.NewMachineSpec()
 	spec.PrepareLowLevel()
 	return GetParentSpecOutput{
@@ -30,7 +33,14 @@ func (s *PeerConnection) ParentSpecGetRequest(w http.ResponseWriter, req *http.R
 	}, "", 0
 }
 
-func (s *PeerConnection) ParentSpecPostRequest(w http.ResponseWriter, req *http.Request) (interface{}, string, int) {
+func (p *PeerConnection) ParentSpecPostRequest(w http.ResponseWriter, req *http.Request) (interface{}, string, int) {
+	b, err := ioutil.ReadAll(req.Body)
+	if err != nil {
+		return nil, err.Error(), -1
+	}
+	input := NotifyParentSpecInput{}
+	json.Unmarshal(b, &input)
+	p.NotifiedParentSpec = input.ParentSpec
 	return nil, "", 0
 }
 
@@ -62,7 +72,10 @@ func (p *PeerConnection) GetParentSpec(parentPeer string) (string, error) {
 }
 
 func (p *PeerConnection) GetNotifiedParentSpec() (string, error) {
-	return "", nil
+	if p.NotifiedParentSpec == "" {
+		return "", xerrors.Errorf("invalid parent spec")
+	}
+	return p.NotifiedParentSpec, nil
 }
 
 func (p *PeerConnection) NotifyParentSpec(childPeer string) error {
@@ -70,7 +83,7 @@ func (p *PeerConnection) NotifyParentSpec(childPeer string) error {
 	spec.PrepareLowLevel()
 	resp, err := httpdaemon.R().
 		SetHeader("Content-Type", "application/json").
-		SetBody(GetParentSpecInput{
+		SetBody(NotifyParentSpecInput{
 			ParentSpec: spec.SN(),
 		}).
 		Post(fmt.Sprintf("http://%v%v", childPeer, ParentSpecAPI))
