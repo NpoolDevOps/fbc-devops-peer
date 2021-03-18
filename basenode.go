@@ -1,16 +1,22 @@
 package main
 
 import (
+	"encoding/json"
+	"fmt"
 	log "github.com/EntropyPool/entropy-logger"
 	machspec "github.com/EntropyPool/machine-spec"
 	runtime "github.com/NpoolDevOps/fbc-devops-client/runtime"
 	types "github.com/NpoolDevOps/fbc-devops-service/types"
+	"github.com/google/uuid"
+	"io/ioutil"
+	"os"
 )
 
 type Basenode struct {
 	DevopsClient   *DevopsClient
 	PeerDesc       *PeerDesc
 	Owner          string
+	Id             uuid.UUID
 	PeerConnection *PeerConnection
 }
 
@@ -83,6 +89,8 @@ func NewBasenode(config *BasenodeConfig) *Basenode {
 		return nil
 	}
 
+	basenode.GenerateUuid()
+
 	basenode.PeerConnection.Run()
 	GetParentSpec(basenode.PeerConnection, func(parentSpec string) {
 		basenode.PeerDesc.PeerConfig.ParentSpec = parentSpec
@@ -94,8 +102,42 @@ func NewBasenode(config *BasenodeConfig) *Basenode {
 	return basenode
 }
 
+type BasenodeConfigFromFile struct {
+	Id uuid.UUID `json:"id"`
+}
+
+func (n *Basenode) GenerateUuid() {
+	var cfgFromFile BasenodeConfigFromFile
+
+	env := os.Getenv("HOME")
+
+	uuidPath := fmt.Sprintf("%s/.fbc-devops-peer", env)
+	uuidFile := fmt.Sprintf("%s/peer.conf", uuidPath)
+	b, err := ioutil.ReadFile(uuidFile)
+	if err == nil {
+		err = json.Unmarshal(b, &cfgFromFile)
+		if err == nil {
+			n.Id = cfgFromFile.Id
+			return
+		}
+	}
+	cfgFromFile.Id = uuid.New()
+	b, err = json.Marshal(cfgFromFile)
+	if err != nil {
+		log.Errorf(log.Fields{}, "cannot parse config to json")
+	}
+
+	os.MkdirAll(uuidPath, 0755)
+	err = ioutil.WriteFile(uuidFile, b, 0644)
+	if err != nil {
+		log.Errorf(log.Fields{}, "cannot write uuid file: %v", err)
+	}
+	n.Id = cfgFromFile.Id
+}
+
 func (n *Basenode) ToDeviceRegisterInput() *types.DeviceRegisterInput {
 	return &types.DeviceRegisterInput{
+		Id:          n.Id,
 		Spec:        n.PeerDesc.MySpec,
 		ParentSpec:  n.PeerDesc.PeerConfig.ParentSpec,
 		Role:        n.PeerDesc.PeerConfig.MainRole,
