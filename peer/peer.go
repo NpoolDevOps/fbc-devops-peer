@@ -3,6 +3,7 @@ package peer
 import (
 	"encoding/json"
 	"fmt"
+	log "github.com/EntropyPool/entropy-logger"
 	machspec "github.com/EntropyPool/machine-spec"
 	"github.com/NpoolDevOps/fbc-devops-peer/node"
 	types "github.com/NpoolDevOps/fbc-devops-peer/types"

@@ -1,9 +1,9 @@
 package types
 
 type NotifyParentSpecInput struct {
-	ParentSpec string
+	ParentSpec string `json:"parent_spec"`
 }
 
 type GetParentSpecOutput struct {
-	ParentSpec string
+	ParentSpec string `json:"parent_spec"`
 }
