@@ -32,3 +32,9 @@ func TestParseIPFromEnvValue(t *testing.T) {
 	}
 	log.Infof(log.Fields{}, "ip = %v", ip)
 }
+
+func TestParse(t *testing.T) {
+	parser := NewParser()
+	parser.parse()
+	parser.dump()
+}

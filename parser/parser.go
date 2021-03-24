@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"fmt"
 	log "github.com/EntropyPool/entropy-logger"
 	"golang.org/x/xerrors"
 	"io/ioutil"
@@ -82,4 +83,14 @@ func (p *Parser) parse() error {
 	p.readEnvFromAPIFile(MinerAPIFile)
 	p.parseEnvs()
 	return nil
+}
+
+func (p *Parser) dump() {
+	fmt.Printf("PARSER ---\n")
+	fmt.Printf("  API INFOS ---\n")
+	for key, val := range p.fileAPIInfo {
+		fmt.Printf("    %v ---\n", key)
+		fmt.Printf("      env: %v\n", val.apiInfo)
+		fmt.Printf("      ip:  %v\n", val.ip)
+	}
 }
