@@ -186,7 +186,11 @@ func (n *Basenode) GetSubRole() string {
 }
 
 func (n *Basenode) NotifyParentSpec(spec string) {
-	log.Infof(log.Fields{}, "Parent SPEC notified: %v", spec)
+	if n.NodeDesc.NodeConfig.ParentSpec == spec {
+		return
+	}
+	n.NodeDesc.NodeConfig.ParentSpec = spec
+	n.devopsClient.FeedMsg(types.DeviceRegisterAPI, n.ToDeviceRegisterInput())
 }
 
 func (n *Basenode) GetParentIP() (string, error) {
