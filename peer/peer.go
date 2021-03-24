@@ -49,12 +49,12 @@ func (p *Peer) Run() {
 	httpdaemon.RegisterRouter(httpdaemon.HttpRouter{
 		Location: types.ParentSpecAPI,
 		Method:   "POST",
-		Handler:  p.ParentSpecGetRequest,
+		Handler:  p.ParentSpecPostRequest,
 	})
 	httpdaemon.RegisterRouter(httpdaemon.HttpRouter{
 		Location: types.ParentSpecAPI,
 		Method:   "GET",
-		Handler:  p.ParentSpecPostRequest,
+		Handler:  p.ParentSpecGetRequest,
 	})
 	httpdaemon.Run(peerHttpPort)
 }
