@@ -80,7 +80,7 @@ func (p *Peer) Run() {
 func (p *Peer) GetParentSpec(parentPeer string) (string, error) {
 	resp, err := httpdaemon.R().
 		SetHeader("Content-Type", "application/json").
-		Get(fmt.Sprintf("http://%v%v", parentPeer, types.ParentSpecAPI))
+		Get(fmt.Sprintf("http://%v:%v%v", parentPeer, peerHttpPort, types.ParentSpecAPI))
 	if err != nil {
 		log.Errorf(log.Fields{}, "fail to get parent spec: %v", err)
 		return "", err
