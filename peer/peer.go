@@ -3,6 +3,7 @@ package peer
 import (
 	"encoding/json"
 	"fmt"
+	log "github.com/EntropyPool/entropy-logger"
 	machspec "github.com/EntropyPool/machine-spec"
 	"github.com/NpoolDevOps/fbc-devops-peer/node"
 	types "github.com/NpoolDevOps/fbc-devops-peer/types"
@@ -10,20 +11,36 @@ import (
 	"golang.org/x/xerrors"
 	"io/ioutil"
 	"net/http"
+	"time"
 )
 
 const peerHttpPort = 52375
 
 type Peer struct {
-	Node               node.Node
-	NotifiedParentSpec string
+	Node             node.Node
+	parentSpecTicker *time.Ticker
 }
 
 func NewPeer(node node.Node) *Peer {
 	conn := &Peer{
-		Node: node,
+		Node:             node,
+		parentSpecTicker: time.NewTicker(2 * time.Minute),
 	}
+
 	return conn
+}
+
+func (p *Peer) handler() {
+	for {
+		ip, err := p.Node.GetParentIP()
+		if err == nil {
+			spec, err := p.GetParentSpec(ip)
+			if err == nil {
+				p.Node.NotifyParentSpec(spec)
+			}
+		}
+		<-p.parentSpecTicker.C
+	}
 }
 
 func (p *Peer) ParentSpecGetRequest(w http.ResponseWriter, req *http.Request) (interface{}, string, int) {
@@ -57,6 +74,7 @@ func (p *Peer) Run() {
 		Handler:  p.ParentSpecGetRequest,
 	})
 	httpdaemon.Run(peerHttpPort)
+	go p.handler()
 }
 
 func (p *Peer) GetParentSpec(parentPeer string) (string, error) {
@@ -64,12 +82,29 @@ func (p *Peer) GetParentSpec(parentPeer string) (string, error) {
 		SetHeader("Content-Type", "application/json").
 		Get(fmt.Sprintf("http://%v%v", parentPeer, types.ParentSpecAPI))
 	if err != nil {
+		log.Errorf(log.Fields{}, "fail to get parent spec: %v", err)
 		return "", err
 	}
 	if resp.StatusCode() != 200 {
+		log.Errorf(log.Fields{}, "fail to get parent spec: NON-200: %v", resp.StatusCode())
 		return "", err
 	}
-	return string(resp.Body()), nil
+	apiResp, err := httpdaemon.ParseResponse(resp)
+	if err != nil {
+		log.Errorf(log.Fields{}, "fail to get parent spec: %v", err)
+		return "", err
+	}
+
+	if apiResp.Code != 0 {
+		log.Errorf(log.Fields{}, "fail to get parent spec: %v", apiResp.Msg)
+		return "", xerrors.Errorf("fail to get parent spec: %v", apiResp.Msg)
+	}
+
+	output := types.GetParentSpecOutput{}
+	b, _ := json.Marshal(apiResp.Body)
+	json.Unmarshal(b, &output)
+
+	return output.ParentSpec, nil
 }
 
 func (p *Peer) NotifyParentSpec(childPeer string) error {

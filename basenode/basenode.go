@@ -161,3 +161,7 @@ func (n *Basenode) GetSubRole() string {
 func (n *Basenode) NotifyParentSpec(spec string) {
 	log.Infof(log.Fields{}, "Parent SPEC notified: %v", spec)
 }
+
+func (n *Basenode) GetParentIP() (string, error) {
+	return n.parser.GetParentIP(n.GetMainRole())
+}

@@ -3,6 +3,7 @@ package parser
 import (
 	"fmt"
 	log "github.com/EntropyPool/entropy-logger"
+	types "github.com/NpoolDevOps/fbc-devops-peer/types"
 	"golang.org/x/xerrors"
 	"io/ioutil"
 	"strings"
@@ -96,4 +97,26 @@ func (p *Parser) dump() {
 		fmt.Printf("      env: %v\n", val.apiInfo)
 		fmt.Printf("      ip:  %v\n", val.ip)
 	}
+}
+
+func (p *Parser) GetParentIP(myRole string) (string, error) {
+	switch myRole {
+	case types.FullNode:
+		return "", xerrors.Errorf("fullnode do not have parent")
+	case types.MinerNode:
+		if _, ok := p.fileAPIInfo[FullnodeAPIFile]; !ok {
+			return "", xerrors.Errorf("do not have miner api info")
+		}
+		return p.fileAPIInfo[FullnodeAPIFile].ip, nil
+	case types.FullMinerNode:
+		return "", xerrors.Errorf("fullminernode do not have parent")
+	case types.WorkerNode:
+		if _, ok := p.fileAPIInfo[MinerAPIFile]; !ok {
+			return "", xerrors.Errorf("do not have miner api info")
+		}
+		return p.fileAPIInfo[MinerAPIFile].ip, nil
+	case types.StorageNode:
+		return "", xerrors.Errorf("storagenode do not have parent")
+	}
+	return "", xerrors.Errorf("unknow role %v", myRole)
 }
