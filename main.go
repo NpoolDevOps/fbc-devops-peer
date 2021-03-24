@@ -3,6 +3,7 @@ package main
 import (
 	log "github.com/EntropyPool/entropy-logger"
 	"github.com/NpoolDevOps/fbc-devops-peer/basenode"
+	"github.com/NpoolDevOps/fbc-devops-peer/peer"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/xerrors"
 	"os"
@@ -58,6 +59,16 @@ func main() {
 			if node == nil {
 				return xerrors.Errorf("cannot init basenode")
 			}
+
+			rpcPeer := peer.NewPeer(node)
+			if rpcPeer == nil {
+				return xerrors.Errorf("cannot init peer")
+			}
+
+			rpcPeer.Run()
+
+			ch := make(chan int)
+			<-ch
 
 			return nil
 		},

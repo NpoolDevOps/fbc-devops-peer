@@ -149,3 +149,7 @@ func (n *Basenode) GetMainRole() string {
 func (n *Basenode) GetSubRole() string {
 	return n.NodeDesc.NodeConfig.SubRole
 }
+
+func (n *Basenode) NotifyParentSpec(spec string) {
+
+}

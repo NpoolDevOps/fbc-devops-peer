@@ -14,36 +14,38 @@ import (
 
 const peerHttpPort = 52375
 
-type PeerConnection struct {
+type Peer struct {
 	Node               node.Node
 	NotifiedParentSpec string
 }
 
-func NewPeerConnection() *PeerConnection {
-	conn := &PeerConnection{}
+func NewPeer(node node.Node) *Peer {
+	conn := &Peer{
+		Node: node,
+	}
 	return conn
 }
 
-func (p *PeerConnection) ParentSpecGetRequest(w http.ResponseWriter, req *http.Request) (interface{}, string, int) {
+func (p *Peer) ParentSpecGetRequest(w http.ResponseWriter, req *http.Request) (interface{}, string, int) {
 	spec := machspec.NewMachineSpec()
 	spec.PrepareLowLevel()
-	return GetParentSpecOutput{
+	return types.GetParentSpecOutput{
 		ParentSpec: spec.SN(),
 	}, "", 0
 }
 
-func (p *PeerConnection) ParentSpecPostRequest(w http.ResponseWriter, req *http.Request) (interface{}, string, int) {
+func (p *Peer) ParentSpecPostRequest(w http.ResponseWriter, req *http.Request) (interface{}, string, int) {
 	b, err := ioutil.ReadAll(req.Body)
 	if err != nil {
 		return nil, err.Error(), -1
 	}
-	input := NotifyParentSpecInput{}
+	input := types.NotifyParentSpecInput{}
 	json.Unmarshal(b, &input)
-	p.NotifiedParentSpec = input.ParentSpec
+	p.Node.NotifyParentSpec(input.ParentSpec)
 	return nil, "", 0
 }
 
-func (p *PeerConnection) Run() {
+func (p *Peer) Run() {
 	httpdaemon.RegisterRouter(httpdaemon.HttpRouter{
 		Location: types.ParentSpecAPI,
 		Method:   "POST",
@@ -57,7 +59,7 @@ func (p *PeerConnection) Run() {
 	httpdaemon.Run(peerHttpPort)
 }
 
-func (p *PeerConnection) GetParentSpec(parentPeer string) (string, error) {
+func (p *Peer) GetParentSpec(parentPeer string) (string, error) {
 	resp, err := httpdaemon.R().
 		SetHeader("Content-Type", "application/json").
 		Get(fmt.Sprintf("http://%v%v", parentPeer, types.ParentSpecAPI))
@@ -70,19 +72,12 @@ func (p *PeerConnection) GetParentSpec(parentPeer string) (string, error) {
 	return string(resp.Body()), nil
 }
 
-func (p *PeerConnection) GetNotifiedParentSpec() (string, error) {
-	if p.NotifiedParentSpec == "" {
-		return "", xerrors.Errorf("invalid parent spec")
-	}
-	return p.NotifiedParentSpec, nil
-}
-
-func (p *PeerConnection) NotifyParentSpec(childPeer string) error {
+func (p *Peer) NotifyParentSpec(childPeer string) error {
 	spec := machspec.NewMachineSpec()
 	spec.PrepareLowLevel()
 	resp, err := httpdaemon.R().
 		SetHeader("Content-Type", "application/json").
-		SetBody(NotifyParentSpecInput{
+		SetBody(types.NotifyParentSpecInput{
 			ParentSpec: spec.SN(),
 		}).
 		Post(fmt.Sprintf("http://%v%v", childPeer, types.ParentSpecAPI))

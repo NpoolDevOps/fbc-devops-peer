@@ -12,6 +12,10 @@ github.com/NpoolDevOps/fbc-license-service v0.0.0-20210317123658-94e800820d4d/go
 github.com/NpoolDevOps/fbc-license-service v0.0.0-20210318060048-fc9b7662d874/go.mod h1:TDYLYEPoO/FIqhlUczeQccA1mMNMHR6BleISvTUCTxo=
 github.com/NpoolRD/http-daemon v0.0.0-20210210091512-241ac31803ef h1:hFDeLUZfb6TJ1p8butePgmGzTzZ1duiNZmgjfV0NSAY=
 github.com/NpoolRD/http-daemon v0.0.0-20210210091512-241ac31803ef/go.mod h1:1zc5D8V0YuVLbkAOLaWY7V4jaZ4iqOibGvJcx+SpZOM=
+github.com/NpoolRD/http-daemon v0.0.0-20210319085810-30667c8e29ae h1:l9NDJGaRgdvaQeNSCgpnx55J2ldQY++gn20K99pGQSQ=
+github.com/NpoolRD/http-daemon v0.0.0-20210319085810-30667c8e29ae/go.mod h1:1zc5D8V0YuVLbkAOLaWY7V4jaZ4iqOibGvJcx+SpZOM=
+github.com/NpoolRD/http-daemon v0.0.0-20210324100344-82fee56de8ac h1:FmZvMTqsfsxiLfqnDp9zYozFwRo673cRUuGP8bsBIaU=
+github.com/NpoolRD/http-daemon v0.0.0-20210324100344-82fee56de8ac/go.mod h1:1zc5D8V0YuVLbkAOLaWY7V4jaZ4iqOibGvJcx+SpZOM=
 github.com/PuerkitoBio/goquery v1.5.1/go.mod h1:GsLWisAFVj4WgDibEWF4pvYnkVQBpKBKeU+7zCJoLcc=
 github.com/andybalholm/cascadia v1.1.0/go.mod h1:GsXiBklL0woXo1j/WYWtSYYC4ouU9PqHO0sqidkEA4Y=
 github.com/census-instrumentation/opencensus-proto v0.2.1/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=
