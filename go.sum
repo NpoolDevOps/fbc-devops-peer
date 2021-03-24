@@ -8,6 +8,7 @@ github.com/NpoolDevOps/fbc-devops-service v0.0.0-20210317160416-3b60c246ef99 h1:
 github.com/NpoolDevOps/fbc-devops-service v0.0.0-20210317160416-3b60c246ef99/go.mod h1:lgsdvbeBu2dYvxwbYttRfZ1qjQ72F+L/677/mGR9VIw=
 github.com/NpoolDevOps/fbc-devops-service v0.0.0-20210318090754-3e9f35202388 h1:qe/en1hS+apaP0kBrgkO28jo9vQv6t/7RpAlNB474dY=
 github.com/NpoolDevOps/fbc-devops-service v0.0.0-20210318090754-3e9f35202388/go.mod h1:cpRsY+DZ6TDTZrGCldMNcKP5u8AnIl4rbpykflkQUC8=
+github.com/NpoolDevOps/fbc-devops-service v0.0.0-20210319024540-5f638a71719c h1:GwvX87WSfokGo2mpkXSVC1mmHKmD5Dcis+xtx4e3pik=
 github.com/NpoolDevOps/fbc-license-service v0.0.0-20210317123658-94e800820d4d/go.mod h1:UZSvgYZiPWuUNcwdCdQYKxq1btVUasBWYn3YbbynR70=
 github.com/NpoolDevOps/fbc-license-service v0.0.0-20210318060048-fc9b7662d874/go.mod h1:TDYLYEPoO/FIqhlUczeQccA1mMNMHR6BleISvTUCTxo=
 github.com/NpoolRD/http-daemon v0.0.0-20210210091512-241ac31803ef h1:hFDeLUZfb6TJ1p8butePgmGzTzZ1duiNZmgjfV0NSAY=

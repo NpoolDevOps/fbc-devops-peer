@@ -3,6 +3,7 @@ package main
 import (
 	log "github.com/EntropyPool/entropy-logger"
 	"github.com/NpoolDevOps/fbc-devops-peer/basenode"
+	devops "github.com/NpoolDevOps/fbc-devops-peer/devops"
 	"github.com/NpoolDevOps/fbc-devops-peer/peer"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/xerrors"
@@ -55,7 +56,11 @@ func main() {
 				User: cctx.String("device-user"),
 			}
 
-			node := basenode.NewBasenode(config)
+			client := devops.NewDevopsClient(&devops.DevopsConfig{
+				PeerReportAPI: cctx.String("report-host"),
+			})
+
+			node := basenode.NewBasenode(config, client)
 			if node == nil {
 				return xerrors.Errorf("cannot init basenode")
 			}

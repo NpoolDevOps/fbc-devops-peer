@@ -40,7 +40,7 @@ func (c *DevopsClient) onMessage(msg *DevopsMsg) {
 		SetBody(b).
 		Post(fmt.Sprintf("%v%v", c.config.PeerReportAPI, msg.Api))
 	if err != nil {
-		log.Errorf(log.Fields{}, "fail to report message")
+		log.Errorf(log.Fields{}, "fail to report message: %v", err)
 		go func() {
 			time.Sleep(10 * time.Second)
 			c.newMsg <- msg
@@ -53,6 +53,16 @@ func (c *DevopsClient) onMessage(msg *DevopsMsg) {
 			c.newMsg <- msg
 		}()
 		return
+	}
+
+	apiResp, err := httpdaemon.ParseResponse(resp)
+	if err != nil {
+		log.Errorf(log.Fields{}, "fail to report my config: %v", err)
+		return
+	}
+
+	if apiResp.Code != 0 {
+		log.Errorf(log.Fields{}, "fail to report my config: %v", apiResp.Msg)
 	}
 }
 

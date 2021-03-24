@@ -5,6 +5,7 @@ import (
 	"fmt"
 	log "github.com/EntropyPool/entropy-logger"
 	machspec "github.com/EntropyPool/machine-spec"
+	devops "github.com/NpoolDevOps/fbc-devops-peer/devops"
 	runtime "github.com/NpoolDevOps/fbc-devops-peer/runtime"
 	types "github.com/NpoolDevOps/fbc-devops-service/types"
 	"github.com/google/uuid"
@@ -13,9 +14,10 @@ import (
 )
 
 type Basenode struct {
-	NodeDesc *NodeDesc
-	User     string
-	Id       uuid.UUID
+	NodeDesc     *NodeDesc
+	User         string
+	Id           uuid.UUID
+	devopsClient *devops.DevopsClient
 }
 
 type NodeHardware struct {
@@ -51,12 +53,13 @@ type BasenodeConfig struct {
 	User          string
 }
 
-func NewBasenode(config *BasenodeConfig) *Basenode {
+func NewBasenode(config *BasenodeConfig, devopsClient *devops.DevopsClient) *Basenode {
 	basenode := &Basenode{
 		NodeDesc: &NodeDesc{
 			NodeConfig: config.NodeConfig,
 		},
-		User: config.User,
+		User:         config.User,
+		devopsClient: devopsClient,
 	}
 
 	spec := machspec.NewMachineSpec()
@@ -67,6 +70,8 @@ func NewBasenode(config *BasenodeConfig) *Basenode {
 	basenode.NodeDesc.HardwareInfo.UpdateNodeInfo()
 
 	basenode.GenerateUuid()
+
+	basenode.devopsClient.FeedMsg(types.DeviceRegisterAPI, basenode.ToDeviceRegisterInput())
 
 	return basenode
 }
