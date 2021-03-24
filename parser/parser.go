@@ -120,3 +120,15 @@ func (p *Parser) GetParentIP(myRole string) (string, error) {
 	}
 	return "", xerrors.Errorf("unknow role %v", myRole)
 }
+
+func (p *Parser) getMinerStorageChilds() ([]string, error) {
+	return nil, nil
+}
+
+func (p *Parser) GetChildIPs(myRole string) ([]string, error) {
+	switch myRole {
+	case types.MinerNode:
+		return p.getMinerStorageChilds()
+	}
+	return nil, xerrors.Errorf("no child for %v", myRole)
+}

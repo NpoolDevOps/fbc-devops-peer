@@ -11,7 +11,10 @@ import (
 	types "github.com/NpoolDevOps/fbc-devops-service/types"
 	"github.com/google/uuid"
 	"io/ioutil"
+	"net"
 	"os"
+	"strings"
+	"time"
 )
 
 type Basenode struct {
@@ -47,6 +50,8 @@ type NodeConfig struct {
 	SubRole        string        `json:"sub_role"`
 	ParentSpec     string        `json:"parent_spec"`
 	HardwareConfig *NodeHardware `json:"hardware_config"`
+	LocalAddr      string        `json:"local_addr"`
+	PublicAddr     string        `json:"public_addr"`
 }
 
 type BasenodeConfig struct {
@@ -73,10 +78,31 @@ func NewBasenode(config *BasenodeConfig, devopsClient *devops.DevopsClient) *Bas
 
 	basenode.GenerateUuid()
 	basenode.parser = parser.NewParser()
+	basenode.GetAddress()
 
 	basenode.devopsClient.FeedMsg(types.DeviceRegisterAPI, basenode.ToDeviceRegisterInput())
 
 	return basenode
+}
+
+func (n *Basenode) GetAddress() {
+	ticker := time.NewTicker(2 * time.Minute)
+	go func() {
+		for {
+			conn, err := net.Dial("udp", "8.8.8.8:80")
+			if err == nil {
+				localAddr := strings.Split(conn.LocalAddr().String(), ":")[0]
+				if n.NodeDesc.NodeConfig.LocalAddr != localAddr {
+					log.Infof(log.Fields{}, "local address updated: %v -> %v",
+						n.NodeDesc.NodeConfig.LocalAddr, localAddr)
+					n.NodeDesc.NodeConfig.LocalAddr = localAddr
+					n.devopsClient.FeedMsg(types.DeviceRegisterAPI, n.ToDeviceRegisterInput())
+				}
+				conn.Close()
+			}
+			<-ticker.C
+		}
+	}()
 }
 
 type BasenodeConfigFromFile struct {
@@ -131,6 +157,7 @@ func (n *Basenode) ToDeviceRegisterInput() *types.DeviceRegisterInput {
 		CpuDesc:     n.NodeDesc.HardwareInfo.CpuDesc,
 		HddCount:    n.NodeDesc.HardwareInfo.HddCount,
 		HddDesc:     n.NodeDesc.HardwareInfo.HddDesc,
+		LocalAddr:   n.NodeDesc.NodeConfig.LocalAddr,
 	}
 }
 
