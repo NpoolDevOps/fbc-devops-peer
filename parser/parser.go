@@ -35,6 +35,9 @@ func NewParser() *Parser {
 	if err != nil {
 		log.Errorf(log.Fields{}, "cannot parse node: %v", err)
 	}
+
+	parser.dump()
+
 	return parser
 }
 

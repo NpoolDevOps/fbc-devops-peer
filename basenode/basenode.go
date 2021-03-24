@@ -6,6 +6,7 @@ import (
 	log "github.com/EntropyPool/entropy-logger"
 	machspec "github.com/EntropyPool/machine-spec"
 	devops "github.com/NpoolDevOps/fbc-devops-peer/devops"
+	parser "github.com/NpoolDevOps/fbc-devops-peer/parser"
 	runtime "github.com/NpoolDevOps/fbc-devops-peer/runtime"
 	types "github.com/NpoolDevOps/fbc-devops-service/types"
 	"github.com/google/uuid"
@@ -18,6 +19,7 @@ type Basenode struct {
 	User         string
 	Id           uuid.UUID
 	devopsClient *devops.DevopsClient
+	parser       *parser.Parser
 }
 
 type NodeHardware struct {
@@ -70,6 +72,7 @@ func NewBasenode(config *BasenodeConfig, devopsClient *devops.DevopsClient) *Bas
 	basenode.NodeDesc.HardwareInfo.UpdateNodeInfo()
 
 	basenode.GenerateUuid()
+	basenode.parser = parser.NewParser()
 
 	basenode.devopsClient.FeedMsg(types.DeviceRegisterAPI, basenode.ToDeviceRegisterInput())
 
