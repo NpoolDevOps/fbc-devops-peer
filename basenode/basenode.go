@@ -10,6 +10,7 @@ import (
 	runtime "github.com/NpoolDevOps/fbc-devops-peer/runtime"
 	types "github.com/NpoolDevOps/fbc-devops-service/types"
 	"github.com/google/uuid"
+	"github.com/xjh22222228/ip"
 	"io/ioutil"
 	"net"
 	"os"
@@ -89,6 +90,8 @@ func (n *Basenode) GetAddress() {
 	ticker := time.NewTicker(2 * time.Minute)
 	go func() {
 		for {
+			updated := false
+
 			conn, err := net.Dial("udp", "8.8.8.8:80")
 			if err == nil {
 				localAddr := strings.Split(conn.LocalAddr().String(), ":")[0]
@@ -96,9 +99,22 @@ func (n *Basenode) GetAddress() {
 					log.Infof(log.Fields{}, "local address updated: %v -> %v",
 						n.NodeDesc.NodeConfig.LocalAddr, localAddr)
 					n.NodeDesc.NodeConfig.LocalAddr = localAddr
-					n.devopsClient.FeedMsg(types.DeviceRegisterAPI, n.ToDeviceRegisterInput())
+					updated = true
 				}
 				conn.Close()
+			}
+			publicAddr, err := ip.V4()
+			if err == nil {
+				if n.NodeDesc.NodeConfig.PublicAddr != publicAddr {
+					log.Infof(log.Fields{}, "public address updated: %v -> %v",
+						n.NodeDesc.NodeConfig.PublicAddr, publicAddr)
+					n.NodeDesc.NodeConfig.PublicAddr = publicAddr
+					n.devopsClient.FeedMsg(types.DeviceRegisterAPI, n.ToDeviceRegisterInput())
+					updated = true
+				}
+			}
+			if updated {
+				n.devopsClient.FeedMsg(types.DeviceRegisterAPI, n.ToDeviceRegisterInput())
 			}
 			<-ticker.C
 		}
@@ -158,6 +174,7 @@ func (n *Basenode) ToDeviceRegisterInput() *types.DeviceRegisterInput {
 		HddCount:    n.NodeDesc.HardwareInfo.HddCount,
 		HddDesc:     n.NodeDesc.HardwareInfo.HddDesc,
 		LocalAddr:   n.NodeDesc.NodeConfig.LocalAddr,
+		PublicAddr:  n.NodeDesc.NodeConfig.PublicAddr,
 	}
 }
 
