@@ -2,6 +2,7 @@ package main
 
 import (
 	log "github.com/EntropyPool/entropy-logger"
+	"github.com/NpoolDevOps/fbc-devops-peer/basenode"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/xerrors"
 	"os"
@@ -36,36 +37,29 @@ func main() {
 				Name: "gpu-count",
 			},
 			&cli.StringFlag{
-				Name: "device-owner",
+				Name: "device-user",
 			},
 		},
 		Action: func(cctx *cli.Context) error {
-			config := &BasenodeConfig{
-				PeerConfig: &PeerConfig{
+			config := &basenode.BasenodeConfig{
+				NodeConfig: &basenode.NodeConfig{
 					MainRole:   cctx.String("main-role"),
 					SubRole:    cctx.String("sub-role"),
 					ParentSpec: cctx.String("parent-spec"),
-					HardwareConfig: &PeerHardware{
+					HardwareConfig: &basenode.NodeHardware{
 						NvmeCount: cctx.Int("nvme-count"),
 						GpuCount:  cctx.Int("gpu-count"),
 					},
 				},
-				PeerReportAPI: cctx.String("report-host"),
-				Owner:         cctx.String("device-owner"),
+				User: cctx.String("device-user"),
 			}
 
-			switch config.PeerConfig.MainRole {
-			case FullNode:
-				return NewFullnodePeer(config).Run()
-			case MinerNode:
-				return NewMinerPeer(config).Run()
-			case WorkerNode:
-				return NewWorkerPeer(config).Run()
-			case StorageNode:
-				return NewStoragePeer(config).Run()
-			default:
-				return xerrors.Errorf("Unknow main role %v", config.PeerConfig.MainRole)
+			node := basenode.NewBasenode(config)
+			if node == nil {
+				return xerrors.Errorf("cannot init basenode")
 			}
+
+			return nil
 		},
 	}
 

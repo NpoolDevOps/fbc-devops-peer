@@ -1,4 +1,4 @@
-module github.com/NpoolDevOps/fbc-devops-client
+module github.com/NpoolDevOps/fbc-devops-peer
 
 go 1.15
 
