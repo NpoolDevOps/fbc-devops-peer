@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	machspec "github.com/EntropyPool/machine-spec"
+	"github.com/NpoolDevOps/fbc-devops-peer/node"
+	types "github.com/NpoolDevOps/fbc-devops-peer/types"
 	"github.com/NpoolRD/http-daemon"
 	"golang.org/x/xerrors"
 	"io/ioutil"
@@ -13,6 +15,7 @@ import (
 const peerHttpPort = 52375
 
 type PeerConnection struct {
+	Node               node.Node
 	NotifiedParentSpec string
 }
 
@@ -20,10 +23,6 @@ func NewPeerConnection() *PeerConnection {
 	conn := &PeerConnection{}
 	return conn
 }
-
-const (
-	ParentSpecAPI = "/api/v0/peer/parentspec"
-)
 
 func (p *PeerConnection) ParentSpecGetRequest(w http.ResponseWriter, req *http.Request) (interface{}, string, int) {
 	spec := machspec.NewMachineSpec()
@@ -46,12 +45,12 @@ func (p *PeerConnection) ParentSpecPostRequest(w http.ResponseWriter, req *http.
 
 func (p *PeerConnection) Run() {
 	httpdaemon.RegisterRouter(httpdaemon.HttpRouter{
-		Location: ParentSpecAPI,
+		Location: types.ParentSpecAPI,
 		Method:   "POST",
 		Handler:  p.ParentSpecGetRequest,
 	})
 	httpdaemon.RegisterRouter(httpdaemon.HttpRouter{
-		Location: ParentSpecAPI,
+		Location: types.ParentSpecAPI,
 		Method:   "GET",
 		Handler:  p.ParentSpecPostRequest,
 	})
@@ -61,7 +60,7 @@ func (p *PeerConnection) Run() {
 func (p *PeerConnection) GetParentSpec(parentPeer string) (string, error) {
 	resp, err := httpdaemon.R().
 		SetHeader("Content-Type", "application/json").
-		Get(fmt.Sprintf("http://%v%v", parentPeer, ParentSpecAPI))
+		Get(fmt.Sprintf("http://%v%v", parentPeer, types.ParentSpecAPI))
 	if err != nil {
 		return "", err
 	}
@@ -86,7 +85,7 @@ func (p *PeerConnection) NotifyParentSpec(childPeer string) error {
 		SetBody(NotifyParentSpecInput{
 			ParentSpec: spec.SN(),
 		}).
-		Post(fmt.Sprintf("http://%v%v", childPeer, ParentSpecAPI))
+		Post(fmt.Sprintf("http://%v%v", childPeer, types.ParentSpecAPI))
 	if err != nil {
 		return err
 	}
