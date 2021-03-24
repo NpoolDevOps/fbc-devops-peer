@@ -1,4 +1,4 @@
-package main
+package devops
 
 import (
 	"encoding/json"
