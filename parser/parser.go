@@ -1,11 +1,16 @@
 package parser
 
 import (
+	"bufio"
+	"encoding/json"
 	"fmt"
 	log "github.com/EntropyPool/entropy-logger"
 	types "github.com/NpoolDevOps/fbc-devops-peer/types"
+	"github.com/google/uuid"
 	"golang.org/x/xerrors"
 	"io/ioutil"
+	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -17,6 +22,8 @@ const (
 	MinerEnvKey         = "MINER_API_INFO"
 	MinerServiceFile    = "/etc/systemd/system/lotus-miner.service"
 	WorkerServiceFile   = "/etc/systemd/system/lotus-worker.service"
+	CommonSetupFile     = "/etc/profile.d/lotus-setup.sh"
+	StorageListDescFile = "storage.json"
 )
 
 type nodeDesc struct {
@@ -24,8 +31,48 @@ type nodeDesc struct {
 	ip      string
 }
 
+type storageDesc struct {
+	storageType string
+	ips         []string
+	vendor      string
+}
+
 type Parser struct {
-	fileAPIInfo map[string]nodeDesc
+	fileAPIInfo        map[string]nodeDesc
+	storageChilds      []storageDesc
+	storagePath        string
+	validStoragePath   bool
+	storageConfig      StorageConfig
+	validStorageConfig bool
+	storageMetas       []LocalStorageMeta
+}
+
+type OSSInfo struct {
+	URL        string
+	AccessKey  string
+	SecretKey  string
+	BucketName string
+	Prefix     string
+	CanWrite   bool
+}
+
+// LocalStorageMeta [path]/sectorstore.json
+type LocalStorageMeta struct {
+	ID       uuid.UUID
+	Weight   uint64 // 0 = readonly
+	CanSeal  bool
+	CanStore bool
+	Oss      bool
+	OssInfo  OSSInfo
+}
+
+// StorageConfig .lotusstorage/storage.json
+type StorageConfig struct {
+	StoragePaths []LocalPath
+}
+
+type LocalPath struct {
+	Path string
 }
 
 func NewParser() *Parser {
@@ -42,13 +89,10 @@ func NewParser() *Parser {
 	return parser
 }
 
-func (p *Parser) parseAPIInfo(info string) error {
-	return nil
-}
-
 func (p *Parser) readEnvFromAPIFile(filename string) error {
 	b, err := ioutil.ReadFile(filename)
 	if err != nil {
+		log.Errorf(log.Fields{}, "cannot read %v: %v", filename, err)
 		return err
 	}
 	s := strings.Split(string(b), "=")
@@ -73,6 +117,7 @@ func (p *Parser) parseEnvs() {
 	for key, val := range p.fileAPIInfo {
 		ip, err := p.parseIPFromEnvValue(val.apiInfo)
 		if err != nil {
+			log.Errorf(log.Fields{}, "cannot parse %v: %v", val.apiInfo, err)
 			delete(p.fileAPIInfo, key)
 			continue
 		}
@@ -82,10 +127,72 @@ func (p *Parser) parseEnvs() {
 	}
 }
 
+func (p *Parser) getStoragePath() {
+	f, err := os.Open(CommonSetupFile)
+	if err != nil {
+		log.Errorf(log.Fields{}, "cannot open %v: %v", CommonSetupFile, err)
+		return
+	}
+	defer f.Close()
+
+	bio := bufio.NewReader(f)
+	for {
+		line, _, err := bio.ReadLine()
+		if err != nil {
+			break
+		}
+		if strings.Contains(string(line), "ENV_LOTUS_STORAGE_PATH") {
+			s := strings.Split(string(line), "=")
+			if len(s) < 2 {
+				log.Errorf(log.Fields{}, "line %v do not have =", line)
+				break
+			}
+			stoPath := s[1]
+			info, err := os.Stat(stoPath)
+			if err != nil {
+				log.Errorf(log.Fields{}, "storage path %v: %v", stoPath, err)
+				break
+			}
+			if !info.IsDir() {
+				log.Errorf(log.Fields{}, "storage path is not dir", stoPath)
+				break
+			}
+			p.storagePath = stoPath
+			p.validStoragePath = true
+		}
+	}
+}
+
+func (p *Parser) parseStoragePaths() {
+	if !p.validStoragePath {
+		return
+	}
+	storageCfg := filepath.Join(p.storagePath, StorageListDescFile)
+	b, err := ioutil.ReadFile(storageCfg)
+	if err != nil {
+		log.Errorf(log.Fields{}, "cannot read %v: %v", storageCfg, err)
+		return
+	}
+	err = json.Unmarshal(b, &p.storageConfig)
+	if err != nil {
+		log.Errorf(log.Fields{}, "fail to parse %v: %v", storageCfg, err)
+		return
+	}
+	p.validStorageConfig = true
+}
+
+func (p *Parser) parseLocalStorages() {
+	if !p.validStorageConfig {
+
+	}
+}
+
 func (p *Parser) parse() error {
 	p.readEnvFromAPIFile(FullnodeAPIFile)
 	p.readEnvFromAPIFile(MinerAPIFile)
 	p.parseEnvs()
+	p.getStoragePath()
+	p.parseStoragePaths()
 	return nil
 }
 
@@ -97,6 +204,7 @@ func (p *Parser) dump() {
 		fmt.Printf("      env: %v\n", val.apiInfo)
 		fmt.Printf("      ip:  %v\n", val.ip)
 	}
+	fmt.Printf("  Storage Path --- %v\n", p.storagePath)
 }
 
 func (p *Parser) GetParentIP(myRole string) (string, error) {
