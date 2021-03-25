@@ -136,3 +136,37 @@ func GetMemoryCount() (int, error) {
 
 	return 0, nil
 }
+
+func GetMemorySize() (uint64, error) {
+	memory, _ := ghw.Memory()
+	return uint64(memory.TotalPhysicalBytes), nil
+}
+
+func GetMemoryDesc() ([]string, error) {
+	mems := []string{}
+
+	memory, _ := ghw.Memory()
+	for _, m := range memory.Modules {
+		info := machspec.Memory{
+			Dimm:         m.Location,
+			Sn:           m.SerialNumber,
+			SizeGB:       int(m.SizeBytes / 1024 / 1024 / 1024),
+			Manufacturer: m.Vendor,
+		}
+		b, _ := json.Marshal(info)
+		mems = append(mems, string(b))
+	}
+
+	if len(mems) == 0 {
+		spec := machspec.NewMachineSpec()
+		err := spec.PrepareLowLevel()
+		if err == nil {
+			for _, m := range spec.Memory {
+				b, _ := json.Marshal(m)
+				mems = append(mems, string(b))
+			}
+		}
+	}
+
+	return mems, nil
+}

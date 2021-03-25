@@ -24,3 +24,8 @@ func TestGetMemoryCount(t *testing.T) {
 	count, _ := GetMemoryCount()
 	log.Infof(log.Fields{}, "memory count: %v", count)
 }
+
+func TestGetMemoryDesc(t *testing.T) {
+	desc, _ := GetMemoryDesc()
+	log.Infof(log.Fields{}, "memory desc: %v", desc)
+}
