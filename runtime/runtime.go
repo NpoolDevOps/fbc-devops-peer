@@ -1,33 +1,31 @@
 package devopsruntime
 
 import (
+	"encoding/json"
 	_ "github.com/EntropyPool/entropy-logger"
-	"github.com/shirou/gopsutil/disk"
+	"github.com/jaypipes/ghw"
 	"strings"
 )
 
-type diskInfo struct {
-	name        string `json:"disk_name"`
-	description string `json:"disk_discription"`
-}
-
-func getRootPart() string {
-	infos, _ := disk.Partitions(false)
-	for _, info := range infos {
-		if info.Mountpoint == "/" {
-			return info.Device
+func rootInDisk(disk *ghw.Disk) bool {
+	for _, part := range disk.Partitions {
+		if part.MountPoint == "/" {
+			return true
 		}
 	}
-	return ""
+	return false
 }
 
 func getNvmeList() []string {
-	infos, _ := disk.Partitions(false)
+	block, _ := ghw.Block()
 
 	nvmes := []string{}
-	for _, info := range infos {
-		if strings.Contains(info.Device, "nvme") {
-			nvmes = append(nvmes, info.Device)
+	for _, disk := range block.Disks {
+		if rootInDisk(disk) {
+			continue
+		}
+		if strings.Contains(disk.Name, "nvme") {
+			nvmes = append(nvmes, disk.Name)
 		}
 	}
 
@@ -35,22 +33,40 @@ func getNvmeList() []string {
 }
 
 func GetNvmeCount() (int, error) {
-	nvmeList := getNvmeList()
-	rootPart := getRootPart()
+	return len(getNvmeList()), nil
+}
 
-	nvmeCount := 0
-	for _, nvme := range nvmeList {
-		if strings.Contains(rootPart, nvme) {
-			continue
-		}
-		nvmeCount += 1
-	}
-
-	return nvmeCount, nil
+type diskInfo struct {
+	name   string `json:"name"`
+	vendor string `json:"vendor"`
+	model  string `json:"model"`
+	sn     string `json:"sn"`
+	wwn    string `json:"wwn"`
 }
 
 func GetNvmeDesc() ([]string, error) {
-	return nil, nil
+	nvmeDescs := []string{}
+
+	block, _ := ghw.Block()
+	for _, disk := range block.Disks {
+		if rootInDisk(disk) {
+			continue
+		}
+		if !strings.Contains(disk.Name, "nvme") {
+			continue
+		}
+		info := diskInfo{
+			name:   disk.Name,
+			vendor: disk.Vendor,
+			model:  disk.Model,
+			sn:     disk.SerialNumber,
+			wwn:    disk.WWN,
+		}
+		b, _ := json.Marshal(info)
+		nvmeDescs = append(nvmeDescs, string(b))
+	}
+
+	return nvmeDescs, nil
 }
 
 func GetGpuCount() (int, error) {
