@@ -2,7 +2,7 @@ package devopsruntime
 
 import (
 	"encoding/json"
-	_ "github.com/EntropyPool/entropy-logger"
+	log "github.com/EntropyPool/entropy-logger"
 	"github.com/jaypipes/ghw"
 	"github.com/rai-project/nvidia-smi"
 	"strings"
@@ -117,4 +117,13 @@ func GetGpuDesc() ([]string, error) {
 	}
 
 	return gpus, nil
+}
+
+func GetMemoryCount() (int, error) {
+	memory, _ := ghw.Memory()
+	log.Infof(log.Fields{}, "==> %v", memory)
+	for _, mem := range memory.Modules {
+		log.Infof(log.Fields{}, "--> %v", mem)
+	}
+	return 0, nil
 }

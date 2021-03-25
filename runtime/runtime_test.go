@@ -19,3 +19,7 @@ func TestGetGpuDesc(t *testing.T) {
 	desc, _ := GetGpuDesc()
 	log.Infof(log.Fields{}, "desc desc: %v", desc)
 }
+
+func TestGetMemoryCount(t *testing.T) {
+	GetMemoryCount()
+}
