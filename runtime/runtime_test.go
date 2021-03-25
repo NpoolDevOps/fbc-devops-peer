@@ -14,3 +14,8 @@ func TestGetNvmeDesc(t *testing.T) {
 	desc, _ := GetNvmeDesc()
 	log.Infof(log.Fields{}, "nvme desc: %v", desc)
 }
+
+func TestGetGpuDesc(t *testing.T) {
+	desc, _ := GetGpuDesc()
+	log.Infof(log.Fields{}, "desc desc: %v", desc)
+}

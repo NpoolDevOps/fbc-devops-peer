@@ -69,10 +69,28 @@ func GetNvmeDesc() ([]string, error) {
 	return nvmeDescs, nil
 }
 
+type gpuDesc struct {
+	Vendor  string `json:"vendor"`
+	Product string `json:"product"`
+}
+
 func GetGpuCount() (int, error) {
-	return 0, nil
+	gpu, _ := ghw.GPU()
+	return len(gpu.GraphicsCards), nil
 }
 
 func GetGpuDesc() ([]string, error) {
-	return nil, nil
+	gpu, _ := ghw.GPU()
+
+	gpus := []string{}
+	for _, card := range gpu.GraphicsCards {
+		info := gpuDesc{
+			Vendor:  card.DeviceInfo.Vendor.Name,
+			Product: card.DeviceInfo.Product.Name,
+		}
+		desc, _ := json.Marshal(info)
+		gpus = append(gpus, string(desc))
+	}
+
+	return gpus, nil
 }
