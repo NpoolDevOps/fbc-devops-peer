@@ -24,6 +24,8 @@ const (
 	WorkerServiceFile   = "/etc/systemd/system/lotus-worker.service"
 	CommonSetupFile     = "/etc/profile.d/lotus-setup.sh"
 	StorageListDescFile = "storage.json"
+	StorageMetaFile     = "sectorstore.json"
+	ProcSelfMounts      = "/proc/self/mounts"
 )
 
 type nodeDesc struct {
@@ -45,6 +47,7 @@ type Parser struct {
 	storageConfig      StorageConfig
 	validStorageConfig bool
 	storageMetas       []LocalStorageMeta
+	cephEntries        map[string]struct{}
 }
 
 type OSSInfo struct {
@@ -78,6 +81,7 @@ type LocalPath struct {
 func NewParser() *Parser {
 	parser := &Parser{
 		fileAPIInfo: map[string]nodeDesc{},
+		cephEntries: map[string]struct{}{},
 	}
 	err := parser.parse()
 	if err != nil {
@@ -141,7 +145,7 @@ func (p *Parser) getStoragePath() {
 		if err != nil {
 			break
 		}
-		if strings.Contains(string(line), "ENV_LOTUS_STORAGE_PATH") {
+		if strings.Contains(string(line), " ENV_LOTUS_STORAGE_PATH") {
 			s := strings.Split(string(line), "=")
 			if len(s) < 2 {
 				log.Errorf(log.Fields{}, "line %v do not have =", line)
@@ -183,8 +187,57 @@ func (p *Parser) parseStoragePaths() {
 
 func (p *Parser) parseLocalStorages() {
 	if !p.validStorageConfig {
-
+		return
 	}
+	for _, path := range p.storageConfig.StoragePaths {
+		storeCfg := filepath.Join(path.Path, StorageMetaFile)
+		b, err := ioutil.ReadFile(storeCfg)
+		if err != nil {
+			log.Errorf(log.Fields{}, "fail to read %v: %v", storeCfg, err)
+			continue
+		}
+		meta := LocalStorageMeta{}
+		err = json.Unmarshal(b, &meta)
+		if err != nil {
+			log.Errorf(log.Fields{}, "fail to parse meta %v: %v", storeCfg, err)
+			continue
+		}
+		p.storageMetas = append(p.storageMetas, meta)
+	}
+}
+
+func (p *Parser) getMountedCeph() {
+	f, err := os.Open(ProcSelfMounts)
+	if err != nil {
+		log.Errorf(log.Fields{}, "fail to open %v: %v", ProcSelfMounts, err)
+		return
+	}
+	bio := bufio.NewReader(f)
+	for {
+		line, _, err := bio.ReadLine()
+		if err != nil {
+			log.Errorf(log.Fields{}, "fail to read line: %v", err)
+			break
+		}
+		if !strings.Contains(string(line), " ceph ") {
+			continue
+		}
+		cephEntry := strings.Split(string(line), " ")[0]
+		cephEntry = strings.Split(cephEntry, ":/")[0]
+		p.cephEntries[cephEntry] = struct{}{}
+	}
+}
+
+func (p *Parser) getMountedGluster() {
+	log.Infof(log.Fields{}, "NOT IMPLEMENTED NOW")
+}
+
+func (p *Parser) parseMinerStorageChilds() {
+
+}
+
+func (p *Parser) parseStorageChilds() {
+
 }
 
 func (p *Parser) parse() error {
@@ -193,6 +246,11 @@ func (p *Parser) parse() error {
 	p.parseEnvs()
 	p.getStoragePath()
 	p.parseStoragePaths()
+	p.parseLocalStorages()
+	p.getMountedCeph()
+	p.getMountedGluster()
+	p.parseMinerStorageChilds()
+	p.parseStorageChilds()
 	return nil
 }
 
@@ -205,6 +263,10 @@ func (p *Parser) dump() {
 		fmt.Printf("      ip:  %v\n", val.ip)
 	}
 	fmt.Printf("  Storage Path --- %v\n", p.storagePath)
+	fmt.Printf("  Ceph Entries --\n")
+	for entry, _ := range p.cephEntries {
+		fmt.Printf("    %v\n", entry)
+	}
 }
 
 func (p *Parser) GetParentIP(myRole string) (string, error) {
