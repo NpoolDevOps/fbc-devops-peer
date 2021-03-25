@@ -122,17 +122,17 @@ func GetGpuDesc() ([]string, error) {
 
 func GetMemoryCount() (int, error) {
 	memory, _ := ghw.Memory()
-	log.Infof(log.Fields{}, "==> %v", memory)
-	for _, mem := range memory.Modules {
-		log.Infof(log.Fields{}, "--> %v", mem)
-	}
+
 	if memory.Modules == nil || len(memory.Modules) == 0 {
 		spec := machspec.NewMachineSpec()
 		err := spec.PrepareLowLevel()
 		if err != nil {
 			log.Errorf(log.Fields{}, "fail to prepare spec: %v", err)
 		}
-		log.Infof(log.Fields{}, "==> %v", spec.Memory)
+		return len(spec.Memory), nil
+	} else {
+		return len(memory.Modules), nil
 	}
+
 	return 0, nil
 }
