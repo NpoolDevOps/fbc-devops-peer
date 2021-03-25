@@ -1,9 +1,8 @@
 package devopsruntime
 
 import (
-	log "github.com/EntropyPool/entropy-logger"
-	gofstab "github.com/deniswernert/go-fstab"
-	"os/exec"
+	_ "github.com/EntropyPool/entropy-logger"
+	"github.com/shirou/gopsutil/disk"
 	"strings"
 )
 
@@ -13,18 +12,30 @@ type diskInfo struct {
 }
 
 func getRootPart() string {
-	mounts, _ := gofstab.ParseSystem()
-	log.Infof(log.Fields{}, "==> %v", mounts)
+	infos, _ := disk.Partitions(false)
+	for _, info := range infos {
+		if info.Mountpoint == "/" {
+			return info.Device
+		}
+	}
 	return ""
 }
 
-func getNvmeDiskList() []string {
-	out, _ := exec.Command("lsblk | grep \"disk\" | grep \"nvme\"").Output()
-	return strings.Split(string(out), "\n")
+func getNvmeList() []string {
+	infos, _ := disk.Partitions(false)
+
+	nvmes := []string{}
+	for _, info := range infos {
+		if strings.Contains(info.Device, "nvme") {
+			nvmes = append(nvmes, info.Device)
+		}
+	}
+
+	return nvmes
 }
 
 func GetNvmeCount() (int, error) {
-	nvmeList := getNvmeDiskList()
+	nvmeList := getNvmeList()
 	rootPart := getRootPart()
 
 	nvmeCount := 0
