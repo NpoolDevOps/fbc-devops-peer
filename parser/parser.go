@@ -33,15 +33,9 @@ type nodeDesc struct {
 	ip      string
 }
 
-type storageDesc struct {
-	storageType string
-	ips         []string
-	vendor      string
-}
-
 type Parser struct {
 	fileAPIInfo        map[string]nodeDesc
-	storageChilds      []storageDesc
+	minerStorageChilds []string
 	storagePath        string
 	validStoragePath   bool
 	storageConfig      StorageConfig
@@ -233,7 +227,20 @@ func (p *Parser) getMountedGluster() {
 }
 
 func (p *Parser) parseMinerStorageChilds() {
-
+	for entry, _ := range p.cephEntries {
+		s := strings.Split(entry, ",")
+		for _, ss := range s {
+			sss := strings.Split(ss, ":")[0]
+			p.minerStorageChilds = append(p.minerStorageChilds, sss)
+		}
+	}
+	for _, meta := range p.storageMetas {
+		if meta.Oss {
+			s := strings.Split(meta.OssInfo.URL, "://")[1]
+			s = strings.Split(s, ":")[0]
+			p.minerStorageChilds = append(p.minerStorageChilds, s)
+		}
+	}
 }
 
 func (p *Parser) parseStorageChilds() {
@@ -266,6 +273,10 @@ func (p *Parser) dump() {
 	fmt.Printf("  Ceph Entries --\n")
 	for entry, _ := range p.cephEntries {
 		fmt.Printf("    %v\n", entry)
+	}
+	fmt.Printf("  Ceph IPs --\n")
+	for _, child := range p.minerStorageChilds {
+		fmt.Printf("    %v\n", child)
 	}
 }
 
