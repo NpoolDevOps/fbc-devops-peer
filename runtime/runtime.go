@@ -2,7 +2,7 @@ package devopsruntime
 
 import (
 	"encoding/json"
-	log "github.com/EntropyPool/entropy-logger"
+	_ "github.com/EntropyPool/entropy-logger"
 	"github.com/jaypipes/ghw"
 	"github.com/rai-project/nvidia-smi"
 	"strings"
@@ -71,8 +71,9 @@ func GetNvmeDesc() ([]string, error) {
 }
 
 type gpuDesc struct {
-	Vendor  string `json:"vendor"`
-	Product string `json:"product"`
+	Vendor        string `json:"vendor"`
+	Product       string `json:"product"`
+	DriverVersion string `json:"driver_version"`
 }
 
 func GetGpuCount() (int, error) {
@@ -81,10 +82,32 @@ func GetGpuCount() (int, error) {
 }
 
 func GetGpuDesc() ([]string, error) {
-	gpu, _ := ghw.GPU()
-
 	gpus := []string{}
+
+	nvgpu, err := nvidiasmi.New()
+	if err == nil {
+		for _, gpu := range nvgpu.GPUS {
+			info := gpuDesc{
+				Vendor:        "NVIDIA",
+				Product:       gpu.ProductName,
+				DriverVersion: nvgpu.DriverVersion,
+			}
+			desc, _ := json.Marshal(info)
+			gpus = append(gpus, string(desc))
+		}
+	}
+
+	gpu, _ := ghw.GPU()
 	for _, card := range gpu.GraphicsCards {
+		added := false
+		for _, name := range gpus {
+			if strings.Contains(name, card.DeviceInfo.Product.Name) {
+				added = true
+			}
+		}
+		if added {
+			continue
+		}
 		info := gpuDesc{
 			Vendor:  card.DeviceInfo.Vendor.Name,
 			Product: card.DeviceInfo.Product.Name,
@@ -92,12 +115,6 @@ func GetGpuDesc() ([]string, error) {
 		desc, _ := json.Marshal(info)
 		gpus = append(gpus, string(desc))
 	}
-
-	nvgpu, err := nvidiasmi.New()
-	if err != nil {
-		log.Infof(log.Fields{}, "==> %v", err)
-	}
-	log.Infof(log.Fields{}, "--> %v", nvgpu)
 
 	return gpus, nil
 }
