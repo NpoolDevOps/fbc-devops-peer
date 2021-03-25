@@ -39,3 +39,13 @@ func TestGetCpuDesc(t *testing.T) {
 	desc, _ := GetCpuDesc()
 	log.Infof(log.Fields{}, "cpu desc: %v", desc)
 }
+
+func TestGetHddCount(t *testing.T) {
+	count, _ := GetHddCount()
+	log.Infof(log.Fields{}, "hdd count: %v", count)
+}
+
+func TestGetHddDesc(t *testing.T) {
+	desc, _ := GetHddDesc()
+	log.Infof(log.Fields{}, "hdd desc: %v", desc)
+}

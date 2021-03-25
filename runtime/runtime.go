@@ -196,3 +196,49 @@ func GetCpuDesc() ([]string, error) {
 
 	return cpus, nil
 }
+
+func getHddList() []string {
+	block, _ := ghw.Block()
+
+	hdds := []string{}
+	for _, disk := range block.Disks {
+		if rootInDisk(disk) {
+			continue
+		}
+		if strings.Contains(disk.Name, "nvme") {
+			continue
+		}
+		hdds = append(hdds, disk.Name)
+	}
+
+	return hdds
+}
+
+func GetHddCount() (int, error) {
+	return len(getHddList()), nil
+}
+
+func GetHddDesc() ([]string, error) {
+	hddDescs := []string{}
+
+	block, _ := ghw.Block()
+	for _, disk := range block.Disks {
+		if rootInDisk(disk) {
+			continue
+		}
+		if strings.Contains(disk.Name, "nvme") {
+			continue
+		}
+		info := diskInfo{
+			Name:   disk.Name,
+			Vendor: disk.Vendor,
+			Model:  disk.Model,
+			Sn:     disk.SerialNumber,
+			Wwn:    disk.WWN,
+		}
+		b, _ := json.Marshal(&info)
+		hddDescs = append(hddDescs, string(b))
+	}
+
+	return hddDescs, nil
+}
