@@ -14,6 +14,7 @@ import (
 	"io/ioutil"
 	"net"
 	"os"
+	"os/exec"
 	"strings"
 	"time"
 )
@@ -53,6 +54,7 @@ type NodeConfig struct {
 	HardwareConfig *NodeHardware `json:"hardware_config"`
 	LocalAddr      string        `json:"local_addr"`
 	PublicAddr     string        `json:"public_addr"`
+	OsSpec         string        `json:"os_spec"`
 }
 
 type BasenodeConfig struct {
@@ -80,10 +82,16 @@ func NewBasenode(config *BasenodeConfig, devopsClient *devops.DevopsClient) *Bas
 	basenode.GenerateUuid()
 	basenode.parser = parser.NewParser()
 	basenode.GetAddress()
+	basenode.ReadOsSpec()
 
 	basenode.devopsClient.FeedMsg(types.DeviceRegisterAPI, basenode.ToDeviceRegisterInput())
 
 	return basenode
+}
+
+func (n *Basenode) ReadOsSpec() {
+	out, _ := exec.Command("uname -a").Output()
+	n.NodeDesc.NodeConfig.OsSpec = string(out)
 }
 
 func (n *Basenode) GetAddress() {
@@ -175,6 +183,7 @@ func (n *Basenode) ToDeviceRegisterInput() *types.DeviceRegisterInput {
 		HddDesc:     n.NodeDesc.HardwareInfo.HddDesc,
 		LocalAddr:   n.NodeDesc.NodeConfig.LocalAddr,
 		PublicAddr:  n.NodeDesc.NodeConfig.PublicAddr,
+		OsSpec:      n.NodeDesc.NodeConfig.OsSpec,
 	}
 }
 

@@ -4,6 +4,8 @@ github.com/EntropyPool/entropy-logger v0.0.0-20210210082337-af230fd03ce7 h1:tiK8
 github.com/EntropyPool/entropy-logger v0.0.0-20210210082337-af230fd03ce7/go.mod h1:perlDQKCtiDeoe5S/iS6VlZluvMQ6KMDb6V23ulWMV4=
 github.com/EntropyPool/machine-spec v0.0.0-20210221073944-f4cf2cd67486 h1:47zmbQl5cypbRxFYbo8gUbeRRGgTKrbklNIgX2NepJs=
 github.com/EntropyPool/machine-spec v0.0.0-20210221073944-f4cf2cd67486/go.mod h1:WWX9wIJ6uWaZLDEUZjMPm5q32dJT6g/LPIpzAayIn/I=
+github.com/NpoolDevOps/fbc-auth-service v0.0.0-20210319121457-54710063b31f/go.mod h1:FSKZRNVwKw/DxbGgb+WB43H1seNTETTSNgOQDJZjeL0=
+github.com/NpoolDevOps/fbc-auth-service v0.0.0-20210323131841-28695bb4b6a8/go.mod h1:3JA4mxc7e9f0dfcxT7WRKz+ASJb4tjcrcJ0rWmHRBUc=
 github.com/NpoolDevOps/fbc-devops-service v0.0.0-20210317160416-3b60c246ef99 h1:4hEKcBCxXB9IlGe1deY10u8uxe4g2vqPNTmPWJyvgdw=
 github.com/NpoolDevOps/fbc-devops-service v0.0.0-20210317160416-3b60c246ef99/go.mod h1:lgsdvbeBu2dYvxwbYttRfZ1qjQ72F+L/677/mGR9VIw=
 github.com/NpoolDevOps/fbc-devops-service v0.0.0-20210318090754-3e9f35202388 h1:qe/en1hS+apaP0kBrgkO28jo9vQv6t/7RpAlNB474dY=
@@ -11,8 +13,12 @@ github.com/NpoolDevOps/fbc-devops-service v0.0.0-20210318090754-3e9f35202388/go.
 github.com/NpoolDevOps/fbc-devops-service v0.0.0-20210319024540-5f638a71719c h1:GwvX87WSfokGo2mpkXSVC1mmHKmD5Dcis+xtx4e3pik=
 github.com/NpoolDevOps/fbc-devops-service v0.0.0-20210324133639-61fae11de3ef h1:Zc2Y+62esAsQ3db75crl0+EmWgaQZHwuPZubuvjjuRs=
 github.com/NpoolDevOps/fbc-devops-service v0.0.0-20210324133639-61fae11de3ef/go.mod h1:cpRsY+DZ6TDTZrGCldMNcKP5u8AnIl4rbpykflkQUC8=
+github.com/NpoolDevOps/fbc-devops-service v0.0.0-20210325051804-3cb408d8cf1f h1:NOyyf91DjJuNNPeYoNgh3W8/1mylsr95tp9AJiAM0ww=
+github.com/NpoolDevOps/fbc-devops-service v0.0.0-20210325051804-3cb408d8cf1f/go.mod h1:w2ICvWr0QlujT3dztNPcHiMzIXm/VdWcOOyOOLCz0Xg=
 github.com/NpoolDevOps/fbc-license-service v0.0.0-20210317123658-94e800820d4d/go.mod h1:UZSvgYZiPWuUNcwdCdQYKxq1btVUasBWYn3YbbynR70=
 github.com/NpoolDevOps/fbc-license-service v0.0.0-20210318060048-fc9b7662d874/go.mod h1:TDYLYEPoO/FIqhlUczeQccA1mMNMHR6BleISvTUCTxo=
+github.com/NpoolDevOps/fbc-license-service v0.0.0-20210319140422-63c83712a695/go.mod h1:mT8+Dx2KWEdqzTMFZol89yjl5RqZ+rbJdHZtvLAvlPo=
+github.com/NpoolDevOps/fbc-license-service v0.0.0-20210324144427-1b800bab7127/go.mod h1:/Vzkzp2z+EnECJv/0xe5vAp8TJCydxXkq5MYNivfcTI=
 github.com/NpoolRD/http-daemon v0.0.0-20210210091512-241ac31803ef h1:hFDeLUZfb6TJ1p8butePgmGzTzZ1duiNZmgjfV0NSAY=
 github.com/NpoolRD/http-daemon v0.0.0-20210210091512-241ac31803ef/go.mod h1:1zc5D8V0YuVLbkAOLaWY7V4jaZ4iqOibGvJcx+SpZOM=
 github.com/NpoolRD/http-daemon v0.0.0-20210319085810-30667c8e29ae h1:l9NDJGaRgdvaQeNSCgpnx55J2ldQY++gn20K99pGQSQ=
@@ -34,6 +40,7 @@ github.com/cpuguy83/go-md2man/v2 v2.0.0-20190314233015-f79a8a8ca69d/go.mod h1:ma
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/denisenkom/go-mssqldb v0.0.0-20191124224453-732737034ffd/go.mod h1:xbL0rPBG9cCiLr28tMa8zpbdarY27NDyej4t/EjAShU=
+github.com/dgrijalva/jwt-go v3.2.0+incompatible/go.mod h1:E3ru+11k8xSBh+hMPgOLZmtrrCbhqsmaPHjLKYnJCaQ=
 github.com/dselans/dmidecode v0.0.0-20180814053009-65c3f9d81910 h1:w9T/rS5VP0SPXqYr7BpUeqf6ukp/GEWm6nXhziWzBY4=
 github.com/dselans/dmidecode v0.0.0-20180814053009-65c3f9d81910/go.mod h1:yGxJ4za56u74+F00gmg9RJoyXLzvrOrIat4b/Dgw9Lo=
 github.com/envoyproxy/go-control-plane v0.9.0/go.mod h1:YTl/9mNaCwkRvm6d1a2C3ymFceY/DCBVvsKhRF0iEA4=
