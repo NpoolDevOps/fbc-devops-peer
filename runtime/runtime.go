@@ -3,6 +3,7 @@ package devopsruntime
 import (
 	"encoding/json"
 	log "github.com/EntropyPool/entropy-logger"
+	machspec "github.com/EntropyPool/machine-spec"
 	"github.com/jaypipes/ghw"
 	"github.com/rai-project/nvidia-smi"
 	"strings"
@@ -124,6 +125,14 @@ func GetMemoryCount() (int, error) {
 	log.Infof(log.Fields{}, "==> %v", memory)
 	for _, mem := range memory.Modules {
 		log.Infof(log.Fields{}, "--> %v", mem)
+	}
+	if memory.Modules == nil || len(memory.Modules) == 0 {
+		spec := machspec.NewMachineSpec()
+		err := spec.PrepareLowLevel()
+		if err != nil {
+			log.Errorf(log.Fields{}, "fail to prepare spec: %v", err)
+		}
+		log.Infof(log.Fields{}, "==> %v", spec.Memory)
 	}
 	return 0, nil
 }
