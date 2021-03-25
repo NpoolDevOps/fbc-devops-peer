@@ -43,6 +43,14 @@ func main() {
 			},
 		},
 		Action: func(cctx *cli.Context) error {
+			if cctx.String("main-role") == "" {
+				return xerrors.Errorf("main-role is must")
+			}
+
+			if cctx.String("device-user") == "" {
+				return xerrors.Errorf("device user is must")
+			}
+
 			config := &basenode.BasenodeConfig{
 				NodeConfig: &basenode.NodeConfig{
 					MainRole:   cctx.String("main-role"),
