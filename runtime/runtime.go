@@ -170,3 +170,8 @@ func GetMemoryDesc() ([]string, error) {
 
 	return mems, nil
 }
+
+func GetCpuCount() (int, error) {
+	cpu, _ := ghw.CPU()
+	return len(cpu.Processors), nil
+}

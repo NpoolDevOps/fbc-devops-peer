@@ -29,3 +29,8 @@ func TestGetMemoryDesc(t *testing.T) {
 	desc, _ := GetMemoryDesc()
 	log.Infof(log.Fields{}, "memory desc: %v", desc)
 }
+
+func TestGetCpuCount(t *testing.T) {
+	count, _ := GetCpuCount()
+	log.Infof(log.Fields{}, "cpu count: %v", count)
+}

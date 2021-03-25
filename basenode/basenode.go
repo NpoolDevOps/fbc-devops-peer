@@ -194,11 +194,19 @@ func (h *NodeHardware) UpdateNodeInfo() error {
 	gpus, _ := runtime.GetGpuCount()
 	gpuDesc, _ := runtime.GetGpuDesc()
 
+	mems, _ := runtime.GetMemoryCount()
+	memSize, _ := runtime.GetMemorySize()
+	memDesc, _ := runtime.GetMemoryDesc()
+
 	h.NvmeCount = nvmes
 	h.NvmeDesc = nvmeDesc
 
 	h.GpuCount = gpus
 	h.GpuDesc = gpuDesc
+
+	h.MemoryCount = mems
+	h.MemorySize = memSize
+	h.MemoryDesc = memDesc
 
 	return nil
 }
