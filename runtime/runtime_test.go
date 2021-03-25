@@ -34,3 +34,8 @@ func TestGetCpuCount(t *testing.T) {
 	count, _ := GetCpuCount()
 	log.Infof(log.Fields{}, "cpu count: %v", count)
 }
+
+func TestGetCpuDesc(t *testing.T) {
+	desc, _ := GetCpuDesc()
+	log.Infof(log.Fields{}, "cpu desc: %v", desc)
+}

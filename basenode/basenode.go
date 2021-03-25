@@ -198,6 +198,9 @@ func (h *NodeHardware) UpdateNodeInfo() error {
 	memSize, _ := runtime.GetMemorySize()
 	memDesc, _ := runtime.GetMemoryDesc()
 
+	cpus, _ := runtime.GetCpuCount()
+	cpuDesc, _ := runtime.GetCpuDesc()
+
 	h.NvmeCount = nvmes
 	h.NvmeDesc = nvmeDesc
 
@@ -207,6 +210,9 @@ func (h *NodeHardware) UpdateNodeInfo() error {
 	h.MemoryCount = mems
 	h.MemorySize = memSize
 	h.MemoryDesc = memDesc
+
+	h.CpuCount = cpus
+	h.CpuDesc = cpuDesc
 
 	return nil
 }

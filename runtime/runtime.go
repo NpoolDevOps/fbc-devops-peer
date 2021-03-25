@@ -175,3 +175,24 @@ func GetCpuCount() (int, error) {
 	cpu, _ := ghw.CPU()
 	return len(cpu.Processors), nil
 }
+
+type cpuDesc struct {
+	Vendor string `json:"vendor"`
+	Model  string `json:"model"`
+}
+
+func GetCpuDesc() ([]string, error) {
+	cpu, _ := ghw.CPU()
+
+	cpus := []string{}
+	for _, c := range cpu.Processors {
+		desc := cpuDesc{
+			Vendor: c.Vendor,
+			Model:  c.Model,
+		}
+		b, _ := json.Marshal(desc)
+		cpus = append(cpus, string(b))
+	}
+
+	return cpus, nil
+}
