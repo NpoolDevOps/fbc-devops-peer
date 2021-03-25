@@ -2,8 +2,9 @@ package devopsruntime
 
 import (
 	"encoding/json"
-	_ "github.com/EntropyPool/entropy-logger"
+	log "github.com/EntropyPool/entropy-logger"
 	"github.com/jaypipes/ghw"
+	"github.com/rai-project/nvidia-smi"
 	"strings"
 )
 
@@ -91,6 +92,12 @@ func GetGpuDesc() ([]string, error) {
 		desc, _ := json.Marshal(info)
 		gpus = append(gpus, string(desc))
 	}
+
+	nvgpu, err := nvidiasmi.New()
+	if err != nil {
+		log.Infof(log.Fields{}, "==> %v", err)
+	}
+	log.Infof(log.Fields{}, "--> %v", nvgpu)
 
 	return gpus, nil
 }
