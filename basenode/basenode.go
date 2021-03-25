@@ -201,6 +201,9 @@ func (h *NodeHardware) UpdateNodeInfo() error {
 	cpus, _ := runtime.GetCpuCount()
 	cpuDesc, _ := runtime.GetCpuDesc()
 
+	hdds, _ := runtime.GetHddCount()
+	hddDesc, _ := runtime.GetHddDesc()
+
 	h.NvmeCount = nvmes
 	h.NvmeDesc = nvmeDesc
 
@@ -213,6 +216,9 @@ func (h *NodeHardware) UpdateNodeInfo() error {
 
 	h.CpuCount = cpus
 	h.CpuDesc = cpuDesc
+
+	h.HddCount = hdds
+	h.HddDesc = hddDesc
 
 	return nil
 }
