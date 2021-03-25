@@ -37,11 +37,11 @@ func GetNvmeCount() (int, error) {
 }
 
 type diskInfo struct {
-	name   string `json:"name"`
-	vendor string `json:"vendor"`
-	model  string `json:"model"`
-	sn     string `json:"sn"`
-	wwn    string `json:"wwn"`
+	Name   string `json:"name"`
+	Vendor string `json:"vendor"`
+	Model  string `json:"model"`
+	Sn     string `json:"sn"`
+	Wwn    string `json:"wwn"`
 }
 
 func GetNvmeDesc() ([]string, error) {
@@ -56,13 +56,13 @@ func GetNvmeDesc() ([]string, error) {
 			continue
 		}
 		info := diskInfo{
-			name:   disk.Name,
-			vendor: disk.Vendor,
-			model:  disk.Model,
-			sn:     disk.SerialNumber,
-			wwn:    disk.WWN,
+			Name:   disk.Name,
+			Vendor: disk.Vendor,
+			Model:  disk.Model,
+			Sn:     disk.SerialNumber,
+			Wwn:    disk.WWN,
 		}
-		b, _ := json.Marshal(info)
+		b, _ := json.Marshal(&info)
 		nvmeDescs = append(nvmeDescs, string(b))
 	}
 
