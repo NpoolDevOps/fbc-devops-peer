@@ -47,8 +47,13 @@ func (p *Peer) handler() {
 		childs, err := p.Node.GetChildsIPs()
 		if err == nil {
 			for _, child := range childs {
-				p.NotifyParentSpec(child)
+				err = p.NotifyParentSpec(child)
+				if err != nil {
+					log.Errorf(log.Fields{}, "fail to notify parent spec to %v: %v", child, err)
+				}
 			}
+		} else {
+			log.Infof(log.Fields{}, "cannot get childs for %v : %v", p.Node.GetMainRole(), err)
 		}
 		<-p.parentSpecTicker.C
 	}
@@ -126,7 +131,7 @@ func (p *Peer) NotifyParentSpec(childPeer string) error {
 		SetBody(types.NotifyParentSpecInput{
 			ParentSpec: spec.SN(),
 		}).
-		Post(fmt.Sprintf("http://%v%v", childPeer, types.ParentSpecAPI))
+		Post(fmt.Sprintf("http://%v:%v/%v", childPeer, peerHttpPort, types.ParentSpecAPI))
 	if err != nil {
 		return err
 	}

@@ -390,6 +390,8 @@ func (p *Parser) getStorageChilds() ([]string, error) {
 
 func (p *Parser) GetChildsIPs(myRole string) ([]string, error) {
 	switch myRole {
+	case types.FullMinerNode:
+		return p.getMinerStorageChilds()
 	case types.MinerNode:
 		return p.getMinerStorageChilds()
 	case types.StorageNode:
