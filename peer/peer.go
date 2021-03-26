@@ -42,6 +42,8 @@ func (p *Peer) handler() {
 			spec, err := p.GetParentSpec(ip)
 			if err == nil {
 				p.Node.NotifyParentSpec(spec)
+			} else {
+				log.Infof(log.Fields{}, "cannot get parent spec from %v: %v", ip, err)
 			}
 		}
 		childs, err := p.Node.GetChildsIPs()
@@ -131,7 +133,7 @@ func (p *Peer) NotifyParentSpec(childPeer string) error {
 		SetBody(types.NotifyParentSpecInput{
 			ParentSpec: spec.SN(),
 		}).
-		Post(fmt.Sprintf("http://%v:%v/%v", childPeer, peerHttpPort, types.ParentSpecAPI))
+		Post(fmt.Sprintf("http://%v:%v%v", childPeer, peerHttpPort, types.ParentSpecAPI))
 	if err != nil {
 		return err
 	}
