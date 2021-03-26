@@ -6,6 +6,7 @@ import (
 	"fmt"
 	log "github.com/EntropyPool/entropy-logger"
 	types "github.com/NpoolDevOps/fbc-devops-peer/types"
+	httpdaemon "github.com/NpoolRD/http-daemon"
 	"github.com/google/uuid"
 	"golang.org/x/xerrors"
 	"io/ioutil"
@@ -47,6 +48,8 @@ type Parser struct {
 	cephEntries        map[string]struct{}
 	localAddr          string
 	cephStoragePeers   map[string]string
+	storageSubRole     string
+	storageChilds      []string
 }
 
 type OSSInfo struct {
@@ -280,8 +283,34 @@ func (p *Parser) parseStorageHosts() {
 	}
 }
 
-func (p *Parser) parseStorageChilds() {
+func (p *Parser) parseMyStorageRole() {
+	resp, err := httpdaemon.R().
+		Get(fmt.Sprintf("http://%v:9090", p.localAddr))
+	if err == nil {
+		if resp.StatusCode() == 200 {
+			p.storageSubRole = types.StorageRoleMgr
+			return
+		}
+	}
 
+	resp, err = httpdaemon.R().
+		Get(fmt.Sprintf("http://%v:7000", p.localAddr))
+	if err == nil {
+		if resp.StatusCode() == 200 {
+			p.storageSubRole = types.StorageRoleAPI
+			return
+		}
+	}
+
+	p.storageSubRole = types.StorageRoleOsd
+}
+
+func (p *Parser) parseStorageChilds() {
+	if types.StorageRoleMgr == p.storageSubRole {
+		for _, v := range p.cephStoragePeers {
+			p.storageChilds = append(p.storageChilds, v)
+		}
+	}
 }
 
 func (p *Parser) parse() error {
@@ -296,6 +325,7 @@ func (p *Parser) parse() error {
 	p.parseMinerStorageChilds()
 	p.parseLocalAddress()
 	p.parseStorageHosts()
+	p.parseMyStorageRole()
 	p.parseStorageChilds()
 	return nil
 }
@@ -320,6 +350,11 @@ func (p *Parser) dump() {
 	fmt.Printf("  Ceph Childs ---\n")
 	for k, v := range p.cephStoragePeers {
 		fmt.Printf("    %v: %v\n", k, v)
+	}
+	fmt.Printf("  Storage Role --- %v\n", p.storageSubRole)
+	fmt.Printf("  Storage Childs ---\n")
+	for _, child := range p.storageChilds {
+		fmt.Printf("    %v\n", child)
 	}
 }
 

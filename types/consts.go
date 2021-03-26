@@ -11,3 +11,9 @@ const (
 	WorkerNode    = "worker"
 	StorageNode   = "storage"
 )
+
+const (
+	StorageRoleAPI = "api"
+	StorageRoleMgr = "mgr"
+	StorageRoleOsd = "osd"
+)
