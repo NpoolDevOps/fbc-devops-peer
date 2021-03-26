@@ -1,8 +1,6 @@
 package basenode
 
 import (
-	"encoding/json"
-	"fmt"
 	log "github.com/EntropyPool/entropy-logger"
 	machspec "github.com/EntropyPool/machine-spec"
 	devops "github.com/NpoolDevOps/fbc-devops-peer/devops"
@@ -13,9 +11,7 @@ import (
 	lic "github.com/NpoolDevOps/fbc-license"
 	"github.com/google/uuid"
 	"github.com/xjh22222228/ip"
-	"io/ioutil"
 	"net"
-	"os"
 	"os/exec"
 	"strings"
 	"time"
@@ -29,6 +25,7 @@ type Basenode struct {
 	Id           uuid.UUID
 	devopsClient *devops.DevopsClient
 	parser       *parser.Parser
+	HasId        bool
 }
 
 type NodeHardware struct {
@@ -87,7 +84,6 @@ func NewBasenode(config *BasenodeConfig, devopsClient *devops.DevopsClient) *Bas
 	basenode.NodeDesc.HardwareInfo = &NodeHardware{}
 	basenode.NodeDesc.HardwareInfo.UpdateNodeInfo()
 
-	basenode.GenerateUuid()
 	basenode.parser = parser.NewParser()
 	basenode.GetAddress()
 	basenode.ReadOsSpec()
@@ -98,8 +94,9 @@ func NewBasenode(config *BasenodeConfig, devopsClient *devops.DevopsClient) *Bas
 	}
 
 	basenode.startLicenseChecker()
-
 	basenode.devopsClient.FeedMsg(types.DeviceRegisterAPI, basenode.ToDeviceRegisterInput())
+
+	devopsClient.SetNode(basenode)
 
 	return basenode
 }
@@ -150,39 +147,6 @@ func (n *Basenode) GetAddress() {
 			<-ticker.C
 		}
 	}()
-}
-
-type BasenodeConfigFromFile struct {
-	Id uuid.UUID `json:"id"`
-}
-
-func (n *Basenode) GenerateUuid() {
-	var cfgFromFile BasenodeConfigFromFile
-
-	env := os.Getenv("HOME")
-
-	uuidPath := fmt.Sprintf("%s/.fbc-devops-peer", env)
-	uuidFile := fmt.Sprintf("%s/peer.conf", uuidPath)
-	b, err := ioutil.ReadFile(uuidFile)
-	if err == nil {
-		err = json.Unmarshal(b, &cfgFromFile)
-		if err == nil {
-			n.Id = cfgFromFile.Id
-			return
-		}
-	}
-	cfgFromFile.Id = uuid.New()
-	b, err = json.Marshal(cfgFromFile)
-	if err != nil {
-		log.Errorf(log.Fields{}, "cannot parse config to json")
-	}
-
-	os.MkdirAll(uuidPath, 0755)
-	err = ioutil.WriteFile(uuidFile, b, 0644)
-	if err != nil {
-		log.Errorf(log.Fields{}, "cannot write uuid file: %v", err)
-	}
-	n.Id = cfgFromFile.Id
 }
 
 func (n *Basenode) ToDeviceRegisterInput() *types.DeviceRegisterInput {
@@ -268,4 +232,9 @@ func (n *Basenode) GetParentIP() (string, error) {
 
 func (n *Basenode) GetChildsIPs() ([]string, error) {
 	return n.parser.GetChildsIPs(n.GetMainRole())
+}
+
+func (n *Basenode) NotifyPeerId(id uuid.UUID) {
+	n.Id = id
+	n.HasId = true
 }

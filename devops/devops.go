@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	log "github.com/EntropyPool/entropy-logger"
+	"github.com/NpoolDevOps/fbc-devops-peer/node"
+	types "github.com/NpoolDevOps/fbc-devops-service/types"
 	httpdaemon "github.com/NpoolRD/http-daemon"
 	"time"
 )
@@ -20,6 +22,7 @@ type DevopsConfig struct {
 type DevopsClient struct {
 	config *DevopsConfig
 	newMsg chan *DevopsMsg
+	node   node.Node
 }
 
 func NewDevopsClient(config *DevopsConfig) *DevopsClient {
@@ -31,6 +34,10 @@ func NewDevopsClient(config *DevopsConfig) *DevopsClient {
 	go cli.reporter()
 
 	return cli
+}
+
+func (c *DevopsClient) SetNode(node node.Node) {
+	c.node = node
 }
 
 func (c *DevopsClient) onMessage(msg *DevopsMsg) {
@@ -63,6 +70,14 @@ func (c *DevopsClient) onMessage(msg *DevopsMsg) {
 
 	if apiResp.Code != 0 {
 		log.Errorf(log.Fields{}, "fail to report my config: %v", apiResp.Msg)
+		return
+	}
+
+	if msg.Api == types.DeviceRegisterAPI {
+		b, _ := json.Marshal(apiResp.Body)
+		id := types.DeviceRegisterOutput{}
+		json.Unmarshal(b, &id)
+		c.node.NotifyPeerId(id.Id)
 	}
 }
 
