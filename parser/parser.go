@@ -262,9 +262,9 @@ func (p *Parser) parseStorageHosts() {
 	bio := bufio.NewReader(f)
 	for {
 		line, _, err := bio.ReadLine()
-		log.Errorf(log.Fields{}, "fail to read %v: %v", HostsFile, err)
 		if err != nil {
-			continue
+			log.Errorf(log.Fields{}, "fail to read %v: %v", HostsFile, err)
+			break
 		}
 		s := strings.Split(string(line), " ")
 		if len(s) < 2 {
