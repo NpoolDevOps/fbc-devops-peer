@@ -6,8 +6,10 @@ import (
 	log "github.com/EntropyPool/entropy-logger"
 	machspec "github.com/EntropyPool/machine-spec"
 	devops "github.com/NpoolDevOps/fbc-devops-peer/devops"
+	lic "github.com/NpoolDevOps/fbc-devops-peer/fbc-license"
 	parser "github.com/NpoolDevOps/fbc-devops-peer/parser"
 	runtime "github.com/NpoolDevOps/fbc-devops-peer/runtime"
+	mytypes "github.com/NpoolDevOps/fbc-devops-peer/types"
 	types "github.com/NpoolDevOps/fbc-devops-service/types"
 	"github.com/google/uuid"
 	"github.com/xjh22222228/ip"
@@ -21,7 +23,9 @@ import (
 
 type Basenode struct {
 	NodeDesc     *NodeDesc
-	User         string
+	Username     string
+	Password     string
+	NetworkType  string
 	Id           uuid.UUID
 	devopsClient *devops.DevopsClient
 	parser       *parser.Parser
@@ -60,7 +64,9 @@ type NodeConfig struct {
 type BasenodeConfig struct {
 	NodeReportAPI string
 	NodeConfig    *NodeConfig
-	User          string
+	Username      string
+	Password      string
+	NetworkType   string
 }
 
 func NewBasenode(config *BasenodeConfig, devopsClient *devops.DevopsClient) *Basenode {
@@ -68,7 +74,9 @@ func NewBasenode(config *BasenodeConfig, devopsClient *devops.DevopsClient) *Bas
 		NodeDesc: &NodeDesc{
 			NodeConfig: config.NodeConfig,
 		},
-		User:         config.User,
+		Username:     config.Username,
+		Password:     config.Password,
+		NetworkType:  config.NetworkType,
 		devopsClient: devopsClient,
 	}
 
@@ -89,9 +97,19 @@ func NewBasenode(config *BasenodeConfig, devopsClient *devops.DevopsClient) *Bas
 		basenode.NodeDesc.NodeConfig.SubRole = role
 	}
 
+	basenode.startLicenseChecker()
+
 	basenode.devopsClient.FeedMsg(types.DeviceRegisterAPI, basenode.ToDeviceRegisterInput())
 
 	return basenode
+}
+
+func (n *Basenode) startLicenseChecker() {
+	switch n.GetMainRole() {
+	case mytypes.StorageNode:
+		go lic.LicenseChecker(n.Username, n.Password, false, n.NetworkType)
+	}
+
 }
 
 func (n *Basenode) ReadOsSpec() {
@@ -174,7 +192,7 @@ func (n *Basenode) ToDeviceRegisterInput() *types.DeviceRegisterInput {
 		ParentSpec:  n.NodeDesc.NodeConfig.ParentSpec,
 		Role:        n.NodeDesc.NodeConfig.MainRole,
 		SubRole:     n.NodeDesc.NodeConfig.SubRole,
-		CurrentUser: n.User,
+		CurrentUser: n.Username,
 		NvmeCount:   n.NodeDesc.HardwareInfo.NvmeCount,
 		NvmeDesc:    n.NodeDesc.HardwareInfo.NvmeDesc,
 		GpuCount:    n.NodeDesc.HardwareInfo.GpuCount,

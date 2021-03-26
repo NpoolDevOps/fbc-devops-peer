@@ -39,7 +39,13 @@ func main() {
 				Name: "gpu-count",
 			},
 			&cli.StringFlag{
-				Name: "device-user",
+				Name: "username",
+			},
+			&cli.StringFlag{
+				Name: "password",
+			},
+			&cli.StringFlag{
+				Name: "network-type",
 			},
 		},
 		Action: func(cctx *cli.Context) error {
@@ -47,8 +53,12 @@ func main() {
 				return xerrors.Errorf("main-role is must")
 			}
 
-			if cctx.String("device-user") == "" {
-				return xerrors.Errorf("device user is must")
+			if cctx.String("network-type") == "" {
+				return xerrors.Errorf("network type is must")
+			}
+
+			if cctx.String("username") == "" || cctx.String("password") == "" {
+				return xerrors.Errorf("invalid username or password")
 			}
 
 			config := &basenode.BasenodeConfig{
@@ -61,7 +71,9 @@ func main() {
 						GpuCount:  cctx.Int("gpu-count"),
 					},
 				},
-				User: cctx.String("device-user"),
+				Username:    cctx.String("username"),
+				Password:    cctx.String("password"),
+				NetworkType: cctx.String("network-type"),
 			}
 
 			client := devops.NewDevopsClient(&devops.DevopsConfig{
