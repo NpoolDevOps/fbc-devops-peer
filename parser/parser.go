@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 	"golang.org/x/xerrors"
 	"io/ioutil"
+	"net"
 	"os"
 	"path/filepath"
 	"strings"
@@ -26,6 +27,8 @@ const (
 	StorageListDescFile = "storage.json"
 	StorageMetaFile     = "sectorstore.json"
 	ProcSelfMounts      = "/proc/self/mounts"
+	HostsFile           = "/etc/hosts"
+	CephConfigFile      = "/etc/ceph/ceph.conf"
 )
 
 type nodeDesc struct {
@@ -42,6 +45,8 @@ type Parser struct {
 	validStorageConfig bool
 	storageMetas       []LocalStorageMeta
 	cephEntries        map[string]struct{}
+	localAddr          string
+	cephStoragePeers   map[string]string
 }
 
 type OSSInfo struct {
@@ -74,8 +79,9 @@ type LocalPath struct {
 
 func NewParser() *Parser {
 	parser := &Parser{
-		fileAPIInfo: map[string]nodeDesc{},
-		cephEntries: map[string]struct{}{},
+		fileAPIInfo:      map[string]nodeDesc{},
+		cephEntries:      map[string]struct{}{},
+		cephStoragePeers: map[string]string{},
 	}
 	err := parser.parse()
 	if err != nil {
@@ -243,6 +249,36 @@ func (p *Parser) parseMinerStorageChilds() {
 	}
 }
 
+func (p *Parser) parseLocalAddress() {
+	conn, err := net.Dial("udp", "8.8.8.8:80")
+	if err == nil {
+		p.localAddr = strings.Split(conn.LocalAddr().String(), ":")[0]
+		conn.Close()
+	}
+}
+
+func (p *Parser) parseStorageHosts() {
+	f, _ := os.Open(HostsFile)
+	bio := bufio.NewReader(f)
+	for {
+		line, _, err := bio.ReadLine()
+		if err != nil {
+			continue
+		}
+		s := strings.Split(string(line), " ")
+		if len(s) < 2 {
+			continue
+		}
+		if !strings.HasPrefix(s[1], "host-") {
+			continue
+		}
+		if s[0] == p.localAddr {
+			continue
+		}
+		p.cephStoragePeers[s[1]] = s[0]
+	}
+}
+
 func (p *Parser) parseStorageChilds() {
 
 }
@@ -257,6 +293,8 @@ func (p *Parser) parse() error {
 	p.getMountedCeph()
 	p.getMountedGluster()
 	p.parseMinerStorageChilds()
+	p.parseLocalAddress()
+	p.parseStorageHosts()
 	p.parseStorageChilds()
 	return nil
 }
@@ -277,6 +315,10 @@ func (p *Parser) dump() {
 	fmt.Printf("  Ceph IPs --\n")
 	for _, child := range p.minerStorageChilds {
 		fmt.Printf("    %v\n", child)
+	}
+	fmt.Printf("  Ceph Childs ---\n")
+	for k, v := range p.cephStoragePeers {
+		fmt.Printf("    %v: %v\n", k, v)
 	}
 }
 
@@ -303,6 +345,10 @@ func (p *Parser) GetParentIP(myRole string) (string, error) {
 }
 
 func (p *Parser) getMinerStorageChilds() ([]string, error) {
+	return p.minerStorageChilds, nil
+}
+
+func (p *Parser) getStorageChilds() ([]string, error) {
 	return nil, nil
 }
 
@@ -310,6 +356,8 @@ func (p *Parser) GetChildIPs(myRole string) ([]string, error) {
 	switch myRole {
 	case types.MinerNode:
 		return p.getMinerStorageChilds()
+	case types.StorageNode:
+		return p.getStorageChilds()
 	}
 	return nil, xerrors.Errorf("no child for %v", myRole)
 }
