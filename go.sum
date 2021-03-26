@@ -8,6 +8,8 @@ github.com/EntropyPool/machine-spec v0.0.0-20210221073944-f4cf2cd67486 h1:47zmbQ
 github.com/EntropyPool/machine-spec v0.0.0-20210221073944-f4cf2cd67486/go.mod h1:WWX9wIJ6uWaZLDEUZjMPm5q32dJT6g/LPIpzAayIn/I=
 github.com/EntropyPool/machine-spec v0.0.0-20210325103529-e4ba6232c0fc h1:V6FW7oxo9G8qIKLFrDP8nZT2N/aht3gZDprc356Imxc=
 github.com/EntropyPool/machine-spec v0.0.0-20210325103529-e4ba6232c0fc/go.mod h1:WWX9wIJ6uWaZLDEUZjMPm5q32dJT6g/LPIpzAayIn/I=
+github.com/EntropyPool/machine-spec v0.0.0-20210326115744-eaf9c297f65c h1:d+N7DLBzDznHPZETsp+CMKhlCIf1LHhcMcgTOeyymQ0=
+github.com/EntropyPool/machine-spec v0.0.0-20210326115744-eaf9c297f65c/go.mod h1:WWX9wIJ6uWaZLDEUZjMPm5q32dJT6g/LPIpzAayIn/I=
 github.com/GeertJohan/go-sourcepath v0.0.0-20150925135350-83e8b8723a9b h1:D4H5C4VvURnduTQydyEhA6OWnNcZTLUlNX4YBw5yelY=
 github.com/GeertJohan/go-sourcepath v0.0.0-20150925135350-83e8b8723a9b/go.mod h1:X/dh6iyBHZUR+NSNoO9isIl7cRw4n09jwjK5tfr+Rno=
 github.com/GeertJohan/go.rice v0.0.0-20170420135705-c02ca9a983da/go.mod h1:DgrzXonpdQbfN3uYaGz1EG4Sbhyum/MMIn6Cphlh2bw=
