@@ -84,6 +84,11 @@ func NewBasenode(config *BasenodeConfig, devopsClient *devops.DevopsClient) *Bas
 	basenode.GetAddress()
 	basenode.ReadOsSpec()
 
+	role, err := basenode.parser.GetSubRole(basenode.GetMainRole())
+	if err != nil {
+		basenode.NodeDesc.NodeConfig.SubRole = role
+	}
+
 	basenode.devopsClient.FeedMsg(types.DeviceRegisterAPI, basenode.ToDeviceRegisterInput())
 
 	return basenode
@@ -241,4 +246,8 @@ func (n *Basenode) NotifyParentSpec(spec string) {
 
 func (n *Basenode) GetParentIP() (string, error) {
 	return n.parser.GetParentIP(n.GetMainRole())
+}
+
+func (n *Basenode) GetChildsIPs() ([]string, error) {
+	return n.parser.GetChildsIPs(n.GetMainRole())
 }

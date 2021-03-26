@@ -385,10 +385,10 @@ func (p *Parser) getMinerStorageChilds() ([]string, error) {
 }
 
 func (p *Parser) getStorageChilds() ([]string, error) {
-	return nil, nil
+	return p.storageChilds, nil
 }
 
-func (p *Parser) GetChildIPs(myRole string) ([]string, error) {
+func (p *Parser) GetChildsIPs(myRole string) ([]string, error) {
 	switch myRole {
 	case types.MinerNode:
 		return p.getMinerStorageChilds()
@@ -396,4 +396,12 @@ func (p *Parser) GetChildIPs(myRole string) ([]string, error) {
 		return p.getStorageChilds()
 	}
 	return nil, xerrors.Errorf("no child for %v", myRole)
+}
+
+func (p *Parser) GetSubRole(myRole string) (string, error) {
+	switch myRole {
+	case types.StorageNode:
+		return p.storageSubRole, nil
+	}
+	return "", xerrors.Errorf("no subrole for %v", myRole)
 }
