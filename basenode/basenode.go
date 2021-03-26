@@ -88,7 +88,7 @@ func NewBasenode(config *BasenodeConfig, devopsClient *devops.DevopsClient) *Bas
 	basenode.ReadOsSpec()
 
 	role, err := basenode.parser.GetSubRole(basenode.GetMainRole())
-	if err != nil {
+	if err == nil {
 		basenode.NodeDesc.NodeConfig.SubRole = role
 	}
 
