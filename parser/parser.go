@@ -216,7 +216,7 @@ func (p *Parser) getMountedCeph() {
 	for {
 		line, _, err := bio.ReadLine()
 		if err != nil {
-			log.Errorf(log.Fields{}, "fail to read line: %v", err)
+			log.Errorf(log.Fields{}, "fail to read %v: %v", ProcSelfMounts, err)
 			break
 		}
 		if !strings.Contains(string(line), " ceph ") {
@@ -262,6 +262,7 @@ func (p *Parser) parseStorageHosts() {
 	bio := bufio.NewReader(f)
 	for {
 		line, _, err := bio.ReadLine()
+		log.Errorf(log.Fields{}, "fail to read %v: %v", HostsFile, err)
 		if err != nil {
 			continue
 		}
