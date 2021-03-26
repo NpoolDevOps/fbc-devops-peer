@@ -5,4 +5,5 @@ type Node interface {
 	GetSubRole() string
 	NotifyParentSpec(string)
 	GetParentIP() (string, error)
+	GetChildsIPs() ([]string, error)
 }

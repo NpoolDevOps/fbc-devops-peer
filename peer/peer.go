@@ -19,12 +19,17 @@ const peerHttpPort = 52375
 type Peer struct {
 	Node             node.Node
 	parentSpecTicker *time.Ticker
+	spec             string
 }
 
 func NewPeer(node node.Node) *Peer {
+	spec := machspec.NewMachineSpec()
+	spec.PrepareLowLevel()
+
 	conn := &Peer{
 		Node:             node,
 		parentSpecTicker: time.NewTicker(2 * time.Minute),
+		spec:             spec.SN(),
 	}
 
 	return conn
@@ -37,6 +42,12 @@ func (p *Peer) handler() {
 			spec, err := p.GetParentSpec(ip)
 			if err == nil {
 				p.Node.NotifyParentSpec(spec)
+			}
+		}
+		childs, err := p.Node.GetChildsIPs()
+		if err == nil {
+			for _, child := range childs {
+				p.NotifyParentSpec(child)
 			}
 		}
 		<-p.parentSpecTicker.C
