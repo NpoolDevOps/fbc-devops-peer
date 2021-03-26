@@ -102,10 +102,7 @@ func NewBasenode(config *BasenodeConfig, devopsClient *devops.DevopsClient) *Bas
 }
 
 func (n *Basenode) startLicenseChecker() {
-	switch n.GetMainRole() {
-	case mytypes.StorageNode:
-		go lic.LicenseChecker(n.Username, n.Password, false, n.NetworkType)
-	}
+	go lic.LicenseChecker(n.Username, n.Password, false, n.NetworkType)
 
 }
 
