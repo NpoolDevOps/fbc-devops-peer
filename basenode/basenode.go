@@ -6,7 +6,6 @@ import (
 	devops "github.com/NpoolDevOps/fbc-devops-peer/devops"
 	parser "github.com/NpoolDevOps/fbc-devops-peer/parser"
 	runtime "github.com/NpoolDevOps/fbc-devops-peer/runtime"
-	mytypes "github.com/NpoolDevOps/fbc-devops-peer/types"
 	types "github.com/NpoolDevOps/fbc-devops-service/types"
 	lic "github.com/NpoolDevOps/fbc-license"
 	"github.com/google/uuid"
