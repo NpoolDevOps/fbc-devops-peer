@@ -10,6 +10,7 @@ const (
 	FullMinerNode = "fullminer"
 	WorkerNode    = "worker"
 	StorageNode   = "storage"
+	GatewayNode   = "gateway"
 )
 
 const (
