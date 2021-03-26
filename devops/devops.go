@@ -11,8 +11,9 @@ import (
 )
 
 type DevopsMsg struct {
-	Api string
-	Msg interface{}
+	Api   string
+	Msg   interface{}
+	Retry bool
 }
 
 type DevopsConfig struct {
@@ -48,28 +49,44 @@ func (c *DevopsClient) onMessage(msg *DevopsMsg) {
 		Post(fmt.Sprintf("%v%v", c.config.PeerReportAPI, msg.Api))
 	if err != nil {
 		log.Errorf(log.Fields{}, "fail to report message: %v", err)
-		go func() {
-			time.Sleep(10 * time.Second)
-			c.newMsg <- msg
-		}()
+		if msg.Retry {
+			go func() {
+				time.Sleep(10 * time.Second)
+				c.newMsg <- msg
+			}()
+		}
 		return
 	}
 	if resp.StatusCode() != 200 {
-		go func() {
-			time.Sleep(10 * time.Second)
-			c.newMsg <- msg
-		}()
+		if msg.Retry {
+			go func() {
+				time.Sleep(10 * time.Second)
+				c.newMsg <- msg
+			}()
+		}
 		return
 	}
 
 	apiResp, err := httpdaemon.ParseResponse(resp)
 	if err != nil {
 		log.Errorf(log.Fields{}, "fail to report my config: %v", err)
+		if msg.Retry {
+			go func() {
+				time.Sleep(2 * time.Minute)
+				c.newMsg <- msg
+			}()
+		}
 		return
 	}
 
 	if apiResp.Code != 0 {
 		log.Errorf(log.Fields{}, "fail to report my config: %v", apiResp.Msg)
+		if msg.Retry {
+			go func() {
+				time.Sleep(2 * time.Minute)
+				c.newMsg <- msg
+			}()
+		}
 		return
 	}
 
@@ -92,11 +109,12 @@ func (c *DevopsClient) reporter() {
 	}
 }
 
-func (c *DevopsClient) FeedMsg(api string, msg interface{}) {
+func (c *DevopsClient) FeedMsg(api string, msg interface{}, retry bool) {
 	go func() {
 		c.newMsg <- &DevopsMsg{
-			Api: api,
-			Msg: msg,
+			Api:   api,
+			Msg:   msg,
+			Retry: retry,
 		}
 	}()
 }

@@ -93,7 +93,7 @@ func NewBasenode(config *BasenodeConfig, devopsClient *devops.DevopsClient) *Bas
 	}
 
 	basenode.startLicenseChecker()
-	basenode.devopsClient.FeedMsg(types.DeviceRegisterAPI, basenode.ToDeviceRegisterInput())
+	basenode.devopsClient.FeedMsg(types.DeviceRegisterAPI, basenode.ToDeviceRegisterInput(), true)
 
 	devopsClient.SetNode(basenode)
 
@@ -133,12 +133,11 @@ func (n *Basenode) GetAddress() {
 					log.Infof(log.Fields{}, "public address updated: %v -> %v",
 						n.NodeDesc.NodeConfig.PublicAddr, publicAddr)
 					n.NodeDesc.NodeConfig.PublicAddr = publicAddr
-					n.devopsClient.FeedMsg(types.DeviceRegisterAPI, n.ToDeviceRegisterInput())
 					updated = true
 				}
 			}
 			if updated {
-				n.devopsClient.FeedMsg(types.DeviceRegisterAPI, n.ToDeviceRegisterInput())
+				n.devopsClient.FeedMsg(types.DeviceRegisterAPI, n.ToDeviceRegisterInput(), true)
 			}
 			<-ticker.C
 		}
@@ -219,7 +218,7 @@ func (n *Basenode) NotifyParentSpec(spec string) {
 		return
 	}
 	n.NodeDesc.NodeConfig.ParentSpec = spec
-	n.devopsClient.FeedMsg(types.DeviceRegisterAPI, n.ToDeviceRegisterInput())
+	n.devopsClient.FeedMsg(types.DeviceRegisterAPI, n.ToDeviceRegisterInput(), true)
 }
 
 func (n *Basenode) GetParentIP() (string, error) {
