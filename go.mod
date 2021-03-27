@@ -5,7 +5,7 @@ go 1.15
 require (
 	github.com/EntropyPool/entropy-logger v0.0.0-20210320022718-3091537e035f
 	github.com/EntropyPool/machine-spec v0.0.0-20210326115744-eaf9c297f65c
-	github.com/NpoolDevOps/fbc-devops-service v0.0.0-20210327043710-629d1c80c562
+	github.com/NpoolDevOps/fbc-devops-service v0.0.0-20210327050328-f968ca812d64
 	github.com/NpoolDevOps/fbc-license v0.0.0
 	github.com/NpoolDevOps/fbc-license-service v0.0.0-20210327043102-a4a5cab50cf4
 	github.com/NpoolRD/http-daemon v0.0.0-20210324100344-82fee56de8ac

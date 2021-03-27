@@ -1,6 +1,8 @@
 package gateway
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	log "github.com/EntropyPool/entropy-logger"
 	"github.com/NpoolDevOps/fbc-devops-peer/basenode"
 	devops "github.com/NpoolDevOps/fbc-devops-peer/devops"
@@ -43,10 +45,11 @@ func (g *GatewayNode) handler() {
 }
 
 func (g *GatewayNode) updateTopology() {
+	passHash := sha256.Sum256([]byte(g.Password))
 	output, err := devopsapi.MyDevicesByUsername(types.MyDevicesByUsernameInput{
 		Username: g.Username,
-		Password: g.Password,
-	})
+		Password: hex.EncodeToString(passHash[0:])[0:12],
+	}, true)
 	if err != nil {
 		log.Errorf(log.Fields{}, "fail to get devices by username: %v", err)
 		return

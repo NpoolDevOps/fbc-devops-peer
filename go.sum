@@ -27,6 +27,10 @@ github.com/NpoolDevOps/fbc-devops-service v0.0.0-20210325051804-3cb408d8cf1f/go.
 github.com/NpoolDevOps/fbc-devops-service v0.0.0-20210327041637-0d0aeaf48866 h1:2Cjd81LZNUlBdVrxOibx0D0ICijSQ6KRtAqrKP6PQgM=
 github.com/NpoolDevOps/fbc-devops-service v0.0.0-20210327043710-629d1c80c562 h1:8AFCiPYdnMJef2wq9W+qXtN+HhyPvDajrlYxRaZot2s=
 github.com/NpoolDevOps/fbc-devops-service v0.0.0-20210327043710-629d1c80c562/go.mod h1:42KMvhSJWo5DU+dssTFlLtgzfZ7mqPCBSTs54eg66Aw=
+github.com/NpoolDevOps/fbc-devops-service v0.0.0-20210327045745-33eca184370d h1:FFMp8dwiGWMUl/KdxY8L0IHDXkAn+6hlmcS06EueNZg=
+github.com/NpoolDevOps/fbc-devops-service v0.0.0-20210327045745-33eca184370d/go.mod h1:42KMvhSJWo5DU+dssTFlLtgzfZ7mqPCBSTs54eg66Aw=
+github.com/NpoolDevOps/fbc-devops-service v0.0.0-20210327050328-f968ca812d64 h1:zwYLQpbF+MAhzIA21PpahSpHZ37DzGDOVpnX4swntNM=
+github.com/NpoolDevOps/fbc-devops-service v0.0.0-20210327050328-f968ca812d64/go.mod h1:42KMvhSJWo5DU+dssTFlLtgzfZ7mqPCBSTs54eg66Aw=
 github.com/NpoolDevOps/fbc-license-service v0.0.0-20210317123658-94e800820d4d/go.mod h1:UZSvgYZiPWuUNcwdCdQYKxq1btVUasBWYn3YbbynR70=
 github.com/NpoolDevOps/fbc-license-service v0.0.0-20210318060048-fc9b7662d874/go.mod h1:TDYLYEPoO/FIqhlUczeQccA1mMNMHR6BleISvTUCTxo=
 github.com/NpoolDevOps/fbc-license-service v0.0.0-20210319140422-63c83712a695/go.mod h1:mT8+Dx2KWEdqzTMFZol89yjl5RqZ+rbJdHZtvLAvlPo=
