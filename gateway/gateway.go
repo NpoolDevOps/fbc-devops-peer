@@ -171,6 +171,7 @@ func (g *GatewayNode) onlineCheck() {
 	}
 
 	if updated {
+		log.Infof(log.Fields{}, "topology updated, generate monitor configuration")
 		go func() { g.configGenerator <- struct{}{} }()
 	}
 }
