@@ -10,6 +10,7 @@ import (
 	mytypes "github.com/NpoolDevOps/fbc-devops-peer/types"
 	devopsapi "github.com/NpoolDevOps/fbc-devops-service/devopsapi"
 	types "github.com/NpoolDevOps/fbc-devops-service/types"
+	"github.com/NpoolRD/http-daemon"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"os"
@@ -290,7 +291,21 @@ func (g *GatewayNode) generateConfig() {
 		return
 	}
 
-	// exec.Command("mv", monitorCfgFile, "/usr/local/prometheus/prometheus.yml")
+	exec.Command("mv", monitorCfgFile, "/usr/local/prometheus/prometheus.yml")
+	g.reloadConfig()
+}
+
+func (g *GatewayNode) reloadConfig() {
+	resp, err := httpdaemon.R().
+		SetHeader("Content-Type", "application/json").
+		Post(fmt.Sprintf("http://localhost:9090/-/reload"))
+	if err != nil {
+		log.Errorf(log.Fields{}, "cannot reload monitor config")
+		return
+	}
+	if resp.StatusCode() != 200 {
+		log.Errorf(log.Fields{}, "fail to reload monitor config")
+	}
 }
 
 func (g *GatewayNode) Banner() {
