@@ -98,6 +98,7 @@ func (g *GatewayNode) updateTopology() {
 func (g *GatewayNode) onlineCheck() {
 	myPublicAddr, err := g.MyPublicAddr()
 	if err != nil {
+		log.Errorf(log.Fields{}, "public address is not ready: %v", err)
 		return
 	}
 
