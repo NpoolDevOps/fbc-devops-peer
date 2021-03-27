@@ -3,6 +3,7 @@ package gateway
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
 	log "github.com/EntropyPool/entropy-logger"
 	"github.com/NpoolDevOps/fbc-devops-peer/basenode"
 	devops "github.com/NpoolDevOps/fbc-devops-peer/devops"
@@ -23,16 +24,17 @@ type hostMonitor struct {
 	ports      []int
 	online     bool
 	publicAddr string
+	localAddr  string
 	newCreated bool
 }
 
 type GatewayNode struct {
 	*basenode.Basenode
-	topologyTicker   *time.Ticker
-	publicAddrWaiter chan struct{}
-	onlineChecker    chan struct{}
-	configGenerator  chan struct{}
-	hosts            map[string]hostMonitor
+	topologyTicker  *time.Ticker
+	addressWaiter   chan struct{}
+	onlineChecker   chan struct{}
+	configGenerator chan struct{}
+	hosts           map[string]hostMonitor
 }
 
 func NewGatewayNode(config *basenode.BasenodeConfig, devopsClient *devops.DevopsClient) *GatewayNode {
@@ -57,8 +59,8 @@ func (g *GatewayNode) handler() {
 		select {
 		case <-g.topologyTicker.C:
 			g.updateTopology()
-		case <-g.publicAddrWaiter:
-			g.waitForPublicAddr()
+		case <-g.addressWaiter:
+			g.waitForAddr()
 		case <-g.onlineChecker:
 			g.onlineCheck()
 		case <-g.configGenerator:
@@ -92,6 +94,7 @@ func (g *GatewayNode) updateTopology() {
 			role:       device.Role,
 			ports:      []int{9100, 9256},
 			publicAddr: device.PublicAddr,
+			localAddr:  device.LocalAddr,
 			online:     online,
 			newCreated: newCreated,
 		}
@@ -106,15 +109,23 @@ func (g *GatewayNode) updateTopology() {
 		g.hosts[device.LocalAddr] = monitor
 	}
 
-	go func() { g.publicAddrWaiter <- struct{}{} }()
+	go func() { g.addressWaiter <- struct{}{} }()
 }
 
-func (g *GatewayNode) waitForPublicAddr() {
+func (g *GatewayNode) waitForAddr() {
 	_, err := g.MyPublicAddr()
 	if err != nil {
 		log.Errorf(log.Fields{}, "public address is not ready: %v", err)
 		time.Sleep(10 * time.Second)
-		go func() { g.publicAddrWaiter <- struct{}{} }()
+		go func() { g.addressWaiter <- struct{}{} }()
+		return
+	}
+
+	_, err = g.MyLocalAddr()
+	if err != nil {
+		log.Errorf(log.Fields{}, "local address is not ready: %v", err)
+		time.Sleep(10 * time.Second)
+		go func() { g.addressWaiter <- struct{}{} }()
 		return
 	}
 
@@ -163,6 +174,24 @@ func (g *GatewayNode) onlineCheck() {
 	}
 }
 
+type staticConfig struct {
+	Targets []string `yaml:"targets"`
+}
+
+type scrapeConfig struct {
+	JobName        string         `yaml:"job_name"`
+	ScrapeInterval string         `yaml:"scrape_interval"`
+	StaticConfigs  []staticConfig `yaml:"static_configs"`
+}
+
+type alertManager struct {
+	StaticConfigs []staticConfig `yaml:"static_configs"`
+}
+
+type alerting struct {
+	AlertManagers []alertManager `yaml:"alertmanagers"`
+}
+
 type monitorGlobal struct {
 	ScrapeInterval     string `yaml:"scrape_interval"`
 	ScrapeTimeout      string `yaml:"scrape_timeout"`
@@ -170,7 +199,10 @@ type monitorGlobal struct {
 }
 
 type monitorConfig struct {
-	Global monitorGlobal `yaml:"global"`
+	Global        monitorGlobal  `yaml:"global"`
+	Alerting      alerting       `yaml:"alerting"`
+	RuleFiles     []string       `yaml:"rule_files"`
+	ScrapeConfigs []scrapeConfig `yaml:"scrape_configs"`
 }
 
 func (g *GatewayNode) generateConfig() {
@@ -179,6 +211,7 @@ func (g *GatewayNode) generateConfig() {
 	monitorCfgFile := filepath.Join(monitorCfgPath, "fbc-peer-monitor.yml")
 
 	exec.Command("rm", "-rf", monitorCfgFile).Run()
+	myLocalAddr, _ := g.MyLocalAddr()
 
 	config := monitorConfig{
 		Global: monitorGlobal{
@@ -186,6 +219,69 @@ func (g *GatewayNode) generateConfig() {
 			ScrapeTimeout:      "50s",
 			EvaluationInterval: "1m",
 		},
+		Alerting: alerting{
+			AlertManagers: []alertManager{
+				{
+					StaticConfigs: []staticConfig{
+						{
+							Targets: []string{
+								"localhost:9093",
+								"alertmanager.npool.top",
+								// TODO: add customized alert url
+							},
+						},
+					},
+				},
+			},
+		},
+		RuleFiles: []string{
+			"rules/*",
+			// TODO: try to get rule files from cloud
+		},
+		ScrapeConfigs: []scrapeConfig{
+			{
+				JobName:        "prometheus",
+				ScrapeInterval: "1m",
+				StaticConfigs: []staticConfig{
+					{
+						Targets: []string{
+							fmt.Sprintf("%s:%v", myLocalAddr, 9090),
+						},
+					},
+				},
+			},
+		},
+	}
+
+	roleHostMap := map[string][]hostMonitor{}
+
+	for _, monitor := range g.hosts {
+		roleHostMap[monitor.role] = append(roleHostMap[monitor.role], monitor)
+	}
+
+	for role, monitors := range roleHostMap {
+		jobConfig := scrapeConfig{
+			JobName:        role,
+			ScrapeInterval: "1m",
+		}
+
+		if role == mytypes.MinerNode {
+			jobConfig.ScrapeInterval = "30s"
+		}
+
+		subConfigs := []staticConfig{}
+		targets := []string{}
+
+		for _, monitor := range monitors {
+			for _, port := range monitor.ports {
+				targets = append(targets, fmt.Sprintf("%v:%v", monitor.localAddr, port))
+			}
+		}
+		subConfigs = append(subConfigs, staticConfig{
+			Targets: targets,
+		})
+		jobConfig.StaticConfigs = subConfigs
+		config.ScrapeConfigs = append(config.ScrapeConfigs, jobConfig)
 	}
 
 	b, err := yaml.Marshal(&config)

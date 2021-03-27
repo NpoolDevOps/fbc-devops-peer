@@ -30,6 +30,7 @@ type Basenode struct {
 	TestMode      bool
 	Peer          *peer.Peer
 	hasPublicAddr bool
+	hasLocalAddr  bool
 }
 
 type NodeHardware struct {
@@ -122,6 +123,13 @@ func (n *Basenode) MyPublicAddr() (string, error) {
 	return n.NodeDesc.NodeConfig.PublicAddr, nil
 }
 
+func (n *Basenode) MyLocalAddr() (string, error) {
+	if !n.hasLocalAddr {
+		return "", xerrors.Errorf("local address not validate")
+	}
+	return n.NodeDesc.NodeConfig.LocalAddr, nil
+}
+
 func (n *Basenode) startLicenseChecker() {
 	if !n.TestMode {
 		go lic.LicenseChecker(n.Username, n.Password, false, n.NetworkType)
@@ -147,6 +155,7 @@ func (n *Basenode) GetAddress() {
 					log.Infof(log.Fields{}, "local address updated: %v -> %v",
 						n.NodeDesc.NodeConfig.LocalAddr, localAddr)
 					n.NodeDesc.NodeConfig.LocalAddr = localAddr
+					n.hasLocalAddr = true
 					updated = true
 				}
 				conn.Close()
