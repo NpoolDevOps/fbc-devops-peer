@@ -81,6 +81,8 @@ func (g *GatewayNode) updateTopology() {
 		return
 	}
 
+	hosts := map[string]hostMonitor{}
+
 	for _, device := range output.Devices {
 		online := false
 		newCreated := false
@@ -107,8 +109,10 @@ func (g *GatewayNode) updateTopology() {
 		if device.Role != mytypes.StorageNode && device.Role != mytypes.FullNode {
 			monitor.ports = append(monitor.ports, 9400)
 		}
-		g.hosts[device.LocalAddr] = monitor
+		hosts[device.LocalAddr] = monitor
 	}
+
+	g.hosts = hosts
 
 	go func() { g.addressWaiter <- struct{}{} }()
 }
@@ -152,15 +156,11 @@ func (g *GatewayNode) onlineCheck() {
 		}
 
 		err := g.Heartbeat(host)
-		online := monitor.online
 		if err != nil {
 			log.Infof(log.Fields{}, "heartbeat to %v lost: %v", host, err)
 			monitor.online = false
 		} else {
 			monitor.online = true
-		}
-		if monitor.online != online {
-			updated = true
 		}
 
 		if monitor.newCreated {
