@@ -65,6 +65,7 @@ func main() {
 				Username:    cctx.String("username"),
 				Password:    cctx.String("password"),
 				NetworkType: cctx.String("network-type"),
+				TestMode:    cctx.Bool("test-mode"),
 			}
 
 			client := devops.NewDevopsClient(&devops.DevopsConfig{
@@ -100,6 +101,7 @@ func main() {
 				return xerrors.Errorf("cannot init peer")
 			}
 
+			node.SetPeer(rpcPeer)
 			rpcPeer.Run()
 
 			ch := make(chan int)

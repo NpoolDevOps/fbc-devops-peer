@@ -5,11 +5,13 @@ import (
 	machspec "github.com/EntropyPool/machine-spec"
 	devops "github.com/NpoolDevOps/fbc-devops-peer/devops"
 	parser "github.com/NpoolDevOps/fbc-devops-peer/parser"
+	"github.com/NpoolDevOps/fbc-devops-peer/peer"
 	runtime "github.com/NpoolDevOps/fbc-devops-peer/runtime"
 	types "github.com/NpoolDevOps/fbc-devops-service/types"
 	lic "github.com/NpoolDevOps/fbc-license"
 	"github.com/google/uuid"
 	"github.com/xjh22222228/ip"
+	"golang.org/x/xerrors"
 	"net"
 	"os/exec"
 	"strings"
@@ -17,14 +19,17 @@ import (
 )
 
 type Basenode struct {
-	NodeDesc     *NodeDesc
-	Username     string
-	Password     string
-	NetworkType  string
-	Id           uuid.UUID
-	devopsClient *devops.DevopsClient
-	parser       *parser.Parser
-	HasId        bool
+	NodeDesc      *NodeDesc
+	Username      string
+	Password      string
+	NetworkType   string
+	Id            uuid.UUID
+	devopsClient  *devops.DevopsClient
+	parser        *parser.Parser
+	HasId         bool
+	TestMode      bool
+	Peer          *peer.Peer
+	hasPublicAddr bool
 }
 
 type NodeHardware struct {
@@ -63,6 +68,7 @@ type BasenodeConfig struct {
 	Username      string
 	Password      string
 	NetworkType   string
+	TestMode      bool
 }
 
 func NewBasenode(config *BasenodeConfig, devopsClient *devops.DevopsClient) *Basenode {
@@ -74,6 +80,7 @@ func NewBasenode(config *BasenodeConfig, devopsClient *devops.DevopsClient) *Bas
 		Password:     config.Password,
 		NetworkType:  config.NetworkType,
 		devopsClient: devopsClient,
+		TestMode:     config.TestMode,
 	}
 
 	spec := machspec.NewMachineSpec()
@@ -100,8 +107,25 @@ func NewBasenode(config *BasenodeConfig, devopsClient *devops.DevopsClient) *Bas
 	return basenode
 }
 
+func (n *Basenode) SetPeer(p interface{}) {
+	n.Peer = p.(*peer.Peer)
+}
+
+func (n *Basenode) Heartbeat(childPeer string) error {
+	return n.Peer.Heartbeat(childPeer)
+}
+
+func (n *Basenode) MyPublicAddr() (string, error) {
+	if !n.hasPublicAddr {
+		return "", xerrors.Errorf("public address not validate")
+	}
+	return n.NodeDesc.NodeConfig.PublicAddr, nil
+}
+
 func (n *Basenode) startLicenseChecker() {
-	go lic.LicenseChecker(n.Username, n.Password, false, n.NetworkType)
+	if !n.TestMode {
+		go lic.LicenseChecker(n.Username, n.Password, false, n.NetworkType)
+	}
 
 }
 
@@ -133,6 +157,7 @@ func (n *Basenode) GetAddress() {
 					log.Infof(log.Fields{}, "public address updated: %v -> %v",
 						n.NodeDesc.NodeConfig.PublicAddr, publicAddr)
 					n.NodeDesc.NodeConfig.PublicAddr = publicAddr
+					n.hasPublicAddr = true
 					updated = true
 				}
 			}

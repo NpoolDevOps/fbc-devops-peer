@@ -80,6 +80,10 @@ func (p *Peer) ParentSpecPostRequest(w http.ResponseWriter, req *http.Request) (
 	return nil, "", 0
 }
 
+func (p *Peer) HeartbeatRequest(w http.ResponseWriter, req *http.Request) (interface{}, string, int) {
+	return nil, "", 0
+}
+
 func (p *Peer) Run() {
 	httpdaemon.RegisterRouter(httpdaemon.HttpRouter{
 		Location: types.ParentSpecAPI,
@@ -90,6 +94,11 @@ func (p *Peer) Run() {
 		Location: types.ParentSpecAPI,
 		Method:   "GET",
 		Handler:  p.ParentSpecGetRequest,
+	})
+	httpdaemon.RegisterRouter(httpdaemon.HttpRouter{
+		Location: types.HeartbeatAPI,
+		Method:   "GET",
+		Handler:  p.HeartbeatRequest,
 	})
 	httpdaemon.Run(peerHttpPort)
 	go p.handler()
@@ -134,6 +143,19 @@ func (p *Peer) NotifyParentSpec(childPeer string) error {
 			ParentSpec: spec.SN(),
 		}).
 		Post(fmt.Sprintf("http://%v:%v%v", childPeer, peerHttpPort, types.ParentSpecAPI))
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode() != 200 {
+		return xerrors.Errorf("http response error")
+	}
+	return nil
+}
+
+func (p *Peer) Heartbeat(childPeer string) error {
+	resp, err := httpdaemon.R().
+		SetHeader("Content-Type", "application/json").
+		Get(fmt.Sprintf("http://%v:%v%v", childPeer, peerHttpPort, types.HeartbeatAPI))
 	if err != nil {
 		return err
 	}
