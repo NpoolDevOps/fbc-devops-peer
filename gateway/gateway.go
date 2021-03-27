@@ -18,6 +18,7 @@ type hostMonitor struct {
 	ports      []int
 	online     bool
 	publicAddr string
+	newCreated bool
 }
 
 type GatewayNode struct {
@@ -74,8 +75,11 @@ func (g *GatewayNode) updateTopology() {
 
 	for _, device := range output.Devices {
 		online := false
+		newCreated := false
 
-		if _, ok := g.hosts[device.LocalAddr]; ok {
+		if _, ok := g.hosts[device.LocalAddr]; !ok {
+			newCreated = true
+		} else {
 			online = g.hosts[device.LocalAddr].online
 		}
 
@@ -84,6 +88,7 @@ func (g *GatewayNode) updateTopology() {
 			ports:      []int{9100, 9256},
 			publicAddr: device.PublicAddr,
 			online:     online,
+			newCreated: newCreated,
 		}
 		if device.Role == mytypes.StorageNode {
 			if device.SubRole == mytypes.StorageRoleMgr {
@@ -132,11 +137,19 @@ func (g *GatewayNode) onlineCheck() {
 		err := g.Heartbeat(host)
 		online := monitor.online
 		if err != nil {
+			log.Infof(log.Fields{}, "heartbeat to %v lost: %v", host, err)
 			monitor.online = false
+		} else {
+			monitor.online = true
 		}
 		if monitor.online != online {
 			updated = true
 		}
+
+		if monitor.newCreated {
+			updated = true
+		}
+
 		g.hosts[host] = monitor
 	}
 
