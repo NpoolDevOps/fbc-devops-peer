@@ -306,6 +306,8 @@ func (g *GatewayNode) reloadConfig() {
 	if resp.StatusCode() != 200 {
 		log.Errorf(log.Fields{}, "fail to reload monitor config")
 	}
+
+	log.Infof(log.Fields{}, "monitor configuration reloaded")
 }
 
 func (g *GatewayNode) Banner() {
