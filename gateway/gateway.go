@@ -9,6 +9,11 @@ import (
 	mytypes "github.com/NpoolDevOps/fbc-devops-peer/types"
 	devopsapi "github.com/NpoolDevOps/fbc-devops-service/devopsapi"
 	types "github.com/NpoolDevOps/fbc-devops-service/types"
+	"gopkg.in/yaml.v2"
+	"io/ioutil"
+	"os"
+	"os/exec"
+	"path/filepath"
 	"strings"
 	"time"
 )
@@ -158,11 +163,44 @@ func (g *GatewayNode) onlineCheck() {
 	}
 }
 
+type monitorGlobal struct {
+	ScrapeInterval     string `yaml:"scrape_interval"`
+	ScrapeTimeout      string `yaml:"scrape_timeout"`
+	EvaluationInterval string `yaml:"evaluation_interval"`
+}
+
+type monitorConfig struct {
+	Global monitorGlobal `yaml:"global"`
+}
+
 func (g *GatewayNode) generateConfig() {
-	for host, monitor := range g.hosts {
-		log.Infof(log.Fields{}, "HOST: %v [%v]", host, monitor.role)
-		log.Infof(log.Fields{}, "  PORTS: %v", monitor.ports)
+	monitorCfgPath := filepath.Join(os.Getenv("HOME"), ".fbc-devops-peer")
+	os.MkdirAll(monitorCfgPath, 0755)
+	monitorCfgFile := filepath.Join(monitorCfgPath, "fbc-peer-monitor.yml")
+
+	exec.Command("rm", "-rf", monitorCfgFile).Run()
+
+	config := monitorConfig{
+		Global: monitorGlobal{
+			ScrapeInterval:     "1m",
+			ScrapeTimeout:      "50s",
+			EvaluationInterval: "1m",
+		},
 	}
+
+	b, err := yaml.Marshal(&config)
+	if err != nil {
+		log.Errorf(log.Fields{}, "fail to marshal config")
+		return
+	}
+
+	err = ioutil.WriteFile(monitorCfgFile, b, 0755)
+	if err != nil {
+		log.Errorf(log.Fields{}, "fail to write %v: %v", monitorCfgFile, err)
+		return
+	}
+
+	// exec.Command("mv", monitorCfgFile, "/usr/local/prometheus/prometheus.yml")
 }
 
 func (g *GatewayNode) Banner() {
