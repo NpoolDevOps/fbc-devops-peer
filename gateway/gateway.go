@@ -22,10 +22,11 @@ type hostMonitor struct {
 
 type GatewayNode struct {
 	*basenode.Basenode
-	topologyTicker  *time.Ticker
-	onlineChecker   chan struct{}
-	configGenerator chan struct{}
-	hosts           map[string]hostMonitor
+	topologyTicker   *time.Ticker
+	publicAddrWaiter chan struct{}
+	onlineChecker    chan struct{}
+	configGenerator  chan struct{}
+	hosts            map[string]hostMonitor
 }
 
 func NewGatewayNode(config *basenode.BasenodeConfig, devopsClient *devops.DevopsClient) *GatewayNode {
@@ -33,6 +34,7 @@ func NewGatewayNode(config *basenode.BasenodeConfig, devopsClient *devops.Devops
 	gateway := &GatewayNode{
 		basenode.NewBasenode(config, devopsClient),
 		time.NewTicker(2 * time.Minute),
+		make(chan struct{}, 10),
 		make(chan struct{}, 10),
 		make(chan struct{}, 10),
 		make(map[string]hostMonitor, 0),
@@ -49,6 +51,8 @@ func (g *GatewayNode) handler() {
 		select {
 		case <-g.topologyTicker.C:
 			g.updateTopology()
+		case <-g.publicAddrWaiter:
+			g.waitForPublicAddr()
 		case <-g.onlineChecker:
 			g.onlineCheck()
 		case <-g.configGenerator:
@@ -92,19 +96,36 @@ func (g *GatewayNode) updateTopology() {
 		g.hosts[device.LocalAddr] = monitor
 	}
 
+	go func() { g.publicAddrWaiter <- struct{}{} }()
+}
+
+func (g *GatewayNode) waitForPublicAddr() {
+	_, err := g.MyPublicAddr()
+	if err != nil {
+		log.Errorf(log.Fields{}, "public address is not ready: %v", err)
+		time.Sleep(10 * time.Second)
+		go func() { g.publicAddrWaiter <- struct{}{} }()
+		return
+	}
+
 	go func() { g.onlineChecker <- struct{}{} }()
 }
 
 func (g *GatewayNode) onlineCheck() {
-	myPublicAddr, err := g.MyPublicAddr()
-	if err != nil {
-		log.Errorf(log.Fields{}, "public address is not ready: %v", err)
-		return
-	}
+	myPublicAddr, _ := g.MyPublicAddr()
 
 	updated := false
 	for host, monitor := range g.hosts {
-		if host[:strings.LastIndex(host, ".")] != myPublicAddr[:strings.LastIndex(myPublicAddr, ".")] {
+		lastIndex := strings.LastIndex(monitor.publicAddr, ".")
+		if lastIndex < 0 {
+			log.Errorf(log.Fields{}, "%v miss public address: %v", host, monitor.publicAddr)
+			continue
+		}
+
+		hostPrefix := monitor.publicAddr[:lastIndex]
+		myAddrPrefix := myPublicAddr[:strings.LastIndex(myPublicAddr, ".")]
+		if hostPrefix != myAddrPrefix {
+			log.Infof(log.Fields{}, "public address prefix %v != %v", hostPrefix, myAddrPrefix)
 			continue
 		}
 
