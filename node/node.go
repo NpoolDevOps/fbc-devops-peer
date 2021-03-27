@@ -11,4 +11,5 @@ type Node interface {
 	GetParentIP() (string, error)
 	GetChildsIPs() ([]string, error)
 	NotifyPeerId(uuid.UUID)
+	Banner()
 }

@@ -233,3 +233,9 @@ func (n *Basenode) NotifyPeerId(id uuid.UUID) {
 	n.Id = id
 	n.HasId = true
 }
+
+func (n *Basenode) Banner() {
+	log.Infof(log.Fields{}, "IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII")
+	log.Infof(log.Fields{}, "      BBBBBBBBBassssssseeeNNN      ")
+	log.Infof(log.Fields{}, "IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII")
+}

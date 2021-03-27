@@ -2,9 +2,17 @@ package main
 
 import (
 	log "github.com/EntropyPool/entropy-logger"
-	"github.com/NpoolDevOps/fbc-devops-peer/basenode"
+	basenode "github.com/NpoolDevOps/fbc-devops-peer/basenode"
 	devops "github.com/NpoolDevOps/fbc-devops-peer/devops"
+	fullminer "github.com/NpoolDevOps/fbc-devops-peer/fullminer"
+	fullnode "github.com/NpoolDevOps/fbc-devops-peer/fullnode"
+	gateway "github.com/NpoolDevOps/fbc-devops-peer/gateway"
+	miner "github.com/NpoolDevOps/fbc-devops-peer/miner"
+	node "github.com/NpoolDevOps/fbc-devops-peer/node"
 	"github.com/NpoolDevOps/fbc-devops-peer/peer"
+	storage "github.com/NpoolDevOps/fbc-devops-peer/storage"
+	types "github.com/NpoolDevOps/fbc-devops-peer/types"
+	worker "github.com/NpoolDevOps/fbc-devops-peer/worker"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/xerrors"
 	"os"
@@ -80,10 +88,28 @@ func main() {
 				PeerReportAPI: cctx.String("report-host"),
 			})
 
-			node := basenode.NewBasenode(config, client)
-			if node == nil {
-				return xerrors.Errorf("cannot init basenode")
+			var node node.Node
+
+			switch cctx.String("main-role") {
+			case types.GatewayNode:
+				node = gateway.NewGatewayNode(config, client)
+			case types.FullMinerNode:
+				node = fullminer.NewFullMinerNode(config, client)
+			case types.FullNode:
+				node = fullnode.NewFullNode(config, client)
+			case types.MinerNode:
+				node = miner.NewMinerNode(config, client)
+			case types.WorkerNode:
+				node = worker.NewWorkerNode(config, client)
+			case types.StorageNode:
+				node = storage.NewStorageNode(config, client)
 			}
+
+			if node == nil {
+				return xerrors.Errorf("cannot init basenode: %v", cctx.String("main-role"))
+			}
+
+			node.Banner()
 
 			rpcPeer := peer.NewPeer(node)
 			if rpcPeer == nil {
