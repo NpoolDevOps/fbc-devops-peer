@@ -285,6 +285,15 @@ func (p *Parser) parseStorageHosts() {
 
 func (p *Parser) parseMyStorageRole() {
 	resp, err := httpdaemon.R().
+		Get(fmt.Sprintf("http://%v:9283", p.localAddr))
+	if err == nil {
+		if resp.StatusCode() == 200 {
+			p.storageSubRole = types.StorageRoleMgr
+			return
+		}
+	}
+
+	resp, err = httpdaemon.R().
 		Get(fmt.Sprintf("http://%v:9090", p.localAddr))
 	if err == nil {
 		if resp.StatusCode() == 200 {
