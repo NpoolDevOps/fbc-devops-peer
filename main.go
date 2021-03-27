@@ -30,21 +30,7 @@ func main() {
 				Usage: "First level role in cluster [fullnode | miner | worker | storage]",
 			},
 			&cli.StringFlag{
-				Name:  "sub-role",
-				Usage: "Sub level role in cluster, [mds | mgr | osd] for storage, ignored by others",
-			},
-			&cli.StringFlag{
-				Name:  "parent-spec",
-				Usage: "Hardware spec of parent node",
-			},
-			&cli.StringFlag{
 				Name: "report-host",
-			},
-			&cli.IntFlag{
-				Name: "nvme-count",
-			},
-			&cli.IntFlag{
-				Name: "gpu-count",
 			},
 			&cli.StringFlag{
 				Name: "username",
@@ -54,6 +40,9 @@ func main() {
 			},
 			&cli.StringFlag{
 				Name: "network-type",
+			},
+			&cli.BoolFlag{
+				Name: "test-mode",
 			},
 		},
 		Action: func(cctx *cli.Context) error {
@@ -71,13 +60,7 @@ func main() {
 
 			config := &basenode.BasenodeConfig{
 				NodeConfig: &basenode.NodeConfig{
-					MainRole:   cctx.String("main-role"),
-					SubRole:    cctx.String("sub-role"),
-					ParentSpec: cctx.String("parent-spec"),
-					HardwareConfig: &basenode.NodeHardware{
-						NvmeCount: cctx.Int("nvme-count"),
-						GpuCount:  cctx.Int("gpu-count"),
-					},
+					MainRole: cctx.String("main-role"),
 				},
 				Username:    cctx.String("username"),
 				Password:    cctx.String("password"),
@@ -86,6 +69,7 @@ func main() {
 
 			client := devops.NewDevopsClient(&devops.DevopsConfig{
 				PeerReportAPI: cctx.String("report-host"),
+				TestMode:      cctx.Bool("test-mode"),
 			})
 
 			var node node.Node

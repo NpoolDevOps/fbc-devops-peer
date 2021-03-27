@@ -5,9 +5,9 @@ go 1.15
 require (
 	github.com/EntropyPool/entropy-logger v0.0.0-20210320022718-3091537e035f
 	github.com/EntropyPool/machine-spec v0.0.0-20210326115744-eaf9c297f65c
-	github.com/NpoolDevOps/fbc-devops-service v0.0.0-20210325051804-3cb408d8cf1f
+	github.com/NpoolDevOps/fbc-devops-service v0.0.0-20210327043710-629d1c80c562
 	github.com/NpoolDevOps/fbc-license v0.0.0
-	github.com/NpoolDevOps/fbc-license-service v0.0.0-20210324144427-1b800bab7127
+	github.com/NpoolDevOps/fbc-license-service v0.0.0-20210327043102-a4a5cab50cf4
 	github.com/NpoolRD/http-daemon v0.0.0-20210324100344-82fee56de8ac
 	github.com/facebookgo/stack v0.0.0-20160209184415-751773369052 // indirect
 	github.com/google/uuid v1.2.0
@@ -22,3 +22,5 @@ require (
 )
 
 replace github.com/NpoolDevOps/fbc-license => ../fbc-license
+
+replace google.golang.org/grpc => google.golang.org/grpc v1.26.0

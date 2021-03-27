@@ -18,6 +18,7 @@ type DevopsMsg struct {
 
 type DevopsConfig struct {
 	PeerReportAPI string
+	TestMode      bool
 }
 
 type DevopsClient struct {
@@ -42,6 +43,10 @@ func (c *DevopsClient) SetNode(node node.Node) {
 }
 
 func (c *DevopsClient) onMessage(msg *DevopsMsg) {
+	if c.config.TestMode {
+		log.Infof(log.Fields{}, "runnint in TEST MODE, do not send message")
+		return
+	}
 	b, _ := json.Marshal(msg.Msg)
 	resp, err := httpdaemon.R().
 		SetHeader("Content-Type", "application/json").
