@@ -180,7 +180,7 @@ type staticConfig struct {
 
 type scrapeConfig struct {
 	JobName        string         `yaml:"job_name"`
-	ScrapeInterval string         `yaml:"scrape_interval"`
+	ScrapeInterval string         `yaml:"scrape_interval,omitempty"`
 	StaticConfigs  []staticConfig `yaml:"static_configs"`
 }
 
@@ -240,8 +240,7 @@ func (g *GatewayNode) generateConfig() {
 		},
 		ScrapeConfigs: []scrapeConfig{
 			{
-				JobName:        "prometheus",
-				ScrapeInterval: "1m",
+				JobName: "prometheus",
 				StaticConfigs: []staticConfig{
 					{
 						Targets: []string{
@@ -261,12 +260,7 @@ func (g *GatewayNode) generateConfig() {
 
 	for role, monitors := range roleHostMap {
 		jobConfig := scrapeConfig{
-			JobName:        role,
-			ScrapeInterval: "1m",
-		}
-
-		if role == mytypes.MinerNode {
-			jobConfig.ScrapeInterval = "30s"
+			JobName: role,
 		}
 
 		subConfigs := []staticConfig{}
