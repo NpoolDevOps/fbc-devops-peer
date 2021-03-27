@@ -103,7 +103,7 @@ func (g *GatewayNode) updateTopology() {
 				monitor.ports = append(monitor.ports, 9283)
 			}
 		}
-		if 0 < device.GpuCount {
+		if device.Role != mytypes.StorageNode && device.Role != mytypes.FullNode {
 			monitor.ports = append(monitor.ports, 9400)
 		}
 		g.hosts[device.LocalAddr] = monitor
