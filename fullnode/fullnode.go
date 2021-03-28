@@ -4,6 +4,8 @@ import (
 	log "github.com/EntropyPool/entropy-logger"
 	"github.com/NpoolDevOps/fbc-devops-peer/basenode"
 	devops "github.com/NpoolDevOps/fbc-devops-peer/devops"
+	exporter "github.com/NpoolDevOps/fbc-devops-peer/exporter"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 type FullNode struct {
@@ -16,4 +18,16 @@ func NewFullNode(config *basenode.BasenodeConfig, devopsClient *devops.DevopsCli
 		basenode.NewBasenode(config, devopsClient),
 	}
 	return fullnode
+}
+
+func (n *FullNode) Describe(ch chan<- *prometheus.Desc) {
+	log.Infof(log.Fields{}, "NOT IMPLEMENT FOR FULLNODE")
+}
+
+func (n *FullNode) Collect(ch chan<- prometheus.Metric) {
+	log.Infof(log.Fields{}, "NOT IMPLEMENT FOR FULLNODE")
+}
+
+func (n *FullNode) CreateExporter() *exporter.Exporter {
+	return exporter.NewExporter(n)
 }
