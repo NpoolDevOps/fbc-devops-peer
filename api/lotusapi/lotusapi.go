@@ -27,18 +27,8 @@ func ChainSyncState(host string) (*SyncState, error) {
 		return nil, xerrors.Errorf("fail to query chain sync status")
 	}
 
-	apiResp, err := httpdaemon.ParseResponse(resp)
-	if err != nil {
-		return nil, xerrors.Errorf("invalid response from lotus")
-	}
-
-	if apiResp.Code != 0 {
-		return nil, xerrors.Errorf("error response from lotus")
-	}
-
-	b, _ := json.Marshal(apiResp.Body)
 	state := api.SyncState{}
-	json.Unmarshal(b, &state)
+	json.Unmarshal(resp.Body(), &state)
 
 	log.Infof(log.Fields{}, "CHAIN SYNC STATE --- %v", state)
 
