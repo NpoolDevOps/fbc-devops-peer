@@ -5,9 +5,7 @@ import (
 	"fmt"
 	log "github.com/EntropyPool/entropy-logger"
 	"github.com/NpoolDevOps/fbc-devops-peer/api/lotusbase"
-	"github.com/NpoolRD/http-daemon"
 	"github.com/filecoin-project/lotus/api"
-	"golang.org/x/xerrors"
 )
 
 type SyncState struct {
@@ -16,21 +14,15 @@ type SyncState struct {
 }
 
 func ChainSyncState(host string) (*SyncState, error) {
-	resp, err := httpdaemon.R().
-		SetHeader("Content-Type", "application/json").
-		SetBody(lotusbase.NewRpcParam("Filecoin.SyncState", []string{})).
-		Post(fmt.Sprintf("http://%v:1234/rpc/v0", host))
+	b, err := lotusbase.Request(fmt.Sprintf("http://%v:1234/rpc/v0", host), []string{}, "Filecoin.SyncState")
 	if err != nil {
 		return nil, err
 	}
-	if resp.StatusCode() != 200 {
-		return nil, xerrors.Errorf("fail to query chain sync status")
-	}
 
 	state := api.SyncState{}
-	json.Unmarshal(resp.Body(), &state)
+	json.Unmarshal(b, &state)
 
-	log.Infof(log.Fields{}, "RESP BODY --- %v", string(resp.Body()))
+	log.Infof(log.Fields{}, "RESP BODY --- %v", string(b))
 	log.Infof(log.Fields{}, "CHAIN SYNC STATE --- %v", state)
 
 	return &SyncState{}, nil
