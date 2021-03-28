@@ -95,6 +95,7 @@ func main() {
 			}
 
 			node.Banner()
+			node.CreateExporter()
 
 			rpcPeer := peer.NewPeer(node)
 			if rpcPeer == nil {
