@@ -21,19 +21,18 @@ import (
 )
 
 type Basenode struct {
-	NodeDesc        *NodeDesc
-	Username        string
-	Password        string
-	NetworkType     string
-	Id              uuid.UUID
-	devopsClient    *devops.DevopsClient
-	parser          *parser.Parser
-	HasId           bool
-	TestMode        bool
-	Peer            *peer.Peer
-	hasPublicAddr   bool
-	hasLocalAddr    bool
-	metricsExporter *exporter.Exporter
+	NodeDesc      *NodeDesc
+	Username      string
+	Password      string
+	NetworkType   string
+	Id            uuid.UUID
+	devopsClient  *devops.DevopsClient
+	parser        *parser.Parser
+	HasId         bool
+	TestMode      bool
+	Peer          *peer.Peer
+	hasPublicAddr bool
+	hasLocalAddr  bool
 }
 
 type NodeHardware struct {
@@ -107,7 +106,6 @@ func NewBasenode(config *BasenodeConfig, devopsClient *devops.DevopsClient) *Bas
 	basenode.devopsClient.FeedMsg(types.DeviceRegisterAPI, basenode.ToDeviceRegisterInput(), true)
 
 	devopsClient.SetNode(basenode)
-	basenode.metricsExporter = exporter.NewExporter(basenode)
 
 	return basenode
 }
@@ -278,6 +276,10 @@ func (n *Basenode) Describe(ch chan<- *prometheus.Desc) {
 
 func (n *Basenode) Collect(ch chan<- prometheus.Metric) {
 	log.Infof(log.Fields{}, "NOT IMPLEMENT FOR BASENODE")
+}
+
+func (n *Basenode) CreateExporter() *exporter.Exporter {
+	return exporter.NewExporter(n)
 }
 
 func (n *Basenode) Banner() {

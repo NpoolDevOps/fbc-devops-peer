@@ -4,6 +4,8 @@ import (
 	log "github.com/EntropyPool/entropy-logger"
 	"github.com/NpoolDevOps/fbc-devops-peer/basenode"
 	devops "github.com/NpoolDevOps/fbc-devops-peer/devops"
+	exporter "github.com/NpoolDevOps/fbc-devops-peer/exporter"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 type StorageNode struct {
@@ -16,4 +18,16 @@ func NewStorageNode(config *basenode.BasenodeConfig, devopsClient *devops.Devops
 		basenode.NewBasenode(config, devopsClient),
 	}
 	return storage
+}
+
+func (n *StorageNode) Describe(ch chan<- *prometheus.Desc) {
+	log.Infof(log.Fields{}, "NOT IMPLEMENT FOR STORAGENODE")
+}
+
+func (n *StorageNode) Collect(ch chan<- prometheus.Metric) {
+	log.Infof(log.Fields{}, "NOT IMPLEMENT FOR STORAGENODE")
+}
+
+func (n *StorageNode) CreateExporter() *exporter.Exporter {
+	return exporter.NewExporter(n)
 }
