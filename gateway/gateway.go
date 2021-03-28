@@ -95,7 +95,7 @@ func (g *GatewayNode) updateTopology() {
 
 		monitor := hostMonitor{
 			role:       device.Role,
-			ports:      []int{9100, 9256},
+			ports:      []int{9100, 9256, mytypes.ExporterPort},
 			publicAddr: device.PublicAddr,
 			localAddr:  device.LocalAddr,
 			online:     online,
