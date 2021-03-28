@@ -40,7 +40,7 @@ func ChainSyncState(host string) (*SyncState, error) {
 	state := api.SyncState{}
 	json.Unmarshal(b, &state)
 
-	log.Infof(log.Fields{}, "CHAIN SYNC STATUS -- %v", state)
+	log.Infof(log.Fields{}, "CHAIN SYNC STATE --- %v", state)
 
 	return &SyncState{}, nil
 }

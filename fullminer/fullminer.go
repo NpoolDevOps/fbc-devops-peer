@@ -30,7 +30,12 @@ func (n *FullMinerNode) Describe(ch chan<- *prometheus.Desc) {
 		return
 	}
 
-	api.ChainSyncState(addr)
+	state, err := api.ChainSyncState(addr)
+	if err != nil {
+		log.Errorf(log.Fields{}, "fail to check chain sync status %v: %v", addr, err)
+	}
+	log.Infof(log.Fields{}, "state --- %v", state)
+
 	log.Infof(log.Fields{}, "NOT IMPLEMENT FOR FULLMINERNODE")
 }
 
