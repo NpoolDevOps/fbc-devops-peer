@@ -25,6 +25,10 @@ func NewFullMinerNode(config *basenode.BasenodeConfig, devopsClient *devops.Devo
 }
 
 func (n *FullMinerNode) Describe(ch chan<- *prometheus.Desc) {
+	log.Infof(log.Fields{}, "NOT IMPLEMENT FOR FULLMINERNODE")
+}
+
+func (n *FullMinerNode) Collect(ch chan<- prometheus.Metric) {
 	addr, err := n.MyLocalAddr()
 	if err != nil {
 		return
@@ -39,10 +43,12 @@ func (n *FullMinerNode) Describe(ch chan<- *prometheus.Desc) {
 	log.Infof(log.Fields{}, "NOT IMPLEMENT FOR FULLMINERNODE")
 }
 
-func (n *FullMinerNode) Collect(ch chan<- prometheus.Metric) {
-	log.Infof(log.Fields{}, "NOT IMPLEMENT FOR FULLMINERNODE")
-}
-
 func (n *FullMinerNode) CreateExporter() *exporter.Exporter {
 	return exporter.NewExporter(n)
+}
+
+func (n *FullMinerNode) Banner() {
+	log.Infof(log.Fields{}, "IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII")
+	log.Infof(log.Fields{}, "   FUlllllLLLLMMMMMMMIIIiNEEeer    ")
+	log.Infof(log.Fields{}, "IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII")
 }
