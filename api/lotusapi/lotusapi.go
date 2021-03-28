@@ -3,7 +3,6 @@ package lotusapi
 import (
 	"encoding/json"
 	"fmt"
-	log "github.com/EntropyPool/entropy-logger"
 	"github.com/NpoolDevOps/fbc-devops-peer/api/lotusbase"
 	"github.com/filecoin-project/lotus/api"
 )
@@ -21,9 +20,6 @@ func ChainSyncState(host string) (*SyncState, error) {
 
 	state := api.SyncState{}
 	json.Unmarshal(b, &state)
-
-	log.Infof(log.Fields{}, "RESP BODY --- %v", string(b))
-	log.Infof(log.Fields{}, "CHAIN SYNC STATE --- %v", state)
 
 	return &SyncState{}, nil
 }
