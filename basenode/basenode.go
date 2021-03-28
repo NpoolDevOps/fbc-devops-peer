@@ -4,12 +4,14 @@ import (
 	log "github.com/EntropyPool/entropy-logger"
 	machspec "github.com/EntropyPool/machine-spec"
 	devops "github.com/NpoolDevOps/fbc-devops-peer/devops"
+	exporter "github.com/NpoolDevOps/fbc-devops-peer/exporter"
 	parser "github.com/NpoolDevOps/fbc-devops-peer/parser"
 	"github.com/NpoolDevOps/fbc-devops-peer/peer"
 	runtime "github.com/NpoolDevOps/fbc-devops-peer/runtime"
 	types "github.com/NpoolDevOps/fbc-devops-service/types"
 	lic "github.com/NpoolDevOps/fbc-license"
 	"github.com/google/uuid"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/xjh22222228/ip"
 	"golang.org/x/xerrors"
 	"net"
@@ -19,18 +21,19 @@ import (
 )
 
 type Basenode struct {
-	NodeDesc      *NodeDesc
-	Username      string
-	Password      string
-	NetworkType   string
-	Id            uuid.UUID
-	devopsClient  *devops.DevopsClient
-	parser        *parser.Parser
-	HasId         bool
-	TestMode      bool
-	Peer          *peer.Peer
-	hasPublicAddr bool
-	hasLocalAddr  bool
+	NodeDesc        *NodeDesc
+	Username        string
+	Password        string
+	NetworkType     string
+	Id              uuid.UUID
+	devopsClient    *devops.DevopsClient
+	parser          *parser.Parser
+	HasId           bool
+	TestMode        bool
+	Peer            *peer.Peer
+	hasPublicAddr   bool
+	hasLocalAddr    bool
+	metricsExporter *exporter.Exporter
 }
 
 type NodeHardware struct {
@@ -104,6 +107,7 @@ func NewBasenode(config *BasenodeConfig, devopsClient *devops.DevopsClient) *Bas
 	basenode.devopsClient.FeedMsg(types.DeviceRegisterAPI, basenode.ToDeviceRegisterInput(), true)
 
 	devopsClient.SetNode(basenode)
+	basenode.metricsExporter = exporter.NewExporter(basenode)
 
 	return basenode
 }
@@ -266,6 +270,14 @@ func (n *Basenode) GetChildsIPs() ([]string, error) {
 func (n *Basenode) NotifyPeerId(id uuid.UUID) {
 	n.Id = id
 	n.HasId = true
+}
+
+func (n *Basenode) Describe(ch chan<- *prometheus.Desc) {
+	log.Infof(log.Fields{}, "NOT IMPLEMENT FOR BASENODE")
+}
+
+func (n *Basenode) Collect(ch chan<- prometheus.Metric) {
+	log.Infof(log.Fields{}, "NOT IMPLEMENT FOR BASENODE")
 }
 
 func (n *Basenode) Banner() {

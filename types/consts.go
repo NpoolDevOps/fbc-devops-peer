@@ -19,3 +19,7 @@ const (
 	StorageRoleMgr = "mgr"
 	StorageRoleOsd = "osd"
 )
+
+const (
+	ExporterPort = 52379
+)

@@ -13,6 +13,7 @@ require (
 	github.com/google/uuid v1.2.0
 	github.com/jaypipes/ghw v0.7.0
 	github.com/mailru/easyjson v0.7.7 // indirect
+	github.com/prometheus/client_golang v0.9.2
 	github.com/rai-project/config v0.0.0-20190926180509-3bd01e698aad // indirect
 	github.com/rai-project/logger v0.0.0-20190701163301-49978a80bf96 // indirect
 	github.com/rai-project/nvidia-smi v0.0.0-20190730061239-864eb441c9ae

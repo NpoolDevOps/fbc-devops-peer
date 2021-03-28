@@ -2,6 +2,7 @@ package node
 
 import (
 	"github.com/google/uuid"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 type Node interface {
@@ -13,4 +14,6 @@ type Node interface {
 	NotifyPeerId(uuid.UUID)
 	Banner()
 	SetPeer(interface{})
+	Describe(ch chan<- *prometheus.Desc)
+	Collect(ch chan<- prometheus.Metric)
 }
