@@ -88,6 +88,7 @@ func (g *GatewayNode) updateTopology() {
 		newCreated := false
 
 		if _, ok := g.hosts[device.LocalAddr]; !ok {
+			log.Infof(log.Fields{}, "Add host: %v | %v", device.LocalAddr, device.Role)
 			newCreated = true
 		} else {
 			online = g.hosts[device.LocalAddr].online
@@ -269,6 +270,7 @@ func (g *GatewayNode) generateConfig() {
 		targets := []string{}
 
 		for _, monitor := range monitors {
+			log.Infof(log.Fields{}, "generate ports: %v | %v", monitor.localAddr, monitor.ports)
 			for _, port := range monitor.ports {
 				targets = append(targets, fmt.Sprintf("%v:%v", monitor.localAddr, port))
 			}
@@ -292,7 +294,12 @@ func (g *GatewayNode) generateConfig() {
 		return
 	}
 
-	exec.Command("mv", monitorCfgFile, "/usr/local/prometheus/prometheus.yml")
+	err = exec.Command("mv", monitorCfgFile, "/usr/local/prometheus/prometheus.yml").Run()
+	if err != nil {
+		log.Errorf(log.Fields{}, "fail to move monitor configuration")
+		return
+	}
+
 	g.reloadConfig()
 }
 
