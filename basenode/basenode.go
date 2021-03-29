@@ -5,6 +5,7 @@ import (
 	machspec "github.com/EntropyPool/machine-spec"
 	devops "github.com/NpoolDevOps/fbc-devops-peer/devops"
 	exporter "github.com/NpoolDevOps/fbc-devops-peer/exporter"
+	basemetrics "github.com/NpoolDevOps/fbc-devops-peer/metrics/basemetrics"
 	parser "github.com/NpoolDevOps/fbc-devops-peer/parser"
 	"github.com/NpoolDevOps/fbc-devops-peer/peer"
 	runtime "github.com/NpoolDevOps/fbc-devops-peer/runtime"
@@ -34,6 +35,7 @@ type Basenode struct {
 	hasPublicAddr bool
 	hasLocalAddr  bool
 	addrNotifier  func(string, string)
+	BaseMetrics   *basemetrics.BaseMetrics
 }
 
 type NodeHardware struct {
@@ -105,6 +107,8 @@ func NewBasenode(config *BasenodeConfig, devopsClient *devops.DevopsClient) *Bas
 	if err == nil {
 		basenode.NodeDesc.NodeConfig.SubRole = role
 	}
+
+	basenode.BaseMetrics = basemetrics.NewBaseMetrics()
 
 	basenode.startLicenseChecker()
 	basenode.devopsClient.FeedMsg(types.DeviceRegisterAPI, basenode.ToDeviceRegisterInput(), true)

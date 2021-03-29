@@ -30,10 +30,12 @@ func NewFullNode(config *basenode.BasenodeConfig, devopsClient *devops.DevopsCli
 
 func (n *FullNode) Describe(ch chan<- *prometheus.Desc) {
 	n.lotusMetrics.Describe(ch)
+	n.BaseMetrics.Describe(ch)
 }
 
 func (n *FullNode) Collect(ch chan<- prometheus.Metric) {
 	n.lotusMetrics.Collect(ch)
+	n.BaseMetrics.Collect(ch)
 }
 
 func (n *FullNode) CreateExporter() *exporter.Exporter {

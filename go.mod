@@ -12,6 +12,7 @@ require (
 	github.com/facebookgo/stack v0.0.0-20160209184415-751773369052 // indirect
 	github.com/filecoin-project/go-state-types v0.1.0
 	github.com/filecoin-project/lotus v1.5.3
+	github.com/go-ping/ping v0.0.0-20210327002015-80a511380375
 	github.com/google/uuid v1.2.0
 	github.com/ipfs/go-cid v0.0.7
 	github.com/jaypipes/ghw v0.7.0

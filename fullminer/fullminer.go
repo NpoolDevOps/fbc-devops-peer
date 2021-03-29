@@ -32,10 +32,12 @@ func (n *FullMinerNode) addressNotifier(local, public string) {
 
 func (n *FullMinerNode) Describe(ch chan<- *prometheus.Desc) {
 	n.lotusMetrics.Describe(ch)
+	n.BaseMetrics.Describe(ch)
 }
 
 func (n *FullMinerNode) Collect(ch chan<- prometheus.Metric) {
 	n.lotusMetrics.Collect(ch)
+	n.BaseMetrics.Collect(ch)
 }
 
 func (n *FullMinerNode) CreateExporter() *exporter.Exporter {
