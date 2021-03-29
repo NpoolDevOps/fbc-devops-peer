@@ -21,11 +21,11 @@ type BaseMetrics struct {
 	PingBaiduDelay   *prometheus.Desc
 	PingBaiduLost    *prometheus.Desc
 
-	pingGatewayDelay float64
-	pingBaiduDelay   float64
-	pingGatewayLost  float64
-	pingBaiduLost    float64
-	timeDiff         float64
+	pingGatewayDelayMs int64
+	pingBaiduDelayMs   int64
+	pingGatewayLost    float64
+	pingBaiduLost      float64
+	timeDiff           float64
 }
 
 func NewBaseMetrics() *BaseMetrics {
@@ -41,7 +41,7 @@ func NewBaseMetrics() *BaseMetrics {
 			nil, nil,
 		),
 		PingBaiduDelay: prometheus.NewDesc(
-			"base_ping_baidu_lost",
+			"base_ping_baidu_delay",
 			"Show base ping baidu lost",
 			nil, nil,
 		),
@@ -72,11 +72,11 @@ func (m *BaseMetrics) updater() {
 		}
 
 		delay, lost := pingStatistic(ip)
-		m.pingGatewayDelay = delay
+		m.pingGatewayDelayMs = delay
 		m.pingGatewayLost = lost
 
 		delay, lost = pingStatistic("www.baidu.com")
-		m.pingBaiduDelay = delay
+		m.pingBaiduDelayMs = delay
 		m.pingBaiduLost = lost
 
 		<-ticker.C
@@ -93,13 +93,13 @@ func (m *BaseMetrics) Describe(ch chan<- *prometheus.Desc) {
 
 func (m *BaseMetrics) Collect(ch chan<- prometheus.Metric) {
 	ch <- prometheus.MustNewConstMetric(m.TimeDiff, prometheus.CounterValue, m.timeDiff)
-	ch <- prometheus.MustNewConstMetric(m.PingGatewayDelay, prometheus.CounterValue, m.pingGatewayDelay)
+	ch <- prometheus.MustNewConstMetric(m.PingGatewayDelay, prometheus.CounterValue, float64(m.pingGatewayDelayMs))
 	ch <- prometheus.MustNewConstMetric(m.PingGatewayLost, prometheus.CounterValue, m.pingGatewayLost)
-	ch <- prometheus.MustNewConstMetric(m.PingBaiduDelay, prometheus.CounterValue, m.pingBaiduDelay)
+	ch <- prometheus.MustNewConstMetric(m.PingBaiduDelay, prometheus.CounterValue, float64(m.pingBaiduDelayMs))
 	ch <- prometheus.MustNewConstMetric(m.PingBaiduLost, prometheus.CounterValue, m.pingBaiduLost)
 }
 
-func pingStatistic(host string) (float64, float64) {
+func pingStatistic(host string) (ms int64, rate float64) {
 	pinger, err := ping.NewPinger(host)
 	if err != nil {
 		log.Errorf(log.Fields{}, "fail to create pinger %v: %v", host, err)
@@ -114,7 +114,7 @@ func pingStatistic(host string) (float64, float64) {
 	}
 
 	stats := pinger.Statistics()
-	return stats.AvgRtt.Seconds(), stats.PacketLoss
+	return stats.AvgRtt.Milliseconds(), stats.PacketLoss
 }
 
 const (
