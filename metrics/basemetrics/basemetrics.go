@@ -67,6 +67,7 @@ func (m *BaseMetrics) updater() {
 	for {
 		ip, err := getDefaultGateway()
 		if err != nil {
+			log.Errorf(log.Fields{}, "fail to get default gateway: %v", err)
 			<-ticker.C
 			continue
 		}
