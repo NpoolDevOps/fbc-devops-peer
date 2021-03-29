@@ -2,7 +2,6 @@ package fullnode
 
 import (
 	log "github.com/EntropyPool/entropy-logger"
-	api "github.com/NpoolDevOps/fbc-devops-peer/api/lotusapi"
 	"github.com/NpoolDevOps/fbc-devops-peer/basenode"
 	devops "github.com/NpoolDevOps/fbc-devops-peer/devops"
 	exporter "github.com/NpoolDevOps/fbc-devops-peer/exporter"
@@ -12,26 +11,29 @@ import (
 
 type FullNode struct {
 	*basenode.Basenode
-	*lotusmetrics.LotusMetrics
+	lotusMetrics *lotusmetrics.LotusMetrics
 }
 
 func NewFullNode(config *basenode.BasenodeConfig, devopsClient *devops.DevopsClient) *FullNode {
-	log.Infof(log.Fields{}, "create %v ndoe", config.NodeConfig.MainRole)
+	log.Infof(log.Fields{}, "create %v node", config.NodeConfig.MainRole)
 	fullnode := &FullNode{
 		basenode.NewBasenode(config, devopsClient),
 		lotusmetrics.NewLotusMetrics(),
 	}
 
+	fullnode.SetAddrNotifier(func(local, public string) {
+		fullnode.lotusMetrics.SetHost(local)
+	})
+
 	return fullnode
 }
 
 func (n *FullNode) Describe(ch chan<- *prometheus.Desc) {
-	api.ChainSyncState("127.0.0.1")
-	log.Infof(log.Fields{}, "NOT IMPLEMENT FOR FULLNODE")
+	n.lotusMetrics.Describe(ch)
 }
 
 func (n *FullNode) Collect(ch chan<- prometheus.Metric) {
-	log.Infof(log.Fields{}, "NOT IMPLEMENT FOR FULLNODE")
+	n.lotusMetrics.Collect(ch)
 }
 
 func (n *FullNode) CreateExporter() *exporter.Exporter {

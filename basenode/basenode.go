@@ -33,6 +33,7 @@ type Basenode struct {
 	Peer          *peer.Peer
 	hasPublicAddr bool
 	hasLocalAddr  bool
+	addrNotifier  func(string, string)
 }
 
 type NodeHardware struct {
@@ -94,7 +95,10 @@ func NewBasenode(config *BasenodeConfig, devopsClient *devops.DevopsClient) *Bas
 	basenode.NodeDesc.HardwareInfo.UpdateNodeInfo()
 
 	basenode.parser = parser.NewParser()
+
 	basenode.GetAddress()
+	basenode.AddressUpdater()
+
 	basenode.ReadOsSpec()
 
 	role, err := basenode.parser.GetSubRole(basenode.GetMainRole())
@@ -112,6 +116,10 @@ func NewBasenode(config *BasenodeConfig, devopsClient *devops.DevopsClient) *Bas
 
 func (n *Basenode) SetPeer(p interface{}) {
 	n.Peer = p.(*peer.Peer)
+}
+
+func (n *Basenode) SetAddrNotifier(addrNotifier func(string, string)) {
+	n.addrNotifier = addrNotifier
 }
 
 func (n *Basenode) Heartbeat(childPeer string) error {
@@ -144,36 +152,52 @@ func (n *Basenode) ReadOsSpec() {
 	n.NodeDesc.NodeConfig.OsSpec = string(out)
 }
 
-func (n *Basenode) GetAddress() {
+func (n *Basenode) GetAddress() (string, string, error) {
+	conn, err := net.Dial("udp", "8.8.8.8:80")
+	if err != nil {
+		return "", "", err
+	}
+	localAddr := strings.Split(conn.LocalAddr().String(), ":")[0]
+	n.hasLocalAddr = true
+
+	publicAddr, err := ip.V4()
+	if err != nil {
+		return "", "", err
+	}
+	n.hasPublicAddr = true
+
+	return localAddr, publicAddr, nil
+}
+
+func (n *Basenode) AddressUpdater() {
 	ticker := time.NewTicker(2 * time.Minute)
 	go func() {
 		for {
 			updated := false
+			localAddr, publicAddr, err := n.GetAddress()
+			if err != nil {
+				continue
+			}
 
-			conn, err := net.Dial("udp", "8.8.8.8:80")
-			if err == nil {
-				localAddr := strings.Split(conn.LocalAddr().String(), ":")[0]
-				if n.NodeDesc.NodeConfig.LocalAddr != localAddr {
-					log.Infof(log.Fields{}, "local address updated: %v -> %v",
-						n.NodeDesc.NodeConfig.LocalAddr, localAddr)
-					n.NodeDesc.NodeConfig.LocalAddr = localAddr
-					n.hasLocalAddr = true
-					updated = true
-				}
-				conn.Close()
+			if n.NodeDesc.NodeConfig.LocalAddr != localAddr {
+				log.Infof(log.Fields{}, "local address updated: %v -> %v",
+					n.NodeDesc.NodeConfig.LocalAddr, localAddr)
+				n.NodeDesc.NodeConfig.LocalAddr = localAddr
+				updated = true
 			}
-			publicAddr, err := ip.V4()
-			if err == nil {
-				if n.NodeDesc.NodeConfig.PublicAddr != publicAddr {
-					log.Infof(log.Fields{}, "public address updated: %v -> %v",
-						n.NodeDesc.NodeConfig.PublicAddr, publicAddr)
-					n.NodeDesc.NodeConfig.PublicAddr = publicAddr
-					n.hasPublicAddr = true
-					updated = true
-				}
+
+			if n.NodeDesc.NodeConfig.PublicAddr != publicAddr {
+				log.Infof(log.Fields{}, "public address updated: %v -> %v",
+					n.NodeDesc.NodeConfig.PublicAddr, publicAddr)
+				n.NodeDesc.NodeConfig.PublicAddr = publicAddr
+				updated = true
 			}
+
 			if updated {
 				n.devopsClient.FeedMsg(types.DeviceRegisterAPI, n.ToDeviceRegisterInput(), true)
+				if n.addrNotifier != nil {
+					n.addrNotifier(localAddr, publicAddr)
+				}
 			}
 			<-ticker.C
 		}

@@ -2,7 +2,6 @@ package fullminer
 
 import (
 	log "github.com/EntropyPool/entropy-logger"
-	api "github.com/NpoolDevOps/fbc-devops-peer/api/lotusapi"
 	"github.com/NpoolDevOps/fbc-devops-peer/basenode"
 	devops "github.com/NpoolDevOps/fbc-devops-peer/devops"
 	exporter "github.com/NpoolDevOps/fbc-devops-peer/exporter"
@@ -12,35 +11,31 @@ import (
 
 type FullMinerNode struct {
 	*basenode.Basenode
-	*lotusmetrics.LotusMetrics
+	lotusMetrics *lotusmetrics.LotusMetrics
 }
 
 func NewFullMinerNode(config *basenode.BasenodeConfig, devopsClient *devops.DevopsClient) *FullMinerNode {
-	log.Infof(log.Fields{}, "create %v ndoe", config.NodeConfig.MainRole)
+	log.Infof(log.Fields{}, "create %v node", config.NodeConfig.MainRole)
 	fullminer := &FullMinerNode{
 		basenode.NewBasenode(config, devopsClient),
 		lotusmetrics.NewLotusMetrics(),
 	}
+
+	fullminer.SetAddrNotifier(fullminer.addressNotifier)
+
 	return fullminer
 }
 
+func (n *FullMinerNode) addressNotifier(local, public string) {
+	n.lotusMetrics.SetHost(local)
+}
+
 func (n *FullMinerNode) Describe(ch chan<- *prometheus.Desc) {
-	log.Infof(log.Fields{}, "NOT IMPLEMENT FOR FULLMINERNODE")
+	n.lotusMetrics.Describe(ch)
 }
 
 func (n *FullMinerNode) Collect(ch chan<- prometheus.Metric) {
-	addr, err := n.MyLocalAddr()
-	if err != nil {
-		return
-	}
-
-	state, err := api.ChainSyncState(addr)
-	if err != nil {
-		log.Errorf(log.Fields{}, "fail to check chain sync status %v: %v", addr, err)
-	}
-	log.Infof(log.Fields{}, "state --- %v", state)
-
-	log.Infof(log.Fields{}, "NOT IMPLEMENT FOR FULLMINERNODE")
+	n.lotusMetrics.Collect(ch)
 }
 
 func (n *FullMinerNode) CreateExporter() *exporter.Exporter {

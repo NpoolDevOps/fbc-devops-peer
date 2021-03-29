@@ -10,9 +10,12 @@ require (
 	github.com/NpoolDevOps/fbc-license-service v0.0.0-20210327043102-a4a5cab50cf4
 	github.com/NpoolRD/http-daemon v0.0.0-20210324100344-82fee56de8ac
 	github.com/facebookgo/stack v0.0.0-20160209184415-751773369052 // indirect
+	github.com/filecoin-project/go-state-types v0.1.0
 	github.com/filecoin-project/lotus v1.5.3
 	github.com/google/uuid v1.2.0
+	github.com/ipfs/go-cid v0.0.7
 	github.com/jaypipes/ghw v0.7.0
+	github.com/libp2p/go-libp2p-core v0.7.0
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/prometheus/client_golang v1.6.0
 	github.com/rai-project/config v0.0.0-20190926180509-3bd01e698aad // indirect
