@@ -1,0 +1,15 @@
+package fbcsnmp
+
+import (
+	log "github.com/EntropyPool/entropy-logger"
+	"testing"
+)
+
+func TestCpuUsage(t *testing.T) {
+	snmp := NewSnmpClient("172.29.100.1", "shangchi123")
+	usages, err := snmp.CpuUsage()
+	if err != nil {
+		log.Infof(log.Fields{}, "fail to get cpu usage: %v", err)
+	}
+	log.Infof(log.Fields{}, "cpu usages: %v", usages)
+}
