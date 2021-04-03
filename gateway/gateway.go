@@ -160,8 +160,14 @@ func (g *GatewayNode) onlineCheck() {
 			continue
 		}
 
+		myLastIndex := strings.LastIndex(myPublicAddr, ".")
+		if myLastIndex < 0 {
+			log.Errorf(log.Fields{}, "%v miss my public address: %v", host, monitor.publicAddr)
+			continue
+		}
+
 		hostPrefix := monitor.publicAddr[:lastIndex]
-		myAddrPrefix := myPublicAddr[:strings.LastIndex(myPublicAddr, ".")]
+		myAddrPrefix := myPublicAddr[:myLastIndex]
 		if hostPrefix != myAddrPrefix {
 			log.Infof(log.Fields{}, "public address prefix %v != %v", hostPrefix, myAddrPrefix)
 			continue
