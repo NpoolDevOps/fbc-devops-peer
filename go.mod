@@ -9,6 +9,7 @@ require (
 	github.com/NpoolDevOps/fbc-license v0.0.0
 	github.com/NpoolDevOps/fbc-license-service v0.0.0-20210327043102-a4a5cab50cf4
 	github.com/NpoolRD/http-daemon v0.0.0-20210324100344-82fee56de8ac
+	github.com/docker/go-units v0.4.0
 	github.com/facebookgo/stack v0.0.0-20160209184415-751773369052 // indirect
 	github.com/filecoin-project/go-state-types v0.1.0
 	github.com/filecoin-project/lotus v1.5.3

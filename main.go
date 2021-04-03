@@ -10,9 +10,11 @@ import (
 	miner "github.com/NpoolDevOps/fbc-devops-peer/miner"
 	node "github.com/NpoolDevOps/fbc-devops-peer/node"
 	"github.com/NpoolDevOps/fbc-devops-peer/peer"
+	snmp "github.com/NpoolDevOps/fbc-devops-peer/snmp"
 	storage "github.com/NpoolDevOps/fbc-devops-peer/storage"
 	types "github.com/NpoolDevOps/fbc-devops-peer/types"
 	worker "github.com/NpoolDevOps/fbc-devops-peer/worker"
+	"github.com/docker/go-units"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/xerrors"
 	"os"
@@ -44,11 +46,24 @@ func main() {
 			&cli.BoolFlag{
 				Name: "test-mode",
 			},
+			&cli.BoolFlag{
+				Name: "snmp-monitor",
+			},
 			&cli.StringFlag{
 				Name: "snmp-user",
 			},
 			&cli.StringFlag{
 				Name: "snmp-pass",
+			},
+			&cli.StringFlag{
+				Name: "snmp-target",
+			},
+			&cli.StringFlag{
+				Name: "snmp-community",
+			},
+			&cli.StringFlag{
+				Name:  "snmp-config-in-bandwidth",
+				Value: "500MiB",
 			},
 		},
 		Action: func(cctx *cli.Context) error {
@@ -83,10 +98,30 @@ func main() {
 
 			switch cctx.String("main-role") {
 			case types.GatewayNode:
-				if cctx.String("snmp-user") == "" || cctx.String("snmp-pass") == "" {
-					return xerrors.Errorf("you need provide user and password for switcher")
+				if cctx.Bool("snmp-monitor") {
+					if cctx.String("snmp-user") == "" || cctx.String("snmp-pass") == "" {
+						return xerrors.Errorf("you need provide user and password for switcher")
+					}
+					if cctx.String("snmp-target") == "" || cctx.String("snmp-community") == "" {
+						return xerrors.Errorf("you need provide target and community for switcher")
+					}
 				}
-				node = gateway.NewGatewayNode(config, client)
+
+				configBw, err := units.RAMInBytes(cctx.String("snmp-config-in-bandwidth"))
+				if err != nil {
+					return xerrors.Errorf("cannot parse config in bandwidth %v: %v", cctx.String("snmp-config-in-bandwidth"), err)
+				}
+
+				node = gateway.NewGatewayNode(&gateway.GatewayConfig{
+					BasenodeConfig: config,
+					SnmpConfig: &snmp.SnmpConfig{
+						Target:          cctx.String("snmp-target"),
+						Community:       cctx.String("snmp-community"),
+						Username:        cctx.String("snmp-user"),
+						Password:        cctx.String("snmp-pass"),
+						ConfigBandwidth: configBw,
+					},
+				}, client)
 			case types.FullMinerNode:
 				node = fullminer.NewFullMinerNode(config, client)
 			case types.FullNode:

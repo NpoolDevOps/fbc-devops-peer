@@ -8,6 +8,7 @@ import (
 	"github.com/NpoolDevOps/fbc-devops-peer/basenode"
 	devops "github.com/NpoolDevOps/fbc-devops-peer/devops"
 	snmpmetrics "github.com/NpoolDevOps/fbc-devops-peer/metrics/snmpmetrics"
+	snmp "github.com/NpoolDevOps/fbc-devops-peer/snmp"
 	mytypes "github.com/NpoolDevOps/fbc-devops-peer/types"
 	devopsapi "github.com/NpoolDevOps/fbc-devops-service/devopsapi"
 	types "github.com/NpoolDevOps/fbc-devops-service/types"
@@ -30,6 +31,11 @@ type hostMonitor struct {
 	newCreated bool
 }
 
+type GatewayConfig struct {
+	BasenodeConfig *basenode.BasenodeConfig
+	SnmpConfig     *snmp.SnmpConfig
+}
+
 type GatewayNode struct {
 	*basenode.Basenode
 	snmpMetrics     *snmpmetrics.SnmpMetrics
@@ -40,11 +46,11 @@ type GatewayNode struct {
 	hosts           map[string]hostMonitor
 }
 
-func NewGatewayNode(config *basenode.BasenodeConfig, devopsClient *devops.DevopsClient) *GatewayNode {
-	log.Infof(log.Fields{}, "create %v ndoe", config.NodeConfig.MainRole)
+func NewGatewayNode(config *GatewayConfig, devopsClient *devops.DevopsClient) *GatewayNode {
+	log.Infof(log.Fields{}, "create %v node", config.BasenodeConfig.NodeConfig.MainRole)
 	gateway := &GatewayNode{
-		basenode.NewBasenode(config, devopsClient),
-		snmpmetrics.NewSnmpMetrics(),
+		basenode.NewBasenode(config.BasenodeConfig, devopsClient),
+		snmpmetrics.NewSnmpMetrics(config.SnmpConfig),
 		time.NewTicker(2 * time.Minute),
 		make(chan struct{}, 10),
 		make(chan struct{}, 10),

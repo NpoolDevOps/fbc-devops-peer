@@ -18,7 +18,7 @@ type SnmpMetrics struct {
 	snmpClient             *snmp.SnmpClient
 }
 
-func NewSnmpMetrics() *SnmpMetrics {
+func NewSnmpMetrics(config *snmp.SnmpConfig) *SnmpMetrics {
 	return &SnmpMetrics{
 		CpuUserPercent: prometheus.NewDesc(
 			"switcher_cpu_user_percent",
