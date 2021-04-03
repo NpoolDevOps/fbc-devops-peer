@@ -44,6 +44,12 @@ func main() {
 			&cli.BoolFlag{
 				Name: "test-mode",
 			},
+			&cli.StringFlag{
+				Name: "snmp-user",
+			},
+			&cli.StringFlag{
+				Name: "snmp-pass",
+			},
 		},
 		Action: func(cctx *cli.Context) error {
 			if cctx.String("main-role") == "" {
@@ -77,6 +83,9 @@ func main() {
 
 			switch cctx.String("main-role") {
 			case types.GatewayNode:
+				if cctx.String("snmp-user") == "" || cctx.String("snmp-pass") == "" {
+					return xerrors.Errorf("you need provide user and password for switcher")
+				}
 				node = gateway.NewGatewayNode(config, client)
 			case types.FullMinerNode:
 				node = fullminer.NewFullMinerNode(config, client)
