@@ -6,7 +6,12 @@ import (
 )
 
 func TestCpuUsage(t *testing.T) {
-	snmp := NewSnmpClient("172.29.100.1", "shangchi123")
+	snmp := NewSnmpClient(SnmpConfig{
+		target:    "172.29.100.1",
+		community: "shangchi123",
+		username:  "172.29.100.1",
+		password:  "shangchi123",
+	})
 	usages, err := snmp.CpuUsage()
 	if err != nil {
 		log.Infof(log.Fields{}, "fail to get cpu usage: %v", err)

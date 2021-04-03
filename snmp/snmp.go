@@ -9,18 +9,21 @@ import (
 	"time"
 )
 
-type SnmpClient struct {
+type SnmpConfig struct {
 	target    string
 	community string
+	username  string
+	password  string
 }
 
-func NewSnmpClient(target string, community string) *SnmpClient {
-	cli := &SnmpClient{
-		target:    target,
-		community: community,
-	}
+type SnmpClient struct {
+	config SnmpConfig
+}
 
-	return cli
+func NewSnmpClient(config SnmpConfig) *SnmpClient {
+	return &SnmpClient{
+		config: config,
+	}
 }
 
 func (c *SnmpClient) CpuUsage() ([]string, error) {
@@ -40,18 +43,19 @@ func (c *SnmpClient) CpuUsage() ([]string, error) {
 
 func (c *SnmpClient) get(oids []string) ([]string, error) {
 	cli := &g.GoSNMP{
-		Target:        c.target,
+		Target:        c.config.target,
 		Port:          161,
 		Version:       g.Version3,
+		Community:     c.config.community,
 		SecurityModel: g.UserSecurityModel,
 		MsgFlags:      g.AuthPriv,
 		Timeout:       time.Duration(30) * time.Second,
 		SecurityParameters: &g.UsmSecurityParameters{
-			UserName:                 "user",
+			UserName:                 c.config.username,
 			AuthenticationProtocol:   g.SHA,
-			AuthenticationPassphrase: "password",
+			AuthenticationPassphrase: c.config.password,
 			PrivacyProtocol:          g.DES,
-			PrivacyPassphrase:        "password",
+			PrivacyPassphrase:        c.config.password,
 		},
 	}
 
