@@ -60,7 +60,7 @@ func NewSnmpMetrics(config *snmp.SnmpConfig) *SnmpMetrics {
 			"Switcher snmp error",
 			nil, nil,
 		),
-		snmpClient: snmp.NewSnmpClient(snmp.SnmpConfig{}),
+		snmpClient: snmp.NewSnmpClient(config),
 	}
 }
 

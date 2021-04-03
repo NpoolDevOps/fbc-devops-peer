@@ -22,11 +22,11 @@ type SnmpConfig struct {
 }
 
 type SnmpClient struct {
-	config SnmpConfig
+	config *SnmpConfig
 	client *g.GoSNMP
 }
 
-func NewSnmpClient(config SnmpConfig) *SnmpClient {
+func NewSnmpClient(config *SnmpConfig) *SnmpClient {
 	cli := &g.GoSNMP{
 		Target:        config.Target,
 		Port:          161,

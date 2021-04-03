@@ -6,7 +6,7 @@ import (
 )
 
 func TestCpuUsage(t *testing.T) {
-	snmp := NewSnmpClient(SnmpConfig{
+	snmp := NewSnmpClient(&SnmpConfig{
 		Target:    "172.29.100.1",
 		Community: "shangchi123",
 		Username:  "172.29.100.1",
@@ -21,7 +21,7 @@ func TestCpuUsage(t *testing.T) {
 }
 
 func TestNetwork(t *testing.T) {
-	snmp := NewSnmpClient(SnmpConfig{
+	snmp := NewSnmpClient(&SnmpConfig{
 		Target:          "172.29.100.1",
 		Community:       "shangchi123",
 		Username:        "172.29.100.1",
