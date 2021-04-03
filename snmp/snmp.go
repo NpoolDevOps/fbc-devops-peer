@@ -4,6 +4,9 @@ import (
 	"fmt"
 	log "github.com/EntropyPool/entropy-logger"
 	g "github.com/gosnmp/gosnmp"
+	"golang.org/x/xerrors"
+	"strings"
+	"time"
 )
 
 type SnmpClient struct {
@@ -22,9 +25,9 @@ func NewSnmpClient(target string, community string) *SnmpClient {
 
 func (c *SnmpClient) CpuUsage() ([]string, error) {
 	oids := []string{
-		"1.3.6.1.4.1.2021.11.9.0",
-		"1.3.6.1.4.1.2021.11.10.0",
-		"1.3.6.1.4.1.2021.11.11.0",
+		".1.3.6.1.4.1.2021.11.9.0",
+		".1.3.6.1.4.1.2021.11.10.0",
+		".1.3.6.1.4.1.2021.11.11.0",
 	}
 
 	outs, err := c.get(oids)
@@ -36,14 +39,28 @@ func (c *SnmpClient) CpuUsage() ([]string, error) {
 }
 
 func (c *SnmpClient) get(oids []string) ([]string, error) {
-	g.Default.Target = c.target
+	cli := &g.GoSNMP{
+		Target:        c.target,
+		Port:          161,
+		Version:       g.Version3,
+		SecurityModel: g.UserSecurityModel,
+		MsgFlags:      g.AuthPriv,
+		Timeout:       time.Duration(30) * time.Second,
+		SecurityParameters: &g.UsmSecurityParameters{
+			UserName:                 "user",
+			AuthenticationProtocol:   g.SHA,
+			AuthenticationPassphrase: "password",
+			PrivacyProtocol:          g.DES,
+			PrivacyPassphrase:        "password",
+		},
+	}
 
-	if err := g.Default.Connect(); err != nil {
+	if err := cli.Connect(); err != nil {
 		return nil, err
 	}
-	defer g.Default.Conn.Close()
+	defer cli.Conn.Close()
 
-	rc, err := g.Default.Get(oids)
+	rc, err := cli.Get(oids)
 	if err != nil {
 		return nil, err
 	}
@@ -51,6 +68,9 @@ func (c *SnmpClient) get(oids []string) ([]string, error) {
 	rcs := []string{}
 
 	for i, v := range rc.Variables {
+		if strings.HasSuffix(v.Name, "1.3.6.1.6.3.15.1.1.3.0") {
+			return nil, xerrors.Errorf("unknow username or password")
+		}
 		log.Infof(log.Fields{}, "%v: oid: %v", i, v.Name)
 		switch v.Type {
 		case g.OctetString:
