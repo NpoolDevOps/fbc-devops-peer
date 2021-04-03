@@ -7,6 +7,7 @@ import (
 	log "github.com/EntropyPool/entropy-logger"
 	"github.com/NpoolDevOps/fbc-devops-peer/basenode"
 	devops "github.com/NpoolDevOps/fbc-devops-peer/devops"
+	snmpmetrics "github.com/NpoolDevOps/fbc-devops-peer/metrics/snmpmetrics"
 	mytypes "github.com/NpoolDevOps/fbc-devops-peer/types"
 	devopsapi "github.com/NpoolDevOps/fbc-devops-service/devopsapi"
 	types "github.com/NpoolDevOps/fbc-devops-service/types"
@@ -31,6 +32,7 @@ type hostMonitor struct {
 
 type GatewayNode struct {
 	*basenode.Basenode
+	snmpMetrics     *snmpmetrics.SnmpMetrics
 	topologyTicker  *time.Ticker
 	addressWaiter   chan struct{}
 	onlineChecker   chan struct{}
@@ -42,6 +44,7 @@ func NewGatewayNode(config *basenode.BasenodeConfig, devopsClient *devops.Devops
 	log.Infof(log.Fields{}, "create %v ndoe", config.NodeConfig.MainRole)
 	gateway := &GatewayNode{
 		basenode.NewBasenode(config, devopsClient),
+		snmpmetrics.NewSnmpMetrics(),
 		time.NewTicker(2 * time.Minute),
 		make(chan struct{}, 10),
 		make(chan struct{}, 10),
