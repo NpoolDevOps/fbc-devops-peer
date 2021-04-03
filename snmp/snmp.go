@@ -2,9 +2,11 @@ package fbcsnmp
 
 import (
 	"fmt"
-	log "github.com/EntropyPool/entropy-logger"
+	log1 "github.com/EntropyPool/entropy-logger"
 	g "github.com/gosnmp/gosnmp"
 	"golang.org/x/xerrors"
+	"log"
+	"os"
 	"strings"
 	"time"
 )
@@ -14,6 +16,7 @@ type SnmpConfig struct {
 	community string
 	username  string
 	password  string
+	verbose   bool
 }
 
 type SnmpClient struct {
@@ -59,6 +62,10 @@ func (c *SnmpClient) get(oids []string) ([]string, error) {
 		},
 	}
 
+	if c.config.verbose {
+		cli.Logger = log.New(os.Stdout, "", 0)
+	}
+
 	if err := cli.Connect(); err != nil {
 		return nil, err
 	}
@@ -75,7 +82,7 @@ func (c *SnmpClient) get(oids []string) ([]string, error) {
 		if strings.HasSuffix(v.Name, "1.3.6.1.6.3.15.1.1.3.0") {
 			return nil, xerrors.Errorf("unknow username or password")
 		}
-		log.Infof(log.Fields{}, "%v: oid: %v", i, v.Name)
+		log1.Infof(log1.Fields{}, "%v: oid: %v", i, v.Name)
 		switch v.Type {
 		case g.OctetString:
 			rcs = append(rcs, string(v.Value.([]byte)))

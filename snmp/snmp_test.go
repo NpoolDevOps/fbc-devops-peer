@@ -11,6 +11,7 @@ func TestCpuUsage(t *testing.T) {
 		community: "shangchi123",
 		username:  "172.29.100.1",
 		password:  "shangchi123",
+		verbose:   true,
 	})
 	usages, err := snmp.CpuUsage()
 	if err != nil {
