@@ -13,9 +13,9 @@ func TestCpuUsage(t *testing.T) {
 		password:  "shangchi123",
 		verbose:   true,
 	})
-	usages, err := snmp.CpuUsage()
+	user, sys, idle, err := snmp.CpuUsage()
 	if err != nil {
 		log.Infof(log.Fields{}, "fail to get cpu usage: %v", err)
 	}
-	log.Infof(log.Fields{}, "cpu usages: %v", usages)
+	log.Infof(log.Fields{}, "cpu usages: %v | %v | %v", user, sys, idle)
 }

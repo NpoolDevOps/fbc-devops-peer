@@ -7,6 +7,7 @@ import (
 	"golang.org/x/xerrors"
 	"log"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -29,7 +30,7 @@ func NewSnmpClient(config SnmpConfig) *SnmpClient {
 	}
 }
 
-func (c *SnmpClient) CpuUsage() ([]string, error) {
+func (c *SnmpClient) CpuUsage() (int, int, int, error) {
 	oids := []string{
 		".1.3.6.1.4.1.2021.11.9.0",
 		".1.3.6.1.4.1.2021.11.10.0",
@@ -38,17 +39,21 @@ func (c *SnmpClient) CpuUsage() ([]string, error) {
 
 	outs, err := c.get(oids)
 	if err != nil {
-		return outs, err
+		return 100000, 100000, 100000, err
 	}
 
-	return outs, nil
+	user, _ := strconv.ParseInt(outs[0], 10, 32)
+	sys, _ := strconv.ParseInt(outs[1], 10, 32)
+	idle, _ := strconv.ParseInt(outs[2], 10, 32)
+
+	return int(user), int(sys), int(idle), nil
 }
 
 func (c *SnmpClient) get(oids []string) ([]string, error) {
 	cli := &g.GoSNMP{
 		Target:        c.config.target,
 		Port:          161,
-		Version:       g.Version3,
+		Version:       g.Version2c,
 		Community:     c.config.community,
 		SecurityModel: g.UserSecurityModel,
 		MsgFlags:      g.AuthPriv,
