@@ -19,6 +19,7 @@ type SnmpConfig struct {
 	Password        string
 	verbose         bool
 	ConfigBandwidth int64
+	Label           string
 }
 
 type SnmpClient struct {

@@ -65,6 +65,9 @@ func main() {
 				Name:  "snmp-config-in-bandwidth",
 				Value: "500MiB",
 			},
+			&cli.StringFlag{
+				Name: "location-label",
+			},
 		},
 		Action: func(cctx *cli.Context) error {
 			if cctx.String("main-role") == "" {
@@ -120,6 +123,7 @@ func main() {
 						Username:        cctx.String("snmp-user"),
 						Password:        cctx.String("snmp-pass"),
 						ConfigBandwidth: configBw,
+						Label:           cctx.String("location-label"),
 					},
 				}, client)
 			case types.FullMinerNode:

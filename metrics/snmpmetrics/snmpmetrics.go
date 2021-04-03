@@ -15,7 +15,10 @@ type SnmpMetrics struct {
 	SnmpError              *prometheus.Desc
 	NetworkBandwidth       *prometheus.Desc
 	NetworkConfigBandwidth *prometheus.Desc
+	NetworkRecvBytes       *prometheus.Desc
+	NetworkSendBytes       *prometheus.Desc
 	snmpClient             *snmp.SnmpClient
+	label                  string
 }
 
 func NewSnmpMetrics(config *snmp.SnmpConfig) *SnmpMetrics {
@@ -55,12 +58,23 @@ func NewSnmpMetrics(config *snmp.SnmpConfig) *SnmpMetrics {
 			"Switcher network config bandwidth",
 			nil, nil,
 		),
+		NetworkRecvBytes: prometheus.NewDesc(
+			"switcher_network_recv_bytes",
+			"Switcher network recv bytes",
+			nil, nil,
+		),
+		NetworkSendBytes: prometheus.NewDesc(
+			"switcher_network_send_bytes",
+			"Switcher network send bytes",
+			nil, nil,
+		),
 		SnmpError: prometheus.NewDesc(
 			"switcher_snmp_error",
 			"Switcher snmp error",
 			nil, nil,
 		),
 		snmpClient: snmp.NewSnmpClient(config),
+		label:      config.Label,
 	}
 }
 
@@ -76,4 +90,31 @@ func (m *SnmpMetrics) Describe(ch chan<- *prometheus.Desc) {
 }
 
 func (m *SnmpMetrics) Collect(ch chan<- prometheus.Metric) {
+	snmpError := 0
+
+	cpuUser, cpuSys, cpuIdle, err := m.snmpClient.CpuUsage()
+	if err != nil {
+		snmpError += 1
+	}
+
+	bw, configBw, err := m.snmpClient.NetworkBandwidth()
+	if err != nil {
+		snmpError += 1
+	}
+
+	recvBytes, sendBytes, err := m.snmpClient.NetworkBytes()
+	if err != nil {
+		snmpError += 1
+	}
+
+	ch <- prometheus.MustNewConstMetric(m.CpuUserPercent, prometheus.CounterValue, float64(cpuUser), m.label)
+	ch <- prometheus.MustNewConstMetric(m.CpuIdlePercent, prometheus.CounterValue, float64(cpuSys), m.label)
+	ch <- prometheus.MustNewConstMetric(m.CpuSysPercent, prometheus.CounterValue, float64(cpuIdle), m.label)
+	ch <- prometheus.MustNewConstMetric(m.MemTotalReal, prometheus.CounterValue, float64(0), m.label)
+	ch <- prometheus.MustNewConstMetric(m.MemUsedReal, prometheus.CounterValue, float64(0), m.label)
+	ch <- prometheus.MustNewConstMetric(m.NetworkBandwidth, prometheus.CounterValue, float64(bw), m.label)
+	ch <- prometheus.MustNewConstMetric(m.NetworkConfigBandwidth, prometheus.CounterValue, float64(configBw), m.label)
+	ch <- prometheus.MustNewConstMetric(m.NetworkRecvBytes, prometheus.CounterValue, float64(recvBytes), m.label)
+	ch <- prometheus.MustNewConstMetric(m.NetworkSendBytes, prometheus.CounterValue, float64(sendBytes), m.label)
+	ch <- prometheus.MustNewConstMetric(m.SnmpError, prometheus.CounterValue, float64(snmpError), m.label)
 }
