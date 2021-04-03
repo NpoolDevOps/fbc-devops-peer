@@ -7,12 +7,14 @@ import (
 	log "github.com/EntropyPool/entropy-logger"
 	"github.com/NpoolDevOps/fbc-devops-peer/basenode"
 	devops "github.com/NpoolDevOps/fbc-devops-peer/devops"
+	exporter "github.com/NpoolDevOps/fbc-devops-peer/exporter"
 	snmpmetrics "github.com/NpoolDevOps/fbc-devops-peer/metrics/snmpmetrics"
 	snmp "github.com/NpoolDevOps/fbc-devops-peer/snmp"
 	mytypes "github.com/NpoolDevOps/fbc-devops-peer/types"
 	devopsapi "github.com/NpoolDevOps/fbc-devops-service/devopsapi"
 	types "github.com/NpoolDevOps/fbc-devops-service/types"
 	"github.com/NpoolRD/http-daemon"
+	"github.com/prometheus/client_golang/prometheus"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"os"
@@ -116,7 +118,7 @@ func (g *GatewayNode) updateTopology() {
 				monitor.ports = append(monitor.ports, 9283)
 			}
 		}
-		if device.Role != mytypes.StorageNode && device.Role != mytypes.FullNode {
+		if device.Role != mytypes.StorageNode && device.Role != mytypes.GatewayNode {
 			monitor.ports = append(monitor.ports, 9400)
 		}
 		hosts[device.LocalAddr] = monitor
@@ -325,6 +327,18 @@ func (g *GatewayNode) reloadConfig() {
 	}
 
 	log.Infof(log.Fields{}, "monitor configuration reloaded")
+}
+
+func (n *GatewayNode) Describe(ch chan<- *prometheus.Desc) {
+	n.snmpMetrics.Describe(ch)
+}
+
+func (n *GatewayNode) Collect(ch chan<- prometheus.Metric) {
+	n.snmpMetrics.Collect(ch)
+}
+
+func (n *GatewayNode) CreateExporter() *exporter.Exporter {
+	return exporter.NewExporter(n)
 }
 
 func (g *GatewayNode) Banner() {
