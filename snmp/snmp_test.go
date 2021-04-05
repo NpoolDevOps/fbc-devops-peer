@@ -11,7 +11,7 @@ func TestCpuUsage(t *testing.T) {
 		Community: "shangchi123",
 		Username:  "172.29.100.1",
 		Password:  "shangchi123",
-		verbose:   true,
+		verbose:   false,
 	})
 	user, sys, idle, err := snmp.CpuUsage()
 	if err != nil {
@@ -26,14 +26,14 @@ func TestNetwork(t *testing.T) {
 		Community:       "shangchi123",
 		Username:        "172.29.100.1",
 		Password:        "shangchi123",
-		verbose:         true,
+		verbose:         false,
 		ConfigBandwidth: 500 * 1024 * 1024,
 	})
-	bw, configBw, err := snmp.NetworkBandwidth()
+	inbw, outbw, configBw, err := snmp.NetworkBandwidth()
 	if err != nil {
 		log.Infof(log.Fields{}, "fail to get network bandwidth: %v", err)
 	}
-	log.Infof(log.Fields{}, "network bandwidth: %v | %v", bw, configBw)
+	log.Infof(log.Fields{}, "network bandwidth: %v | %v | %v", inbw, outbw, configBw)
 
 	recvBytes, sendBytes, err := snmp.NetworkBytes()
 	if err != nil {

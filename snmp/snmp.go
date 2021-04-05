@@ -74,15 +74,22 @@ func (c *SnmpClient) CpuUsage() (int, int, int, error) {
 	return int(user), int(sys), int(idle), nil
 }
 
-func (c *SnmpClient) NetworkBandwidth() (int64, int64, error) {
-	oid := ".1.3.6.1.2.1.2.2.1.5"
+func (c *SnmpClient) NetworkBandwidth() (int64, int64, int64, error) {
+	oid := ".1.3.6.1.2.1.2.2.1.5.195"
 	bwStr, err := c.walk(oid)
 	if err != nil {
-		return 0, 0, err
+		return 0, 0, 0, err
 	}
+	inbw, _ := strconv.ParseInt(bwStr, 10, 32)
 
-	bw, _ := strconv.ParseInt(bwStr, 10, 32)
-	return bw, c.config.ConfigBandwidth, nil
+	oid = ".1.3.6.1.2.1.2.2.1.16.195"
+	bwStr, err = c.walk(oid)
+	if err != nil {
+		return 0, 0, 0, err
+	}
+	outbw, _ := strconv.ParseInt(bwStr, 10, 32)
+
+	return inbw, outbw, c.config.ConfigBandwidth, nil
 }
 
 func (c *SnmpClient) NetworkBytes() (int64, int64, error) {

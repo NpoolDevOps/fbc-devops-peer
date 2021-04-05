@@ -1,6 +1,7 @@
 package snmpmetrics
 
 import (
+	log "github.com/EntropyPool/entropy-logger"
 	snmp "github.com/NpoolDevOps/fbc-devops-peer/snmp"
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -13,7 +14,8 @@ type SnmpMetrics struct {
 	MemTotalReal           *prometheus.Desc
 	MemUsedReal            *prometheus.Desc
 	SnmpError              *prometheus.Desc
-	NetworkBandwidth       *prometheus.Desc
+	NetworkInBandwidth     *prometheus.Desc
+	NetworkOutBandwidth    *prometheus.Desc
 	NetworkConfigBandwidth *prometheus.Desc
 	NetworkRecvBytes       *prometheus.Desc
 	NetworkSendBytes       *prometheus.Desc
@@ -26,7 +28,7 @@ func NewSnmpMetrics(config *snmp.SnmpConfig) *SnmpMetrics {
 		CpuUserPercent: prometheus.NewDesc(
 			"switcher_cpu_user_percent",
 			"Switcher cpu user percent",
-			[]string{config.Label}, nil,
+			[]string{"location"}, nil,
 		),
 		CpuSysPercent: prometheus.NewDesc(
 			"switcher_cpu_sys_percent",
@@ -48,9 +50,14 @@ func NewSnmpMetrics(config *snmp.SnmpConfig) *SnmpMetrics {
 			"Switcher mem used real",
 			[]string{"location"}, nil,
 		),
-		NetworkBandwidth: prometheus.NewDesc(
-			"switcher_network_bandwidth",
-			"Switcher network bandwidth",
+		NetworkInBandwidth: prometheus.NewDesc(
+			"switcher_network_in_bandwidth",
+			"Switcher network in bandwidth",
+			[]string{"location"}, nil,
+		),
+		NetworkOutBandwidth: prometheus.NewDesc(
+			"switcher_network_out_bandwidth",
+			"Switcher network out bandwidth",
 			[]string{"location"}, nil,
 		),
 		NetworkConfigBandwidth: prometheus.NewDesc(
@@ -84,7 +91,8 @@ func (m *SnmpMetrics) Describe(ch chan<- *prometheus.Desc) {
 	ch <- m.CpuSysPercent
 	ch <- m.MemTotalReal
 	ch <- m.MemUsedReal
-	ch <- m.NetworkBandwidth
+	ch <- m.NetworkInBandwidth
+	ch <- m.NetworkOutBandwidth
 	ch <- m.NetworkConfigBandwidth
 	ch <- m.SnmpError
 }
@@ -94,16 +102,19 @@ func (m *SnmpMetrics) Collect(ch chan<- prometheus.Metric) {
 
 	cpuUser, cpuSys, cpuIdle, err := m.snmpClient.CpuUsage()
 	if err != nil {
+		log.Errorf(log.Fields{}, "fail to get cpu usage: %v", err)
 		snmpError += 1
 	}
 
-	bw, configBw, err := m.snmpClient.NetworkBandwidth()
+	inbw, outbw, configBw, err := m.snmpClient.NetworkBandwidth()
 	if err != nil {
+		log.Errorf(log.Fields{}, "fail to get network bandwidth: %v", err)
 		snmpError += 1
 	}
 
 	recvBytes, sendBytes, err := m.snmpClient.NetworkBytes()
 	if err != nil {
+		log.Errorf(log.Fields{}, "fail to get network bytes: %v", err)
 		snmpError += 1
 	}
 
@@ -112,7 +123,8 @@ func (m *SnmpMetrics) Collect(ch chan<- prometheus.Metric) {
 	ch <- prometheus.MustNewConstMetric(m.CpuSysPercent, prometheus.CounterValue, float64(cpuIdle), m.label)
 	ch <- prometheus.MustNewConstMetric(m.MemTotalReal, prometheus.CounterValue, float64(0), m.label)
 	ch <- prometheus.MustNewConstMetric(m.MemUsedReal, prometheus.CounterValue, float64(0), m.label)
-	ch <- prometheus.MustNewConstMetric(m.NetworkBandwidth, prometheus.CounterValue, float64(bw), m.label)
+	ch <- prometheus.MustNewConstMetric(m.NetworkInBandwidth, prometheus.CounterValue, float64(inbw), m.label)
+	ch <- prometheus.MustNewConstMetric(m.NetworkOutBandwidth, prometheus.CounterValue, float64(outbw), m.label)
 	ch <- prometheus.MustNewConstMetric(m.NetworkConfigBandwidth, prometheus.CounterValue, float64(configBw), m.label)
 	ch <- prometheus.MustNewConstMetric(m.NetworkRecvBytes, prometheus.CounterValue, float64(recvBytes), m.label)
 	ch <- prometheus.MustNewConstMetric(m.NetworkSendBytes, prometheus.CounterValue, float64(sendBytes), m.label)
