@@ -110,6 +110,39 @@ func (c *SnmpClient) NetworkBytes() (int64, int64, error) {
 	return recv, send, nil
 }
 
+func (c *SnmpClient) OutDiscards() (int64, error) {
+	oid := ".1.3.6.1.2.1.2.2.1.19.195"
+	disStr, err := c.walk(oid)
+	if err != nil {
+		return 0, err
+	}
+
+	dis, _ := strconv.ParseInt(disStr, 10, 32)
+	return dis, nil
+}
+
+func (c *SnmpClient) OutErrors() (int64, error) {
+	oid := ".1.3.6.1.2.1.2.2.1.20.195"
+	errStr, err := c.walk(oid)
+	if err != nil {
+		return 0, err
+	}
+
+	outerr, _ := strconv.ParseInt(errStr, 10, 32)
+	return outerr, nil
+}
+
+func (c *SnmpClient) MemorySize() (int64, error) {
+	oid := ".1.3.6.1.2.1.25.2.2"
+	msStr, err := c.walk(oid)
+	if err != nil {
+		return 0, err
+	}
+
+	ms, _ := strconv.ParseInt(msStr, 10, 32)
+	return ms, nil
+}
+
 func (c *SnmpClient) parsePdu(pdu g.SnmpPDU) string {
 	switch pdu.Type {
 	case g.OctetString:

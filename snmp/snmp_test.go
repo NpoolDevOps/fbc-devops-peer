@@ -40,4 +40,22 @@ func TestNetwork(t *testing.T) {
 		log.Infof(log.Fields{}, "fail to get network bytes: %v", err)
 	}
 	log.Infof(log.Fields{}, "network bytes: %v | %v", recvBytes, sendBytes)
+
+	dis, err := snmp.OutDiscards()
+	if err != nil {
+		log.Infof(log.Fields{}, "fail to get out discards: %v", err)
+	}
+	log.Infof(log.Fields{}, "out discards: %v", dis)
+
+	outerr, err := snmp.OutErrors()
+	if err != nil {
+		log.Infof(log.Fields{}, "fail to get out errors: %v", err)
+	}
+	log.Infof(log.Fields{}, "out errors: %v", outerr)
+
+	ms, err := snmp.MemorySize()
+	if err != nil {
+		log.Infof(log.Fields{}, "fail to get memory size: %v", err)
+	}
+	log.Infof(log.Fields{}, "memory size: %v", ms)
 }
