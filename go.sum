@@ -39,6 +39,8 @@ github.com/EntropyPool/machine-spec v0.0.0-20210325103529-e4ba6232c0fc h1:V6FW7o
 github.com/EntropyPool/machine-spec v0.0.0-20210325103529-e4ba6232c0fc/go.mod h1:WWX9wIJ6uWaZLDEUZjMPm5q32dJT6g/LPIpzAayIn/I=
 github.com/EntropyPool/machine-spec v0.0.0-20210326115744-eaf9c297f65c h1:d+N7DLBzDznHPZETsp+CMKhlCIf1LHhcMcgTOeyymQ0=
 github.com/EntropyPool/machine-spec v0.0.0-20210326115744-eaf9c297f65c/go.mod h1:WWX9wIJ6uWaZLDEUZjMPm5q32dJT6g/LPIpzAayIn/I=
+github.com/EntropyPool/machine-spec v0.0.0-20210408033101-2db09d058812 h1:diMNU4lF24Xksk+r8EZH54/2Rx18KlyXob6K3l6QMCY=
+github.com/EntropyPool/machine-spec v0.0.0-20210408033101-2db09d058812/go.mod h1:WWX9wIJ6uWaZLDEUZjMPm5q32dJT6g/LPIpzAayIn/I=
 github.com/GeertJohan/go-sourcepath v0.0.0-20150925135350-83e8b8723a9b h1:D4H5C4VvURnduTQydyEhA6OWnNcZTLUlNX4YBw5yelY=
 github.com/GeertJohan/go-sourcepath v0.0.0-20150925135350-83e8b8723a9b/go.mod h1:X/dh6iyBHZUR+NSNoO9isIl7cRw4n09jwjK5tfr+Rno=
 github.com/GeertJohan/go.incremental v1.0.0/go.mod h1:6fAjUhbVuX1KcMD3c8TEgVUqmo4seqhv0i0kdATSkM0=
