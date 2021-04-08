@@ -107,7 +107,9 @@ func pingStatistic(host string) (ms int64, rate float64) {
 		return -1, -1
 	}
 
+	pinger.SetPrivileged(true)
 	pinger.Count = 200
+
 	err = pinger.Run()
 	if err != nil {
 		log.Errorf(log.Fields{}, "fail to run pinger %v: %v", host, err)
