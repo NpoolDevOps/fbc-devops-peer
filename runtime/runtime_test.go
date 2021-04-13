@@ -49,3 +49,8 @@ func TestGetHddDesc(t *testing.T) {
 	desc, _ := GetHddDesc()
 	log.Infof(log.Fields{}, "hdd desc: %v", desc)
 }
+
+func TestGetEthernetCount(t *testing.T) {
+	count, err := GetEthernetCount()
+	log.Infof(log.Fields{}, "ethernet count: %v | %v", count, err)
+}

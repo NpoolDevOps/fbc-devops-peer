@@ -1,11 +1,13 @@
 package devopsruntime
 
 import (
+	"bufio"
 	"encoding/json"
 	log "github.com/EntropyPool/entropy-logger"
 	machspec "github.com/EntropyPool/machine-spec"
 	"github.com/jaypipes/ghw"
 	"github.com/rai-project/nvidia-smi"
+	"os/exec"
 	"strings"
 )
 
@@ -241,4 +243,37 @@ func GetHddDesc() ([]string, error) {
 	}
 
 	return hddDescs, nil
+}
+
+type Ethernet struct {
+	Description   string `json:"description"`
+	Vendor        string `json:"vendor"`
+	LogicName     string `json:"name"`
+	Serial        string `json:"serial"`
+	Configuration string `json:"configuration"`
+	Ip            string `json:"ip"`
+}
+
+func GetEthernetCount() (int, error) {
+	out, err := exec.Command("lshw", "-C", "network").Output()
+	if err != nil {
+		return 0, err
+	}
+
+	br := bufio.NewReader(strings.NewReader(string(out)))
+	count := 0
+	for {
+		line, _, err := br.ReadLine()
+		if err != nil {
+			break
+		}
+		if strings.Contains(string(line), "description:") {
+			count += 1
+		}
+	}
+	return count, nil
+}
+
+func GetEthernetDesc() ([]Ethernet, error) {
+	return nil, nil
 }
