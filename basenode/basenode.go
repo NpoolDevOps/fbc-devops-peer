@@ -211,16 +211,23 @@ func (n *Basenode) GetAddress() (string, string, error) {
 		"@resolver1.opendns.com", "-b", localAddr,
 	).Output()
 	if err == nil {
+		n.hasPublicAddr = true
 		return localAddr, string(addr), nil
 	}
 
 	publicAddr, err := n.getPublicAddr("inet-ip.info")
-	if err != nil {
-		return localAddr, "", err
+	if err == nil {
+		n.hasPublicAddr = true
+		return localAddr, publicAddr, err
 	}
 
-	n.hasPublicAddr = true
-	return localAddr, publicAddr, nil
+	publicAddr, err = n.getPublicAddr("curl ipinfo.io/ip")
+	if err == nil {
+		n.hasPublicAddr = true
+		return localAddr, publicAddr, err
+	}
+
+	return localAddr, "", err
 }
 
 func (n *Basenode) AddressUpdater() {
@@ -230,6 +237,7 @@ func (n *Basenode) AddressUpdater() {
 			updated := false
 			localAddr, publicAddr, err := n.GetAddress()
 			if err != nil {
+				<-ticker.C
 				continue
 			}
 
