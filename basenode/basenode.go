@@ -200,6 +200,11 @@ func (n *Basenode) getPublicAddr(url string) (string, error) {
 		return "", err
 	}
 
+	addr := net.ParseIP(string(body))
+	if addr == nil {
+		return "", xerrors.Errorf("invalid ip address")
+	}
+
 	return string(body), nil
 }
 
@@ -215,17 +220,23 @@ func (n *Basenode) GetAddress() (string, string, error) {
 		return localAddr, string(addr), nil
 	}
 
-	publicAddr, err := n.getPublicAddr("inet-ip.info")
+	log.Errorf(log.Fields{}, "cannot get public address with dig: %v", err)
+
+	publicAddr, err := n.getPublicAddr("http://inet-ip.info/ip")
 	if err == nil {
 		n.hasPublicAddr = true
 		return localAddr, publicAddr, err
 	}
 
-	publicAddr, err = n.getPublicAddr("ipinfo.io/ip")
+	log.Errorf(log.Fields{}, "cannot get public address: %v", err)
+
+	publicAddr, err = n.getPublicAddr("http://ipinfo.io/ip")
 	if err == nil {
 		n.hasPublicAddr = true
 		return localAddr, publicAddr, err
 	}
+
+	log.Errorf(log.Fields{}, "cannot get public address: %v", err)
 
 	return localAddr, "", err
 }
