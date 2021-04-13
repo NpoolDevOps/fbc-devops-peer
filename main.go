@@ -68,6 +68,9 @@ func main() {
 			&cli.StringFlag{
 				Name: "location-label",
 			},
+			&cli.StringFlag{
+				Name: "mon-address",
+			},
 		},
 		Action: func(cctx *cli.Context) error {
 			if cctx.String("main-role") == "" {
@@ -82,9 +85,14 @@ func main() {
 				return xerrors.Errorf("invalid username or password")
 			}
 
+			if cctx.String("mon-address") == "" {
+				return xerrors.Errorf("invalid monitor address")
+			}
+
 			config := &basenode.BasenodeConfig{
 				NodeConfig: &basenode.NodeConfig{
-					MainRole: cctx.String("main-role"),
+					MainRole:  cctx.String("main-role"),
+					LocalAddr: cctx.String("mon-address"),
 				},
 				Username:    cctx.String("username"),
 				Password:    cctx.String("password"),

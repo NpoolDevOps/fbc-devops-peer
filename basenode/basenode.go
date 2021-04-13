@@ -1,6 +1,7 @@
 package basenode
 
 import (
+	"fmt"
 	log "github.com/EntropyPool/entropy-logger"
 	machspec "github.com/EntropyPool/machine-spec"
 	devops "github.com/NpoolDevOps/fbc-devops-peer/devops"
@@ -13,11 +14,11 @@ import (
 	lic "github.com/NpoolDevOps/fbc-license"
 	"github.com/google/uuid"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/xjh22222228/ip"
 	"golang.org/x/xerrors"
+	"io/ioutil"
 	"net"
+	"net/http"
 	"os/exec"
-	"strings"
 	"time"
 )
 
@@ -87,6 +88,7 @@ func NewBasenode(config *BasenodeConfig, devopsClient *devops.DevopsClient) *Bas
 		NetworkType:  config.NetworkType,
 		devopsClient: devopsClient,
 		TestMode:     config.TestMode,
+		hasLocalAddr: true,
 	}
 
 	spec := machspec.NewMachineSpec()
@@ -152,24 +154,72 @@ func (n *Basenode) startLicenseChecker() {
 }
 
 func (n *Basenode) ReadOsSpec() {
-	out, _ := exec.Command("uname -a").Output()
+	out, _ := exec.Command("uname", "-a").Output()
 	n.NodeDesc.NodeConfig.OsSpec = string(out)
 }
 
+func (n *Basenode) getPublicAddr(url string) (string, error) {
+	localAddr := n.NodeDesc.NodeConfig.LocalAddr
+
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return "", err
+	}
+
+	client := &http.Client{
+		Transport: &http.Transport{
+			Dial: func(network, addr string) (net.Conn, error) {
+				localAddr, err := net.ResolveTCPAddr(network, fmt.Sprintf("%v:0", localAddr))
+				if err != nil {
+					return nil, err
+				}
+				remoteAddr, err := net.ResolveTCPAddr(network, addr)
+				if err != nil {
+					return nil, err
+				}
+				conn, err := net.DialTCP(network, localAddr, remoteAddr)
+				if err != nil {
+					return nil, err
+				}
+				deadline := time.Now().Add(35 * time.Second)
+				conn.SetDeadline(deadline)
+				return conn, nil
+			},
+		},
+	}
+
+	req.Header.Set("User-Agent",
+		"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/27.0.1453.93 Safari/537.36")
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	return string(body), nil
+}
+
 func (n *Basenode) GetAddress() (string, string, error) {
-	conn, err := net.Dial("udp", "8.8.8.8:80")
-	if err != nil {
-		return "", "", err
-	}
-	localAddr := strings.Split(conn.LocalAddr().String(), ":")[0]
-	n.hasLocalAddr = true
+	localAddr := n.NodeDesc.NodeConfig.LocalAddr
 
-	publicAddr, err := ip.V4()
-	if err != nil {
-		return "", "", err
+	addr, err := exec.Command(
+		"dig", "+short", "myip.opendns.com",
+		"@resolver1.opendns.com", "-b", localAddr,
+	).Output()
+	if err == nil {
+		return localAddr, string(addr), nil
 	}
+
+	publicAddr, err := n.getPublicAddr("inet-ip.info")
+	if err != nil {
+		return localAddr, "", err
+	}
+
 	n.hasPublicAddr = true
-
 	return localAddr, publicAddr, nil
 }
 
