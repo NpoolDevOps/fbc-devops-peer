@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/NpoolDevOps/fbc-devops-peer/api/lotusbase"
+	"github.com/NpoolDevOps/fbc-devops-peer/version"
 	"github.com/filecoin-project/lotus/api"
 	"github.com/filecoin-project/lotus/chain/types"
 	"github.com/libp2p/go-libp2p-core/peer"
@@ -122,4 +123,19 @@ func ClientNetPeers(host string) (int, error) {
 	json.Unmarshal(bs, &peers)
 
 	return len(peers), nil
+}
+
+func ClientVersion(host string) (version.Version, error) {
+	bs, err := lotusbase.Request(lotusRpcUrl(host), []string{}, "Filecoin.Version")
+	if err != nil {
+		return version.Version{}, err
+	}
+
+	ver := api.APIVersion{}
+	json.Unmarshal(bs, &ver)
+
+	return version.Version{
+		Application: "lotus",
+		Version:     ver.Version,
+	}, nil
 }

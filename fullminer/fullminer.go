@@ -2,10 +2,12 @@ package fullminer
 
 import (
 	log "github.com/EntropyPool/entropy-logger"
+	lotusapi "github.com/NpoolDevOps/fbc-devops-peer/api/lotusapi"
 	"github.com/NpoolDevOps/fbc-devops-peer/basenode"
 	devops "github.com/NpoolDevOps/fbc-devops-peer/devops"
 	exporter "github.com/NpoolDevOps/fbc-devops-peer/exporter"
 	lotusmetrics "github.com/NpoolDevOps/fbc-devops-peer/metrics/lotusmetrics"
+	version "github.com/NpoolDevOps/fbc-devops-peer/version"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -22,12 +24,24 @@ func NewFullMinerNode(config *basenode.BasenodeConfig, devopsClient *devops.Devo
 	}
 
 	fullminer.SetAddrNotifier(fullminer.addressNotifier)
+	fullminer.WatchVersions(fullminer.getVersions)
 
 	return fullminer
 }
 
 func (n *FullMinerNode) addressNotifier(local, public string) {
 	n.lotusMetrics.SetHost(local)
+}
+
+func (n *FullMinerNode) getVersions(host string) []version.Version {
+	vers := []version.Version{}
+
+	ver, err := lotusapi.ClientVersion(host)
+	if err == nil {
+		vers = append(vers, ver)
+	}
+
+	return vers
 }
 
 func (n *FullMinerNode) Describe(ch chan<- *prometheus.Desc) {

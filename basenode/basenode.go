@@ -1,6 +1,7 @@
 package basenode
 
 import (
+	"encoding/json"
 	"fmt"
 	log "github.com/EntropyPool/entropy-logger"
 	machspec "github.com/EntropyPool/machine-spec"
@@ -130,6 +131,38 @@ func (n *Basenode) SetPeer(p interface{}) {
 
 func (n *Basenode) SetAddrNotifier(addrNotifier func(string, string)) {
 	n.addrNotifier = addrNotifier
+}
+
+func (n *Basenode) WatchVersions(versionGetter func(string) []version.Version) {
+	go func() {
+		ticker := time.NewTicker(2 * time.Minute)
+		vers := []version.Version{}
+		for {
+			localAddr, err := n.MyLocalAddr()
+			if err != nil {
+				<-ticker.C
+				continue
+			}
+			vs := versionGetter(localAddr)
+			updated := false
+			for _, ver := range vers {
+				for _, v := range vs {
+					if v.Application == ver.Application {
+						if v.Version != ver.Version {
+							updated = true
+						}
+					}
+				}
+			}
+
+			if updated {
+				n.Versions = vs
+				n.devopsClient.FeedMsg(types.DeviceRegisterAPI, n.ToDeviceRegisterInput(), true)
+			}
+
+			<-ticker.C
+		}
+	}()
 }
 
 func (n *Basenode) SetApplicationVersions(versions []version.Version) {
@@ -286,6 +319,13 @@ func (n *Basenode) AddressUpdater() {
 }
 
 func (n *Basenode) ToDeviceRegisterInput() *types.DeviceRegisterInput {
+	versions := []string{}
+
+	for _, ver := range n.Versions {
+		b, _ := json.Marshal(ver)
+		versions = append(versions, string(b))
+	}
+
 	return &types.DeviceRegisterInput{
 		Id:            n.Id,
 		Spec:          n.NodeDesc.MySpec,
@@ -309,6 +349,7 @@ func (n *Basenode) ToDeviceRegisterInput() *types.DeviceRegisterInput {
 		OsSpec:        n.NodeDesc.NodeConfig.OsSpec,
 		EthernetCount: n.NodeDesc.HardwareInfo.EthernetCount,
 		EthernetDesc:  n.NodeDesc.HardwareInfo.EthernetDesc,
+		Versions:      versions,
 	}
 }
 
@@ -393,6 +434,11 @@ func (n *Basenode) Collect(ch chan<- prometheus.Metric) {
 
 func (n *Basenode) CreateExporter() *exporter.Exporter {
 	return exporter.NewExporter(n)
+}
+
+func GetVersions(host string) []version.Version {
+	log.Infof(log.Fields{}, "NOT IMPLEMENT FOR BASENODE")
+	return nil
 }
 
 func (n *Basenode) Banner() {
