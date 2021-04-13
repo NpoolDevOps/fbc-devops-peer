@@ -252,6 +252,8 @@ type Ethernet struct {
 	Serial        string `json:"serial"`
 	Configuration string `json:"configuration"`
 	Ip            string `json:"ip"`
+	BusInfo       string `json:"bus_info"`
+	Capacity      string `json:"capacity"`
 }
 
 func GetEthernetCount() (int, error) {
@@ -275,5 +277,65 @@ func GetEthernetCount() (int, error) {
 }
 
 func GetEthernetDesc() ([]Ethernet, error) {
-	return nil, nil
+	out, err := exec.Command("lshw", "-C", "network").Output()
+	if err != nil {
+		return nil, err
+	}
+
+	eths := []Ethernet{}
+	br := bufio.NewReader(strings.NewReader(string(out)))
+	eth := Ethernet{}
+	parsed := false
+	hasNetwork := false
+
+	for {
+		line, _, err := br.ReadLine()
+		if err != nil {
+			break
+		}
+
+		if strings.Contains(string(line), "*-network") && parsed {
+			eths = append(eths, eth)
+			eth = Ethernet{}
+			hasNetwork = true
+		}
+
+		if strings.Contains(string(line), "description:") {
+			eth.Description = strings.Split(string(line), ": ")[1]
+		}
+		if strings.Contains(string(line), "vendor:") {
+			eth.Vendor = strings.Split(string(line), ": ")[1]
+		}
+		if strings.Contains(string(line), "logic name:") {
+			eth.LogicName = strings.Split(string(line), ": ")[1]
+		}
+		if strings.Contains(string(line), "serial:") {
+			eth.Serial = strings.Split(string(line), ": ")[1]
+		}
+		if strings.Contains(string(line), "bus info:") {
+			eth.BusInfo = strings.Split(string(line), ": ")[1]
+		}
+		if strings.Contains(string(line), "configuration:") {
+			eth.Configuration = strings.Split(string(line), ": ")[1]
+
+			ips := strings.Split(eth.Configuration, "ip=")
+			if 1 < len(ips) {
+				eth.Ip = strings.Split(ips[1], " ")[0]
+			}
+		}
+		if strings.Contains(string(line), "capacity:") {
+			eth.Capacity = strings.Split(string(line), ": ")[1]
+		}
+		if strings.Contains(string(line), "size:") {
+			eth.Capacity = strings.Split(string(line), ": ")[1]
+		}
+
+		parsed = true
+	}
+
+	if hasNetwork {
+		eths = append(eths, eth)
+	}
+
+	return eths, nil
 }

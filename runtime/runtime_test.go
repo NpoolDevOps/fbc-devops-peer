@@ -54,3 +54,8 @@ func TestGetEthernetCount(t *testing.T) {
 	count, err := GetEthernetCount()
 	log.Infof(log.Fields{}, "ethernet count: %v | %v", count, err)
 }
+
+func TestGetEthernetDesc(t *testing.T) {
+	desc, err := GetEthernetDesc()
+	log.Infof(log.Fields{}, "ethernet desc: %v | %v", desc, err)
+}

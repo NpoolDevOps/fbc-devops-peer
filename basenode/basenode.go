@@ -10,6 +10,7 @@ import (
 	parser "github.com/NpoolDevOps/fbc-devops-peer/parser"
 	"github.com/NpoolDevOps/fbc-devops-peer/peer"
 	runtime "github.com/NpoolDevOps/fbc-devops-peer/runtime"
+	version "github.com/NpoolDevOps/fbc-devops-peer/version"
 	types "github.com/NpoolDevOps/fbc-devops-service/types"
 	lic "github.com/NpoolDevOps/fbc-license"
 	"github.com/google/uuid"
@@ -37,20 +38,23 @@ type Basenode struct {
 	hasLocalAddr  bool
 	addrNotifier  func(string, string)
 	BaseMetrics   *basemetrics.BaseMetrics
+	Versions      []version.Version
 }
 
 type NodeHardware struct {
-	NvmeCount   int      `json:"nvme_count"`
-	NvmeDesc    []string `json:"nvme_desc"`
-	GpuCount    int      `json:"gpu_count"`
-	GpuDesc     []string `json:"gpu_desc"`
-	MemoryCount int      `json:"memory_count"`
-	MemorySize  uint64   `json:"memory_size"`
-	MemoryDesc  []string `json:"memory_desc"`
-	CpuCount    int      `json:"cpu_count"`
-	CpuDesc     []string `json:"cpu_desc"`
-	HddCount    int      `json:"hdd_count"`
-	HddDesc     []string `json:"hdd_count"`
+	NvmeCount     int      `json:"nvme_count"`
+	NvmeDesc      []string `json:"nvme_desc"`
+	GpuCount      int      `json:"gpu_count"`
+	GpuDesc       []string `json:"gpu_desc"`
+	MemoryCount   int      `json:"memory_count"`
+	MemorySize    uint64   `json:"memory_size"`
+	MemoryDesc    []string `json:"memory_desc"`
+	CpuCount      int      `json:"cpu_count"`
+	CpuDesc       []string `json:"cpu_desc"`
+	HddCount      int      `json:"hdd_count"`
+	HddDesc       []string `json:"hdd_count"`
+	EthernetCount int      `json:"ethernet_count"`
+	EthernetDesc  []string `json:"ethernet_desc"`
 }
 
 type NodeDesc struct {
@@ -126,6 +130,10 @@ func (n *Basenode) SetPeer(p interface{}) {
 
 func (n *Basenode) SetAddrNotifier(addrNotifier func(string, string)) {
 	n.addrNotifier = addrNotifier
+}
+
+func (n *Basenode) SetApplicationVersions(versions []version.Version) {
+	n.Versions = versions
 }
 
 func (n *Basenode) Heartbeat(childPeer string) error {
