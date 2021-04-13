@@ -327,6 +327,9 @@ func (h *NodeHardware) UpdateNodeInfo() error {
 	hdds, _ := runtime.GetHddCount()
 	hddDesc, _ := runtime.GetHddDesc()
 
+	eths, _ := runtime.GetEthernetCount()
+	ethDesc, _ := runtime.GetEthernetDesc()
+
 	h.NvmeCount = nvmes
 	h.NvmeDesc = nvmeDesc
 
@@ -342,6 +345,9 @@ func (h *NodeHardware) UpdateNodeInfo() error {
 
 	h.HddCount = hdds
 	h.HddDesc = hddDesc
+
+	h.EthernetCount = eths
+	h.EthernetDesc = ethDesc
 
 	return nil
 }

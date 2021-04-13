@@ -276,13 +276,13 @@ func GetEthernetCount() (int, error) {
 	return count, nil
 }
 
-func GetEthernetDesc() ([]Ethernet, error) {
+func GetEthernetDesc() ([]string, error) {
 	out, err := exec.Command("lshw", "-C", "network").Output()
 	if err != nil {
 		return nil, err
 	}
 
-	eths := []Ethernet{}
+	eths := []string{}
 	br := bufio.NewReader(strings.NewReader(string(out)))
 	eth := Ethernet{}
 	parsed := false
@@ -295,7 +295,8 @@ func GetEthernetDesc() ([]Ethernet, error) {
 		}
 
 		if strings.Contains(string(line), "*-network") && parsed {
-			eths = append(eths, eth)
+			b, _ := json.Marshal(eth)
+			eths = append(eths, string(b))
 			eth = Ethernet{}
 			hasNetwork = true
 		}
@@ -334,7 +335,8 @@ func GetEthernetDesc() ([]Ethernet, error) {
 	}
 
 	if hasNetwork {
-		eths = append(eths, eth)
+		b, _ := json.Marshal(eth)
+		eths = append(eths, string(b))
 	}
 
 	return eths, nil
