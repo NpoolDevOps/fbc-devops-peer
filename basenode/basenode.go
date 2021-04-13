@@ -221,7 +221,7 @@ func (n *Basenode) GetAddress() (string, string, error) {
 		return localAddr, publicAddr, err
 	}
 
-	publicAddr, err = n.getPublicAddr("curl ipinfo.io/ip")
+	publicAddr, err = n.getPublicAddr("ipinfo.io/ip")
 	if err == nil {
 		n.hasPublicAddr = true
 		return localAddr, publicAddr, err
