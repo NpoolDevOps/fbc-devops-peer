@@ -5,9 +5,9 @@ go 1.15
 require (
 	github.com/EntropyPool/entropy-logger v0.0.0-20210320022718-3091537e035f
 	github.com/EntropyPool/machine-spec v0.0.0-20210408033101-2db09d058812
-	github.com/NpoolDevOps/fbc-devops-service v0.0.0-20210327050328-f968ca812d64
+	github.com/NpoolDevOps/fbc-devops-service v0.0.0-20210413053955-6d57518351f4
 	github.com/NpoolDevOps/fbc-license v0.0.0
-	github.com/NpoolDevOps/fbc-license-service v0.0.0-20210327043102-a4a5cab50cf4
+	github.com/NpoolDevOps/fbc-license-service v0.0.0-20210328062839-d1527bc31f7e
 	github.com/NpoolRD/http-daemon v0.0.0-20210324100344-82fee56de8ac
 	github.com/docker/go-units v0.4.0
 	github.com/facebookgo/stack v0.0.0-20160209184415-751773369052 // indirect
