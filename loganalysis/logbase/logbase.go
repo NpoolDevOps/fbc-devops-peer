@@ -13,11 +13,11 @@ import (
 )
 
 type LogLine struct {
-	Level     string    `json:"level"`
-	Logger    string    `json:"logger"`
-	Caller    string    `json:"caller"`
-	Timestamp time.Time `json:"ts"`
-	Msg       string    `json:"msg"`
+	Level     string `json:"level"`
+	Logger    string `json:"logger"`
+	Caller    string `json:"caller"`
+	Timestamp string `json:"ts"`
+	Msg       string `json:"msg"`
 }
 
 func (ll *LogLine) String() string {
@@ -66,14 +66,15 @@ func (lb *Logbase) watch() {
 		logLine := LogLine{}
 		err := json.Unmarshal([]byte(line.Text), &logLine)
 		if err == nil {
-			if logLine.Timestamp.Before(lb.lastLogTime) {
+			timestamp, _ := lb.Timestamp(logLine.Timestamp)
+			if timestamp.Before(lb.lastLogTime) {
 				continue
 			}
 
 			lb.newline <- logLine
 			os.MkdirAll(lb.logTsPath, 0666)
 			err = ioutil.WriteFile(filepath.Join(lb.logTsPath, lb.logTsFile),
-				[]byte(fmt.Sprintf("%v", logLine.Timestamp)), 0666)
+				[]byte(logLine.Timestamp), 0666)
 			if err != nil {
 				log.Errorf(log.Fields{}, "cannot write timestamp: %v", err)
 			}
