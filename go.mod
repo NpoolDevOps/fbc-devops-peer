@@ -16,6 +16,7 @@ require (
 	github.com/go-ping/ping v0.0.0-20210327002015-80a511380375
 	github.com/google/uuid v1.2.0
 	github.com/gosnmp/gosnmp v1.30.0
+	github.com/hpcloud/tail v1.0.0
 	github.com/ipfs/go-cid v0.0.7
 	github.com/jaypipes/ghw v0.7.0
 	github.com/libp2p/go-libp2p-core v0.7.0
