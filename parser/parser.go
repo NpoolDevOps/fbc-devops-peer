@@ -50,6 +50,8 @@ type Parser struct {
 	cephStoragePeers   map[string]string
 	storageSubRole     string
 	storageChilds      []string
+	minerLogFile       string
+	fullnodeLogFile    string
 }
 
 type OSSInfo struct {
@@ -161,7 +163,7 @@ func (p *Parser) getStoragePath() {
 				break
 			}
 			if !info.IsDir() {
-				log.Errorf(log.Fields{}, "storage path is not dir", stoPath)
+				log.Errorf(log.Fields{}, "storage path is not dir: %v", stoPath)
 				break
 			}
 			p.storagePath = stoPath
@@ -322,6 +324,36 @@ func (p *Parser) parseStorageChilds() {
 	}
 }
 
+func (p *Parser) parseLogFileFromService(file string) string {
+	f, _ := os.Open(file)
+	bio := bufio.NewReader(f)
+	for {
+		line, _, err := bio.ReadLine()
+		if err != nil {
+			log.Errorf(log.Fields{}, "fail to read %v: %v", file, err)
+			break
+		}
+
+		if !strings.HasPrefix(string(line), "Environment=GOLOG_FILE=") {
+			continue
+		}
+
+		s := strings.Split(string(line), "GOLOG_FILE=")
+		if len(s) < 2 {
+			continue
+		}
+
+		return s[1]
+	}
+
+	return ""
+}
+
+func (p *Parser) parseLogFiles() {
+	p.fullnodeLogFile = p.parseLogFileFromService(FullnodeServiceFile)
+	p.minerLogFile = p.parseLogFileFromService(MinerServiceFile)
+}
+
 func (p *Parser) parse() error {
 	p.readEnvFromAPIFile(FullnodeAPIFile)
 	p.readEnvFromAPIFile(MinerAPIFile)
@@ -336,6 +368,7 @@ func (p *Parser) parse() error {
 	p.parseStorageHosts()
 	p.parseMyStorageRole()
 	p.parseStorageChilds()
+	p.parseLogFiles()
 	return nil
 }
 
@@ -415,4 +448,15 @@ func (p *Parser) GetSubRole(myRole string) (string, error) {
 		return p.storageSubRole, nil
 	}
 	return "", xerrors.Errorf("no subrole for %v", myRole)
+}
+
+func (p *Parser) GetLogFile(myRole string) (string, error) {
+	switch myRole {
+	case types.MinerNode:
+		return p.minerLogFile, nil
+	case types.FullNode:
+		return p.fullnodeLogFile, nil
+	default:
+		return "", xerrors.Errorf("no log file for role: %v", myRole)
+	}
 }

@@ -34,7 +34,5 @@ func TestParseIPFromEnvValue(t *testing.T) {
 }
 
 func TestParse(t *testing.T) {
-	parser := NewParser()
-	parser.Parse()
-	parser.Dump()
+	NewParser()
 }
