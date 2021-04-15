@@ -419,6 +419,14 @@ func (n *Basenode) GetChildsIPs() ([]string, error) {
 	return n.parser.GetChildsIPs(n.GetMainRole())
 }
 
+func (n *Basenode) GetLogFileByRole(role string) (string, error) {
+	return n.parser.GetLogFile(role)
+}
+
+func (n *Basenode) GetLogFile() (string, error) {
+	return n.parser.GetLogFile(n.GetMainRole())
+}
+
 func (n *Basenode) NotifyPeerId(id uuid.UUID) {
 	n.Id = id
 	n.HasId = true

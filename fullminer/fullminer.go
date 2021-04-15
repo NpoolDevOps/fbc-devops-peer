@@ -7,6 +7,8 @@ import (
 	devops "github.com/NpoolDevOps/fbc-devops-peer/devops"
 	exporter "github.com/NpoolDevOps/fbc-devops-peer/exporter"
 	lotusmetrics "github.com/NpoolDevOps/fbc-devops-peer/metrics/lotusmetrics"
+	minermetrics "github.com/NpoolDevOps/fbc-devops-peer/metrics/minermetrics"
+	types "github.com/NpoolDevOps/fbc-devops-peer/types"
 	version "github.com/NpoolDevOps/fbc-devops-peer/version"
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -14,14 +16,20 @@ import (
 type FullMinerNode struct {
 	*basenode.Basenode
 	lotusMetrics *lotusmetrics.LotusMetrics
+	minerMetrics *minermetrics.MinerMetrics
 }
 
 func NewFullMinerNode(config *basenode.BasenodeConfig, devopsClient *devops.DevopsClient) *FullMinerNode {
 	log.Infof(log.Fields{}, "create %v node", config.NodeConfig.MainRole)
 	fullminer := &FullMinerNode{
 		basenode.NewBasenode(config, devopsClient),
-		lotusmetrics.NewLotusMetrics(),
+		nil, nil,
 	}
+
+	logfile, _ := fullminer.GetLogFileByRole(types.FullNode)
+	fullminer.lotusMetrics = lotusmetrics.NewLotusMetrics(logfile)
+	logfile, _ = fullminer.GetLogFileByRole(types.MinerNode)
+	fullminer.minerMetrics = minermetrics.NewMinerMetrics(logfile)
 
 	fullminer.SetAddrNotifier(fullminer.addressNotifier)
 	fullminer.WatchVersions(fullminer.getVersions)

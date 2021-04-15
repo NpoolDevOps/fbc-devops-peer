@@ -9,6 +9,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -18,6 +19,7 @@ type LogLine struct {
 	Caller    string `json:"caller"`
 	Timestamp string `json:"ts"`
 	Msg       string `json:"msg"`
+	Line      string
 }
 
 func (ll *LogLine) String() string {
@@ -71,7 +73,9 @@ func (lb *Logbase) watch() {
 				continue
 			}
 
+			logLine.Line = line.Text
 			lb.newline <- logLine
+
 			os.MkdirAll(lb.logTsPath, 0666)
 			err = ioutil.WriteFile(filepath.Join(lb.logTsPath, lb.logTsFile),
 				[]byte(logLine.Timestamp), 0666)
@@ -84,4 +88,8 @@ func (lb *Logbase) watch() {
 
 func (lb *Logbase) Timestamp(line string) (time.Time, error) {
 	return time.Parse(time.RFC3339, line)
+}
+
+func (lb *Logbase) LineMatchKey(line string, key string) bool {
+	return strings.Contains(line, key)
 }

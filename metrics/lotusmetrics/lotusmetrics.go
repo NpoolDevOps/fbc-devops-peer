@@ -17,7 +17,7 @@ type LotusMetrics struct {
 	errors  int
 }
 
-func NewLotusMetrics() *LotusMetrics {
+func NewLotusMetrics(logfile string) *LotusMetrics {
 	return &LotusMetrics{
 		HeightDiff: prometheus.NewDesc(
 			"lotus_chain_height_diff",

@@ -139,3 +139,20 @@ func ClientVersion(host string) (version.Version, error) {
 		Version:     ver.Version,
 	}, nil
 }
+
+func TipSetByHeight(host string, height uint64) ([]string, error) {
+	bs, err := lotusbase.Request(lotusRpcUrl(host), []interface{}{height, nil}, "Filecoin.ChainGetTipSetByHeight")
+	if err != nil {
+		return nil, err
+	}
+
+	ts := types.TipSet{}
+	json.Unmarshal(bs, ts)
+
+	cids := []string{}
+	for _, b := range ts.Blocks() {
+		cids = append(cids, fmt.Sprintf("%v", b.Cid()))
+	}
+
+	return cids, nil
+}

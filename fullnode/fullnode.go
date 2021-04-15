@@ -18,8 +18,11 @@ func NewFullNode(config *basenode.BasenodeConfig, devopsClient *devops.DevopsCli
 	log.Infof(log.Fields{}, "create %v node", config.NodeConfig.MainRole)
 	fullnode := &FullNode{
 		basenode.NewBasenode(config, devopsClient),
-		lotusmetrics.NewLotusMetrics(),
+		nil,
 	}
+
+	logfile, _ := fullnode.GetLogFile()
+	fullnode.lotusMetrics = lotusmetrics.NewLotusMetrics(logfile)
 
 	fullnode.SetAddrNotifier(func(local, public string) {
 		fullnode.lotusMetrics.SetHost(local)
