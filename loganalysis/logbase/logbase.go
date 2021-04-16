@@ -7,8 +7,10 @@ import (
 	"github.com/hpcloud/tail"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -29,7 +31,7 @@ func (ll *LogLine) String() string {
 type Logbase struct {
 	tail        *tail.Tail
 	newline     chan LogLine
-	lastLogTime time.Time
+	lastLogTime uint64
 	logfile     string
 	logTsFile   string
 	logTsPath   string
@@ -50,12 +52,18 @@ func NewLogbase(logfile string, newline chan LogLine) *Logbase {
 
 	b, err := ioutil.ReadFile(filepath.Join(lb.logTsPath, lb.logTsFile))
 	if err == nil {
-		lb.lastLogTime, _ = lb.Timestamp(string(b))
+		lb.lastLogTime = lb.Timestamp(string(b))
 	}
 
 	go lb.watch()
 
 	return lb
+}
+
+func (lb *Logbase) parseTimestamp(ts string) uint64 {
+	out, _ := exec.Command("date", "-d", ts, "+%s").Output()
+	t, _ := strconv.ParseUint(string(out), 10, 64)
+	return t
 }
 
 func (lb *Logbase) watch() {
@@ -68,8 +76,8 @@ func (lb *Logbase) watch() {
 		logLine := LogLine{}
 		err := json.Unmarshal([]byte(line.Text), &logLine)
 		if err == nil {
-			timestamp, _ := lb.Timestamp(logLine.Timestamp)
-			if timestamp.Before(lb.lastLogTime) {
+			timestamp := lb.Timestamp(logLine.Timestamp)
+			if timestamp <= lb.lastLogTime {
 				continue
 			}
 
@@ -86,8 +94,8 @@ func (lb *Logbase) watch() {
 	}
 }
 
-func (lb *Logbase) Timestamp(line string) (time.Time, error) {
-	return time.Parse(time.RFC3339, line)
+func (lb *Logbase) Timestamp(line string) uint64 {
+	return lb.parseTimestamp(line)
 }
 
 func (lb *Logbase) LineMatchKey(line string, key string) bool {
