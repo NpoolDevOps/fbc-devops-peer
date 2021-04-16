@@ -76,12 +76,6 @@ func (lb *Logbase) watch() {
 		logLine := LogLine{}
 		err := json.Unmarshal([]byte(line.Text), &logLine)
 		if err == nil {
-			length := 80
-			if len(logLine.Msg) < length {
-				length = len(logLine.Msg)
-			}
-			fmt.Printf("\r%v", strings.TrimSpace(logLine.Msg[0:length]))
-
 			timestamp := lb.Timestamp(logLine.Timestamp)
 			if 0 < timestamp && timestamp <= lb.lastLogTime {
 				continue
