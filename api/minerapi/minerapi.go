@@ -95,7 +95,7 @@ func GetMinerInfo(ch chan MinerInfo, sectors bool) {
 			if strings.Contains(lineStr, "Vesting: ") {
 				info.Vesting = parseBalance(lineStr)
 			}
-			if strings.Contains(lineStr, "Available: ") {
+			if strings.Contains(lineStr, "Available: ") && info.Available == 0 {
 				info.Available = parseBalance(lineStr)
 			}
 			if strings.Contains(lineStr, "Worker Balance: ") {
