@@ -62,7 +62,7 @@ func NewLogbase(logfile string, newline chan LogLine) *Logbase {
 
 func (lb *Logbase) parseTimestamp(ts string) uint64 {
 	out, _ := exec.Command("date", "-d", ts, "+%s").Output()
-	t, _ := strconv.ParseUint(string(out), 10, 64)
+	t, _ := strconv.ParseUint(strings.TrimSpace(string(out)), 10, 64)
 	return t
 }
 
