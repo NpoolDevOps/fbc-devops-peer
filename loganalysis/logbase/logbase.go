@@ -62,7 +62,10 @@ func NewLogbase(logfile string, newline chan LogLine) *Logbase {
 
 func (lb *Logbase) parseTimestamp(ts string) uint64 {
 	out, _ := exec.Command("date", "-d", ts, "+%s").Output()
-	t, _ := strconv.ParseUint(strings.TrimSpace(string(out)), 10, 64)
+	t, err := strconv.ParseUint(strings.TrimSpace(string(out)), 10, 64)
+	if err != nil {
+		log.Errorf(log.Fields{}, "cannot parse timestamp %v: %v", ts, err)
+	}
 	return t
 }
 
@@ -77,16 +80,18 @@ func (lb *Logbase) watch() {
 		err := json.Unmarshal([]byte(line.Text), &logLine)
 		if err == nil {
 			timestamp := lb.Timestamp(logLine.Timestamp)
-			if timestamp <= lb.lastLogTime {
+			if 0 < timestamp && timestamp <= lb.lastLogTime {
 				continue
 			}
 
 			logLine.Line = line.Text
 			lb.newline <- logLine
 
-			os.MkdirAll(lb.logTsPath, 0666)
-			err = ioutil.WriteFile(filepath.Join(lb.logTsPath, lb.logTsFile),
-				[]byte(logLine.Timestamp), 0666)
+			if 0 < timestamp {
+				os.MkdirAll(lb.logTsPath, 0666)
+				err = ioutil.WriteFile(filepath.Join(lb.logTsPath, lb.logTsFile),
+					[]byte(logLine.Timestamp), 0666)
+			}
 			if err != nil {
 				log.Errorf(log.Fields{}, "cannot write timestamp: %v", err)
 			}
