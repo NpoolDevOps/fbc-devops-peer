@@ -151,10 +151,10 @@ func GetSealingJobs(ch chan SealingJobs) {
 				info.Jobs[items[4]] = map[string]SealingJob{}
 			}
 			jobs := info.Jobs[items[4]]
-			if _, ok := jobs[items[2]]; !ok {
-				jobs[items[2]] = SealingJob{}
+			if _, ok := jobs[items[3]]; !ok {
+				jobs[items[3]] = SealingJob{}
 			}
-			job := jobs[items[2]]
+			job := jobs[items[3]]
 
 			elapsedDuration, _ := time.ParseDuration(items[6])
 			elapsed := uint64(elapsedDuration.Milliseconds())
@@ -172,7 +172,7 @@ func GetSealingJobs(ch chan SealingJobs) {
 				}
 			}
 
-			jobs[items[2]] = job
+			jobs[items[3]] = job
 			info.Jobs[items[4]] = jobs
 		}
 
