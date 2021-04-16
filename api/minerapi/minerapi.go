@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type MinerInfo struct {
@@ -112,6 +113,67 @@ func GetMinerInfo(ch chan MinerInfo, sectors bool) {
 			if strings.Contains(lineStr, "Sectors:") {
 				inSectorState = true
 			}
+		}
+
+		ch <- info
+	}()
+}
+
+type SealingJob struct {
+	Running    uint64
+	Assigned   uint64
+	MaxWaiting uint64
+	MaxRunning uint64
+}
+
+type SealingJobs struct {
+	Jobs map[string]map[string]SealingJob
+}
+
+func GetSealingJobs(ch chan SealingJobs) {
+	go func() {
+		out, _ := exec.Command("lotus-miner", "sealing", "jobs").Output()
+		br := bufio.NewReader(bytes.NewReader(out))
+
+		info := SealingJobs{
+			Jobs: map[string]map[string]SealingJob{},
+		}
+
+		for {
+			line, _, err := br.ReadLine()
+			if err != nil {
+				break
+			}
+
+			lineStr := strings.TrimSpace(string(line))
+			items := strings.Fields(lineStr)
+			if _, ok := info.Jobs[items[4]]; !ok {
+				info.Jobs[items[4]] = map[string]SealingJob{}
+			}
+			jobs := info.Jobs[items[4]]
+			if _, ok := jobs[items[2]]; !ok {
+				jobs[items[2]] = SealingJob{}
+			}
+			job := jobs[items[2]]
+
+			elapsedDuration, _ := time.ParseDuration(items[6])
+			elapsed := uint64(elapsedDuration.Milliseconds())
+
+			switch items[5] {
+			case "Running":
+				job.Running += 1
+				if job.MaxRunning < elapsed {
+					job.MaxRunning = elapsed
+				}
+			default:
+				job.Assigned += 1
+				if job.MaxWaiting < elapsed {
+					job.MaxWaiting = elapsed
+				}
+			}
+
+			jobs[items[2]] = job
+			info.Jobs[items[4]] = jobs
 		}
 
 		ch <- info

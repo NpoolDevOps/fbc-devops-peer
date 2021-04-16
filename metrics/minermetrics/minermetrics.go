@@ -41,8 +41,16 @@ type MinerMetrics struct {
 	ControlBalance   *prometheus.Desc
 	MinerTaskState   *prometheus.Desc
 
-	minerInfo minerapi.MinerInfo
-	mutex     sync.Mutex
+	SectorTaskRunning        *prometheus.Desc
+	SectorTaskWaiting        *prometheus.Desc
+	SectorTaskRunningElapsed *prometheus.Desc
+	SectorTaskWaitingElapsed *prometheus.Desc
+	MinerSectorTaskRunning   *prometheus.Desc
+	MinerSectorTaskWaiting   *prometheus.Desc
+
+	minerInfo   minerapi.MinerInfo
+	sealingJobs minerapi.SealingJobs
+	mutex       sync.Mutex
 
 	errors       int
 	host         string
@@ -188,11 +196,42 @@ func NewMinerMetrics(logfile string) *MinerMetrics {
 			"Miner sector state",
 			[]string{"state"}, nil,
 		),
+		SectorTaskRunning: prometheus.NewDesc(
+			"miner_sector_task_running",
+			"Miner sector task running",
+			[]string{"tasktype", "worker"}, nil,
+		),
+		SectorTaskRunningElapsed: prometheus.NewDesc(
+			"miner_sector_task_running_elapsed",
+			"Miner sector task running elapsed",
+			[]string{"tasktype", "worker"}, nil,
+		),
+		SectorTaskWaiting: prometheus.NewDesc(
+			"miner_sector_task_waiting",
+			"Miner sector task waiting",
+			[]string{"tasktype", "worker"}, nil,
+		),
+		SectorTaskWaitingElapsed: prometheus.NewDesc(
+			"miner_sector_task_waiting_elapsed",
+			"Miner sector task waiting elapsed",
+			[]string{"tasktype", "worker"}, nil,
+		),
+		MinerSectorTaskRunning: prometheus.NewDesc(
+			"miner_sector_task_running_total",
+			"Miner sector task running total",
+			[]string{"tasktype"}, nil,
+		),
+		MinerSectorTaskWaiting: prometheus.NewDesc(
+			"miner_sector_task_waiting_total",
+			"Miner sector task waiting total",
+			[]string{"tasktype"}, nil,
+		),
 	}
 
 	go func() {
 		ticker := time.NewTicker(10 * time.Minute)
-		ch := make(chan minerapi.MinerInfo)
+		infoCh := make(chan minerapi.MinerInfo)
+		jobsCh := make(chan minerapi.SealingJobs)
 		count := 0
 		for {
 			showSectors := false
@@ -202,11 +241,18 @@ func NewMinerMetrics(logfile string) *MinerMetrics {
 
 			count += 1
 
-			minerapi.GetMinerInfo(ch, showSectors)
-			info := <-ch
+			minerapi.GetMinerInfo(infoCh, showSectors)
+			info := <-infoCh
 
 			mm.mutex.Lock()
 			mm.minerInfo = info
+			mm.mutex.Unlock()
+
+			minerapi.GetSealingJobs(jobsCh)
+			jobs := <-jobsCh
+
+			mm.mutex.Lock()
+			mm.sealingJobs = jobs
 			mm.mutex.Unlock()
 
 			<-ticker.C
@@ -252,6 +298,12 @@ func (m *MinerMetrics) Describe(ch chan<- *prometheus.Desc) {
 	ch <- m.WorkerBalance
 	ch <- m.ControlBalance
 	ch <- m.MinerTaskState
+	ch <- m.SectorTaskRunning
+	ch <- m.SectorTaskWaiting
+	ch <- m.SectorTaskRunningElapsed
+	ch <- m.SectorTaskWaitingElapsed
+	ch <- m.MinerSectorTaskRunning
+	ch <- m.MinerSectorTaskWaiting
 }
 
 func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
@@ -323,6 +375,24 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 		}
 		ch <- prometheus.MustNewConstMetric(m.MinerSectorTaskConcurrent, prometheus.CounterValue, float64(totalConcurrent), taskType)
 		ch <- prometheus.MustNewConstMetric(m.MinerSectorTaskDones, prometheus.CounterValue, float64(totalDones), taskType)
+	}
+
+	m.mutex.Lock()
+	jobs := m.sealingJobs
+	m.mutex.Unlock()
+	for taskType, typedJobs := range jobs.Jobs {
+		totalRunning := uint64(0)
+		totalWaiting := uint64(0)
+		for worker, job := range typedJobs {
+			ch <- prometheus.MustNewConstMetric(m.SectorTaskWaitingElapsed, prometheus.CounterValue, float64(job.MaxWaiting), taskType, worker)
+			ch <- prometheus.MustNewConstMetric(m.SectorTaskRunningElapsed, prometheus.CounterValue, float64(job.MaxRunning), taskType, worker)
+			ch <- prometheus.MustNewConstMetric(m.SectorTaskRunning, prometheus.CounterValue, float64(job.Running), taskType, worker)
+			ch <- prometheus.MustNewConstMetric(m.SectorTaskWaiting, prometheus.CounterValue, float64(job.Assigned), taskType, worker)
+			totalRunning += job.Running
+			totalWaiting += job.Assigned
+		}
+		ch <- prometheus.MustNewConstMetric(m.MinerSectorTaskRunning, prometheus.CounterValue, float64(totalRunning), taskType)
+		ch <- prometheus.MustNewConstMetric(m.MinerSectorTaskWaiting, prometheus.CounterValue, float64(totalWaiting), taskType)
 	}
 
 	m.mutex.Lock()
