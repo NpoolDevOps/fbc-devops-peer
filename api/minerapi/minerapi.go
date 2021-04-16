@@ -147,7 +147,7 @@ func GetSealingJobs(ch chan SealingJobs) {
 				break
 			}
 
-			if !titleLine {
+			if titleLine {
 				titleLine = false
 				continue
 			}
