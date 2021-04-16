@@ -180,10 +180,13 @@ func (ml *MinerLog) processCandidateBlocks() {
 		return
 	}
 
+	blocks := []minedBlock{}
+
 	for _, b := range ml.candidateBlocks {
 		height, _ := strconv.ParseUint(b.Height, 10, 64)
 		cids, err := lotusapi.TipSetByHeight(ml.fullnodeHost, height)
 		if err != nil {
+			blocks = append(blocks, b)
 			continue
 		}
 
@@ -209,7 +212,7 @@ func (ml *MinerLog) processCandidateBlocks() {
 		ml.mutex.Unlock()
 	}
 
-	ml.candidateBlocks = []minedBlock{}
+	ml.candidateBlocks = blocks
 }
 
 func (ml *MinerLog) watch() {
