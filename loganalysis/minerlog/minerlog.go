@@ -7,6 +7,7 @@ import (
 	"github.com/NpoolDevOps/fbc-devops-peer/loganalysis/logbase"
 	"strconv"
 	"sync"
+	"time"
 )
 
 const (
@@ -43,16 +44,14 @@ var logRegKeys = []LogRegKey{
 		RegName:  RegMiningFailedBlock,
 		ItemName: KeyMiningFailedBlock,
 	},
-	/*
-		LogRegKey{
-			RegName:  RegRunTaskStart,
-			ItemName: KeySectorTask,
-		},
-		LogRegKey{
-			RegName:  RegRunTaskEnd,
-			ItemName: KeySectorTask,
-		},
-	*/
+	LogRegKey{
+		RegName:  RegRunTaskStart,
+		ItemName: KeySectorTask,
+	},
+	LogRegKey{
+		RegName:  RegRunTaskEnd,
+		ItemName: KeySectorTask,
+	},
 }
 
 type minedBlock struct {
@@ -62,6 +61,16 @@ type minedBlock struct {
 	Miner   string   `json:"miner"`
 	Parents []string `json:"parents"`
 	Took    float64  `json:"took"`
+}
+
+type sectorTask struct {
+	TaskType     string `json:"taskType"`
+	taskDone     bool
+	TaskStart    uint64 `json:"start"`
+	SectorNumber string `json:"sectorNumber"`
+	Worker       string `json:"worker"`
+	Elapsed      uint64 `json:"elapsed"`
+	Error        string `json:"error"`
 }
 
 type MinerLog struct {
@@ -74,6 +83,8 @@ type MinerLog struct {
 	forkBlocks      uint64
 	pastBlocks      uint64
 	failedBlocks    uint64
+	sectorTasks     map[string]map[string]sectorTask
+	BootTime        uint64
 	mutex           sync.Mutex
 }
 
@@ -84,6 +95,8 @@ func NewMinerLog(logfile string) *MinerLog {
 		newline:         newline,
 		items:           map[string][]uint64{},
 		hasFullnodeHost: false,
+		sectorTasks:     map[string]map[string]sectorTask{},
+		BootTime:        uint64(time.Now().Unix()),
 	}
 
 	go ml.watch()
@@ -105,6 +118,33 @@ func (ml *MinerLog) processMinedNewBlock(line logbase.LogLine) {
 	ml.candidateBlocks = append(ml.candidateBlocks, mline)
 }
 
+func (ml *MinerLog) processSectorTask(line logbase.LogLine, end bool) {
+	mline := sectorTask{}
+	err := json.Unmarshal([]byte(line.Line), &mline)
+	if err != nil {
+		log.Errorf(log.Fields{}, "fail to unmarshal %v: %v", line.Line, err)
+	}
+
+	ml.mutex.Lock()
+	if _, ok := ml.sectorTasks[mline.TaskType]; !ok {
+		ml.sectorTasks[mline.TaskType] = map[string]sectorTask{}
+	}
+	sectorTasks := ml.sectorTasks[mline.TaskType]
+	if end {
+		mline.taskDone = true
+		if mline.Elapsed == 0 {
+			mline.Elapsed = uint64(time.Now().Unix()) - mline.TaskStart
+		}
+	} else {
+		if mline.TaskStart == 0 {
+			mline.TaskStart = uint64(time.Now().Unix())
+		}
+	}
+	sectorTasks[mline.SectorNumber] = mline
+	ml.sectorTasks[mline.TaskType] = sectorTasks
+	ml.mutex.Unlock()
+}
+
 func (ml *MinerLog) processLine(line logbase.LogLine) {
 	for _, item := range logRegKeys {
 		if !ml.logbase.LineMatchKey(line.Line, item.RegName) {
@@ -122,6 +162,10 @@ func (ml *MinerLog) processLine(line logbase.LogLine) {
 			ml.mutex.Lock()
 			ml.failedBlocks += 1
 			ml.mutex.Unlock()
+		case RegRunTaskStart:
+			ml.processSectorTask(line, false)
+		case RegRunTaskEnd:
+			ml.processSectorTask(line, true)
 		}
 
 		break
@@ -203,4 +247,55 @@ func (ml *MinerLog) GetFailedBlocks() uint64 {
 	ml.failedBlocks = 0
 	ml.mutex.Unlock()
 	return failedBlocks
+}
+
+type SectorTaskStat struct {
+	Worker  string
+	Elapsed uint64
+	Done    bool
+	Sector  string
+}
+
+func (ml *MinerLog) GetSectorTasks() map[string]map[string][]SectorTaskStat {
+	tasks := map[string]map[string][]SectorTaskStat{}
+
+	ml.mutex.Lock()
+	for taskType, sectorTasks := range ml.sectorTasks {
+		if _, ok := tasks[taskType]; !ok {
+			tasks[taskType] = map[string][]SectorTaskStat{}
+		}
+		typedTasks := tasks[taskType]
+		for _, task := range sectorTasks {
+			if _, ok := typedTasks[task.Worker]; !ok {
+				typedTasks[task.Worker] = []SectorTaskStat{}
+			}
+			workerTasks := typedTasks[task.Worker]
+
+			elapsed := task.Elapsed
+			if !task.taskDone {
+				if 0 < task.TaskStart {
+					elapsed = uint64(time.Now().Unix()) - task.TaskStart
+				} else {
+					elapsed = uint64(time.Now().Unix()) - ml.BootTime
+				}
+				elapsed = elapsed
+			} else {
+				delete(ml.sectorTasks[taskType], task.SectorNumber)
+			}
+			if len(task.Worker) == 0 {
+				task.Worker = "miner"
+			}
+			workerTasks = append(workerTasks, SectorTaskStat{
+				Worker:  task.Worker,
+				Elapsed: elapsed,
+				Done:    task.taskDone,
+				Sector:  task.SectorNumber,
+			})
+			typedTasks[task.Worker] = workerTasks
+		}
+		tasks[taskType] = typedTasks
+	}
+	ml.mutex.Unlock()
+
+	return tasks
 }

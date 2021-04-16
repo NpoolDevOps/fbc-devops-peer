@@ -15,6 +15,12 @@ type MinerMetrics struct {
 	BlockTookMinMs *prometheus.Desc
 	Blocks         *prometheus.Desc
 
+	SectorTaskElapsed    *prometheus.Desc
+	SectorTaskDuration   *prometheus.Desc
+	SectorTaskConcurrent *prometheus.Desc
+	SectorTaskDones      *prometheus.Desc
+	SectorTaskProgress   *prometheus.Desc
+
 	errors       int
 	host         string
 	hasHost      bool
@@ -59,6 +65,31 @@ func NewMinerMetrics(logfile string) *MinerMetrics {
 			"Show miner block produced",
 			nil, nil,
 		),
+		SectorTaskElapsed: prometheus.NewDesc(
+			"miner_seal_sector_task_elapsed",
+			"Miner seal sector task elapsed",
+			[]string{"tasktype", "worker"}, nil,
+		),
+		SectorTaskDuration: prometheus.NewDesc(
+			"miner_seal_sector_task_duration",
+			"Miner seal sector task duration",
+			[]string{"tasktype", "worker"}, nil,
+		),
+		SectorTaskConcurrent: prometheus.NewDesc(
+			"miner_seal_sector_task_concurrent",
+			"Miner seal sector task concurrent",
+			[]string{"tasktype", "worker"}, nil,
+		),
+		SectorTaskDones: prometheus.NewDesc(
+			"miner_seal_sector_task_dones",
+			"Miner seal sector task dones",
+			[]string{"tasktype", "worker"}, nil,
+		),
+		SectorTaskProgress: prometheus.NewDesc(
+			"miner_seal_sector_task_progress",
+			"Miner seal sector task progress",
+			[]string{"tasktype", "worker", "sector", "done"}, nil,
+		),
 	}
 	return mm
 }
@@ -79,6 +110,11 @@ func (m *MinerMetrics) Describe(ch chan<- *prometheus.Desc) {
 	ch <- m.BlockTookMaxMs
 	ch <- m.BlockTookMinMs
 	ch <- m.Blocks
+	ch <- m.SectorTaskElapsed
+	ch <- m.SectorTaskDuration
+	ch <- m.SectorTaskConcurrent
+	ch <- m.SectorTaskDones
+	ch <- m.SectorTaskProgress
 }
 
 func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
@@ -111,4 +147,35 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 	ch <- prometheus.MustNewConstMetric(m.BlockTookMaxMs, prometheus.CounterValue, float64(maxMs))
 	ch <- prometheus.MustNewConstMetric(m.BlockTookMinMs, prometheus.CounterValue, float64(minMs))
 	ch <- prometheus.MustNewConstMetric(m.Blocks, prometheus.CounterValue, float64(len(tooks)))
+
+	sectorTasks := m.ml.GetSectorTasks()
+	for taskType, typedTasks := range sectorTasks {
+		for worker, workerTasks := range typedTasks {
+			elapsed := uint64(0)
+			concurrent := uint64(0)
+			duration := uint64(0)
+			dones := uint64(0)
+			for _, task := range workerTasks {
+				if task.Done {
+					dones += 1
+					if duration < task.Elapsed {
+						duration = task.Elapsed
+					}
+					ch <- prometheus.MustNewConstMetric(m.SectorTaskProgress, prometheus.CounterValue,
+						float64(duration), taskType, worker, task.Sector, "1")
+				} else {
+					concurrent += 1
+					if elapsed < task.Elapsed {
+						elapsed = task.Elapsed
+					}
+					ch <- prometheus.MustNewConstMetric(m.SectorTaskProgress, prometheus.CounterValue,
+						float64(elapsed), taskType, worker, task.Sector, "0")
+				}
+			}
+			ch <- prometheus.MustNewConstMetric(m.SectorTaskElapsed, prometheus.CounterValue, float64(elapsed), taskType, worker)
+			ch <- prometheus.MustNewConstMetric(m.SectorTaskDuration, prometheus.CounterValue, float64(duration), taskType, worker)
+			ch <- prometheus.MustNewConstMetric(m.SectorTaskConcurrent, prometheus.CounterValue, float64(concurrent), taskType, worker)
+			ch <- prometheus.MustNewConstMetric(m.SectorTaskDones, prometheus.CounterValue, float64(dones), taskType, worker)
+		}
+	}
 }
