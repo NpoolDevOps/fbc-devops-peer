@@ -21,6 +21,9 @@ type MinerMetrics struct {
 	SectorTaskDones      *prometheus.Desc
 	SectorTaskProgress   *prometheus.Desc
 
+	MinerSectorTaskConcurrent *prometheus.Desc
+	MinerSectorTaskDones      *prometheus.Desc
+
 	errors       int
 	host         string
 	hasHost      bool
@@ -90,6 +93,16 @@ func NewMinerMetrics(logfile string) *MinerMetrics {
 			"Miner seal sector task progress",
 			[]string{"tasktype", "worker", "sector", "done"}, nil,
 		),
+		MinerSectorTaskConcurrent: prometheus.NewDesc(
+			"miner_seal_sector_task_concurrent_total",
+			"Miner seal sector task concurrent total",
+			[]string{"tasktype"}, nil,
+		),
+		MinerSectorTaskDones: prometheus.NewDesc(
+			"miner_seal_sector_task_dones_total",
+			"Miner seal sector task dones total",
+			[]string{"tasktype"}, nil,
+		),
 	}
 	return mm
 }
@@ -115,6 +128,8 @@ func (m *MinerMetrics) Describe(ch chan<- *prometheus.Desc) {
 	ch <- m.SectorTaskConcurrent
 	ch <- m.SectorTaskDones
 	ch <- m.SectorTaskProgress
+	ch <- m.MinerSectorTaskConcurrent
+	ch <- m.MinerSectorTaskDones
 }
 
 func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
@@ -149,6 +164,9 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 	ch <- prometheus.MustNewConstMetric(m.Blocks, prometheus.CounterValue, float64(len(tooks)))
 
 	sectorTasks := m.ml.GetSectorTasks()
+	totalConcurrent := 0
+	totalDones := 0
+
 	for taskType, typedTasks := range sectorTasks {
 		for worker, workerTasks := range typedTasks {
 			elapsed := uint64(0)
@@ -158,6 +176,7 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 			for _, task := range workerTasks {
 				if task.Done {
 					dones += 1
+					totalDones += 1
 					if duration < task.Elapsed {
 						duration = task.Elapsed
 					}
@@ -165,6 +184,7 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 						float64(duration), taskType, worker, task.Sector, "1")
 				} else {
 					concurrent += 1
+					totalConcurrent += 1
 					if elapsed < task.Elapsed {
 						elapsed = task.Elapsed
 					}
@@ -177,5 +197,7 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 			ch <- prometheus.MustNewConstMetric(m.SectorTaskConcurrent, prometheus.CounterValue, float64(concurrent), taskType, worker)
 			ch <- prometheus.MustNewConstMetric(m.SectorTaskDones, prometheus.CounterValue, float64(dones), taskType, worker)
 		}
+		ch <- prometheus.MustNewConstMetric(m.MinerSectorTaskConcurrent, prometheus.CounterValue, float64(totalConcurrent), taskType)
+		ch <- prometheus.MustNewConstMetric(m.MinerSectorTaskDones, prometheus.CounterValue, float64(totalDones), taskType)
 	}
 }
