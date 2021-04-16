@@ -163,11 +163,8 @@ func GetSealingJobs(ch chan SealingJobs) {
 			}
 			job := jobs[items[3]]
 
-			elapsedDuration, err := time.ParseDuration(items[6])
-			if err != nil {
-				log.Errorf(log.Fields{}, "cannot parse %v to duration: %v", items[6], err)
-			}
-			elapsed := uint64(elapsedDuration.Milliseconds())
+			elapsedDuration, _ := time.ParseDuration(items[6])
+			elapsed := uint64(elapsedDuration.Seconds())
 
 			switch items[5] {
 			case "running":
