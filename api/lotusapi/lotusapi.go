@@ -147,7 +147,7 @@ func TipSetByHeight(host string, height uint64) ([]string, error) {
 	}
 
 	ts := types.TipSet{}
-	json.Unmarshal(bs, ts)
+	json.Unmarshal(bs, &ts)
 
 	cids := []string{}
 	for _, b := range ts.Blocks() {

@@ -131,6 +131,16 @@ func (n *Basenode) SetPeer(p interface{}) {
 
 func (n *Basenode) SetAddrNotifier(addrNotifier func(string, string)) {
 	n.addrNotifier = addrNotifier
+	var err error
+	localAddr, err := n.MyLocalAddr()
+	if err != nil {
+		return
+	}
+	publicAddr, err := n.MyPublicAddr()
+	if err != nil {
+		return
+	}
+	addrNotifier(localAddr, publicAddr)
 }
 
 func (n *Basenode) WatchVersions(versionGetter func(string) []version.Version) {

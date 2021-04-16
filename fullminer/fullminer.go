@@ -39,6 +39,8 @@ func NewFullMinerNode(config *basenode.BasenodeConfig, devopsClient *devops.Devo
 
 func (n *FullMinerNode) addressNotifier(local, public string) {
 	n.lotusMetrics.SetHost(local)
+	n.minerMetrics.SetHost(local)
+	n.minerMetrics.SetFullnodeHost(local)
 }
 
 func (n *FullMinerNode) getVersions(host string) []version.Version {
@@ -54,11 +56,13 @@ func (n *FullMinerNode) getVersions(host string) []version.Version {
 
 func (n *FullMinerNode) Describe(ch chan<- *prometheus.Desc) {
 	n.lotusMetrics.Describe(ch)
+	n.minerMetrics.Describe(ch)
 	n.BaseMetrics.Describe(ch)
 }
 
 func (n *FullMinerNode) Collect(ch chan<- prometheus.Metric) {
 	n.lotusMetrics.Collect(ch)
+	n.minerMetrics.Collect(ch)
 	n.BaseMetrics.Collect(ch)
 }
 

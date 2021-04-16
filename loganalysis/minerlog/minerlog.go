@@ -10,15 +10,19 @@ import (
 )
 
 const (
-	RegMinedNewBlock = "mined new block"
-	RegRunTaskStart  = "run task start"
-	RegRunTaskEnd    = "run task end"
+	RegMinedNewBlock     = "\"msg\":\"mined new block\""
+	RegMinedPastBlock    = "mined block in the past"
+	RegMiningFailedBlock = "\"msg\":\"mining block failed"
+	RegRunTaskStart      = "run task start"
+	RegRunTaskEnd        = "run task end"
 )
 
 const (
-	KeyMinedNewBlock  = RegMinedNewBlock
-	KeyMinedForkBlock = "mined fork block"
-	KeySectorTask     = "run task"
+	KeyMinedNewBlock     = RegMinedNewBlock
+	KeyMinedPastBlock    = RegMinedPastBlock
+	KeyMiningFailedBlock = RegMiningFailedBlock
+	KeyMinedForkBlock    = "mined fork block"
+	KeySectorTask        = "run task"
 )
 
 type LogRegKey struct {
@@ -32,13 +36,23 @@ var logRegKeys = []LogRegKey{
 		ItemName: KeyMinedNewBlock,
 	},
 	LogRegKey{
-		RegName:  RegRunTaskStart,
-		ItemName: KeySectorTask,
+		RegName:  RegMinedPastBlock,
+		ItemName: KeyMinedPastBlock,
 	},
 	LogRegKey{
-		RegName:  RegRunTaskEnd,
-		ItemName: KeySectorTask,
+		RegName:  RegMiningFailedBlock,
+		ItemName: KeyMiningFailedBlock,
 	},
+	/*
+		LogRegKey{
+			RegName:  RegRunTaskStart,
+			ItemName: KeySectorTask,
+		},
+		LogRegKey{
+			RegName:  RegRunTaskEnd,
+			ItemName: KeySectorTask,
+		},
+	*/
 }
 
 type minedBlock struct {
@@ -58,6 +72,8 @@ type MinerLog struct {
 	hasFullnodeHost bool
 	candidateBlocks []minedBlock
 	forkBlocks      uint64
+	pastBlocks      uint64
+	failedBlocks    uint64
 	mutex           sync.Mutex
 }
 
@@ -91,13 +107,21 @@ func (ml *MinerLog) processMinedNewBlock(line logbase.LogLine) {
 
 func (ml *MinerLog) processLine(line logbase.LogLine) {
 	for _, item := range logRegKeys {
-		if !ml.logbase.LineMatchKey(line.Msg, item.RegName) {
+		if !ml.logbase.LineMatchKey(line.Line, item.RegName) {
 			continue
 		}
 
 		switch item.RegName {
 		case RegMinedNewBlock:
 			ml.processMinedNewBlock(line)
+		case RegMinedPastBlock:
+			ml.mutex.Lock()
+			ml.pastBlocks += 1
+			ml.mutex.Unlock()
+		case RegMiningFailedBlock:
+			ml.mutex.Lock()
+			ml.failedBlocks += 1
+			ml.mutex.Unlock()
 		}
 
 		break
@@ -137,6 +161,8 @@ func (ml *MinerLog) processCandidateBlocks() {
 		ml.items[KeyMinedNewBlock] = blockTimes
 		ml.mutex.Unlock()
 	}
+
+	ml.candidateBlocks = []minedBlock{}
 }
 
 func (ml *MinerLog) watch() {
@@ -160,4 +186,18 @@ func (ml *MinerLog) GetForkBlocks() uint64 {
 	forkBlocks := ml.forkBlocks
 	ml.mutex.Unlock()
 	return forkBlocks
+}
+
+func (ml *MinerLog) GetPastBlocks() uint64 {
+	ml.mutex.Lock()
+	pastBlocks := ml.pastBlocks
+	ml.mutex.Unlock()
+	return pastBlocks
+}
+
+func (ml *MinerLog) GetFailedBlocks() uint64 {
+	ml.mutex.Lock()
+	failedBlocks := ml.failedBlocks
+	ml.mutex.Unlock()
+	return failedBlocks
 }
