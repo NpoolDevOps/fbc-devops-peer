@@ -1,8 +1,11 @@
 package minermetrics
 
 import (
+	"github.com/NpoolDevOps/fbc-devops-peer/api/minerapi"
 	"github.com/NpoolDevOps/fbc-devops-peer/loganalysis/minerlog"
 	"github.com/prometheus/client_golang/prometheus"
+	"sync"
+	"time"
 )
 
 type MinerMetrics struct {
@@ -23,6 +26,23 @@ type MinerMetrics struct {
 
 	MinerSectorTaskConcurrent *prometheus.Desc
 	MinerSectorTaskDones      *prometheus.Desc
+
+	Power            *prometheus.Desc
+	RawPower         *prometheus.Desc
+	CommittedPower   *prometheus.Desc
+	ProvingPower     *prometheus.Desc
+	FaultyPower      *prometheus.Desc
+	MinerBalance     *prometheus.Desc
+	PrecommitDeposit *prometheus.Desc
+	InitialPledge    *prometheus.Desc
+	Vesting          *prometheus.Desc
+	Available        *prometheus.Desc
+	WorkerBalance    *prometheus.Desc
+	ControlBalance   *prometheus.Desc
+	MinerTaskState   *prometheus.Desc
+
+	minerInfo minerapi.MinerInfo
+	mutex     sync.Mutex
 
 	errors       int
 	host         string
@@ -103,7 +123,96 @@ func NewMinerMetrics(logfile string) *MinerMetrics {
 			"Miner seal sector task dones total",
 			[]string{"tasktype"}, nil,
 		),
+		Power: prometheus.NewDesc(
+			"miner_power",
+			"Miner power",
+			nil, nil,
+		),
+		RawPower: prometheus.NewDesc(
+			"miner_raw_power",
+			"Miner raw power",
+			nil, nil,
+		),
+		CommittedPower: prometheus.NewDesc(
+			"miner_committed_power",
+			"Miner committed power",
+			nil, nil,
+		),
+		ProvingPower: prometheus.NewDesc(
+			"miner_proving_power",
+			"Miner proving power",
+			nil, nil,
+		),
+		FaultyPower: prometheus.NewDesc(
+			"miner_faulty_power",
+			"Miner faulty power",
+			nil, nil,
+		),
+		MinerBalance: prometheus.NewDesc(
+			"miner_balance",
+			"Miner balance",
+			nil, nil,
+		),
+		PrecommitDeposit: prometheus.NewDesc(
+			"miner_precommit_deposit",
+			"Miner precommit deposit",
+			nil, nil,
+		),
+		InitialPledge: prometheus.NewDesc(
+			"miner_initial_pledge",
+			"Miner initial pledge",
+			nil, nil,
+		),
+		Vesting: prometheus.NewDesc(
+			"miner_vesting",
+			"Miner vesting",
+			nil, nil,
+		),
+		Available: prometheus.NewDesc(
+			"miner_available",
+			"Miner available",
+			nil, nil,
+		),
+		WorkerBalance: prometheus.NewDesc(
+			"miner_worker_balance",
+			"Miner worker balance",
+			nil, nil,
+		),
+		ControlBalance: prometheus.NewDesc(
+			"miner_control_balance",
+			"Miner control balance",
+			nil, nil,
+		),
+		MinerTaskState: prometheus.NewDesc(
+			"miner_sector_state",
+			"Miner sector state",
+			[]string{"state"}, nil,
+		),
 	}
+
+	go func() {
+		ticker := time.NewTicker(10 * time.Minute)
+		ch := make(chan minerapi.MinerInfo)
+		count := 0
+		for {
+			showSectors := false
+			if count%3 == 0 {
+				showSectors = true
+			}
+
+			count += 1
+
+			minerapi.GetMinerInfo(ch, showSectors)
+			info := <-ch
+
+			mm.mutex.Lock()
+			mm.minerInfo = info
+			mm.mutex.Unlock()
+
+			<-ticker.C
+		}
+	}()
+
 	return mm
 }
 
@@ -130,6 +239,19 @@ func (m *MinerMetrics) Describe(ch chan<- *prometheus.Desc) {
 	ch <- m.SectorTaskProgress
 	ch <- m.MinerSectorTaskConcurrent
 	ch <- m.MinerSectorTaskDones
+	ch <- m.Power
+	ch <- m.RawPower
+	ch <- m.CommittedPower
+	ch <- m.ProvingPower
+	ch <- m.FaultyPower
+	ch <- m.MinerBalance
+	ch <- m.PrecommitDeposit
+	ch <- m.InitialPledge
+	ch <- m.Vesting
+	ch <- m.Available
+	ch <- m.WorkerBalance
+	ch <- m.ControlBalance
+	ch <- m.MinerTaskState
 }
 
 func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
@@ -137,6 +259,8 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 	forkBlocks := m.ml.GetForkBlocks()
 	pastBlocks := m.ml.GetPastBlocks()
 	failedBlocks := m.ml.GetFailedBlocks()
+
+	minerapi.GetMinerInfo(make(chan minerapi.MinerInfo), false)
 
 	avgMs := uint64(0)
 	maxMs := uint64(0)
@@ -199,5 +323,24 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 		}
 		ch <- prometheus.MustNewConstMetric(m.MinerSectorTaskConcurrent, prometheus.CounterValue, float64(totalConcurrent), taskType)
 		ch <- prometheus.MustNewConstMetric(m.MinerSectorTaskDones, prometheus.CounterValue, float64(totalDones), taskType)
+	}
+
+	m.mutex.Lock()
+	info := m.minerInfo
+	m.mutex.Unlock()
+	ch <- prometheus.MustNewConstMetric(m.Power, prometheus.CounterValue, float64(info.Power))
+	ch <- prometheus.MustNewConstMetric(m.RawPower, prometheus.CounterValue, float64(info.Raw))
+	ch <- prometheus.MustNewConstMetric(m.CommittedPower, prometheus.CounterValue, float64(info.Committed))
+	ch <- prometheus.MustNewConstMetric(m.ProvingPower, prometheus.CounterValue, float64(info.Proving))
+	ch <- prometheus.MustNewConstMetric(m.FaultyPower, prometheus.CounterValue, float64(info.Faulty))
+	ch <- prometheus.MustNewConstMetric(m.MinerBalance, prometheus.CounterValue, float64(info.MinerBalance))
+	ch <- prometheus.MustNewConstMetric(m.PrecommitDeposit, prometheus.CounterValue, float64(info.PrecommitDeposit))
+	ch <- prometheus.MustNewConstMetric(m.InitialPledge, prometheus.CounterValue, float64(info.InitialPledge))
+	ch <- prometheus.MustNewConstMetric(m.Vesting, prometheus.CounterValue, float64(info.Vesting))
+	ch <- prometheus.MustNewConstMetric(m.Available, prometheus.CounterValue, float64(info.Available))
+	ch <- prometheus.MustNewConstMetric(m.WorkerBalance, prometheus.CounterValue, float64(info.WorkerBalance))
+	ch <- prometheus.MustNewConstMetric(m.ControlBalance, prometheus.CounterValue, float64(info.ControlBalance))
+	for state, count := range info.State {
+		ch <- prometheus.MustNewConstMetric(m.MinerTaskState, prometheus.CounterValue, float64(count), state)
 	}
 }
