@@ -2,15 +2,20 @@ package lotusmetrics
 
 import (
 	api "github.com/NpoolDevOps/fbc-devops-peer/api/lotusapi"
+	lotuslog "github.com/NpoolDevOps/fbc-devops-peer/loganalysis/lotuslog"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
 type LotusMetrics struct {
-	HeightDiff   *prometheus.Desc
-	BlockElapsed *prometheus.Desc
-	NetPeers     *prometheus.Desc
-	LotusError   *prometheus.Desc
-	SyncError    *prometheus.Desc
+	ll *lotuslog.LotusLog
+
+	HeightDiff         *prometheus.Desc
+	BlockElapsed       *prometheus.Desc
+	NetPeers           *prometheus.Desc
+	LotusError         *prometheus.Desc
+	SyncError          *prometheus.Desc
+	ConnectionRefuseds *prometheus.Desc
+	ConnectionTimeouts *prometheus.Desc
 
 	host    string
 	hasHost bool
@@ -19,6 +24,7 @@ type LotusMetrics struct {
 
 func NewLotusMetrics(logfile string) *LotusMetrics {
 	return &LotusMetrics{
+		ll: lotuslog.NewLotusLog(logfile),
 		HeightDiff: prometheus.NewDesc(
 			"lotus_chain_height_diff",
 			"Show lotus chain sync height diff",
@@ -42,6 +48,16 @@ func NewLotusMetrics(logfile string) *LotusMetrics {
 		SyncError: prometheus.NewDesc(
 			"lotus_chain_sync_error",
 			"Show errors of lotus chain sync",
+			nil, nil,
+		),
+		ConnectionRefuseds: prometheus.NewDesc(
+			"lotus_chain_net_connection_refuseds",
+			"Show errors of lotus network connection refuseds",
+			nil, nil,
+		),
+		ConnectionTimeouts: prometheus.NewDesc(
+			"lotus_chain_net_connection_timeouts",
+			"Show errors of lotus network connection timeouts",
 			nil, nil,
 		),
 	}
@@ -79,9 +95,14 @@ func (m *LotusMetrics) Collect(ch chan<- prometheus.Metric) {
 		syncError = 1
 	}
 
+	refuseds := m.ll.GetRefuseds()
+	timeouts := m.ll.GetTimeouts()
+
 	ch <- prometheus.MustNewConstMetric(m.LotusError, prometheus.CounterValue, float64(m.errors))
 	ch <- prometheus.MustNewConstMetric(m.HeightDiff, prometheus.CounterValue, float64(state.HeightDiff))
 	ch <- prometheus.MustNewConstMetric(m.BlockElapsed, prometheus.CounterValue, float64(state.BlockElapsed))
 	ch <- prometheus.MustNewConstMetric(m.NetPeers, prometheus.CounterValue, float64(netPeers))
 	ch <- prometheus.MustNewConstMetric(m.SyncError, prometheus.CounterValue, float64(int(syncError)))
+	ch <- prometheus.MustNewConstMetric(m.ConnectionRefuseds, prometheus.CounterValue, float64(int(refuseds)))
+	ch <- prometheus.MustNewConstMetric(m.ConnectionTimeouts, prometheus.CounterValue, float64(int(timeouts)))
 }
