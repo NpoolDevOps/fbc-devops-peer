@@ -140,6 +140,9 @@ func (ml *MinerLog) processSectorTask(line logbase.LogLine, end bool) {
 			mline.TaskStart = uint64(time.Now().Unix())
 		}
 	}
+	if len(mline.Worker) == 0 {
+		mline.Worker = "miner"
+	}
 	sectorTasks[mline.SectorNumber] = mline
 	ml.sectorTasks[mline.TaskType] = sectorTasks
 	ml.mutex.Unlock()
@@ -281,9 +284,6 @@ func (ml *MinerLog) GetSectorTasks() map[string]map[string][]SectorTaskStat {
 				elapsed = elapsed
 			} else {
 				delete(ml.sectorTasks[taskType], task.SectorNumber)
-			}
-			if len(task.Worker) == 0 {
-				task.Worker = "miner"
 			}
 			workerTasks = append(workerTasks, SectorTaskStat{
 				Worker:  task.Worker,
