@@ -454,11 +454,6 @@ func (n *Basenode) CreateExporter() *exporter.Exporter {
 	return exporter.NewExporter(n)
 }
 
-func GetVersions(host string) []version.Version {
-	log.Infof(log.Fields{}, "NOT IMPLEMENT FOR BASENODE")
-	return nil
-}
-
 func (n *Basenode) Banner() {
 	log.Infof(log.Fields{}, "IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII")
 	log.Infof(log.Fields{}, "      BBBBBBBBBassssssseeeNNN      ")

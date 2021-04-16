@@ -111,6 +111,9 @@ func (p *Parser) readEnvFromAPIFile(filename string) error {
 	p.fileAPIInfo[filename] = nodeDesc{
 		apiInfo: s[1],
 	}
+
+	os.Setenv(s[0], s[1])
+
 	return nil
 }
 
