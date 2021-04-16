@@ -229,13 +229,13 @@ func NewMinerMetrics(logfile string) *MinerMetrics {
 	}
 
 	go func() {
-		ticker := time.NewTicker(10 * time.Minute)
+		ticker := time.NewTicker(2 * time.Minute)
 		infoCh := make(chan minerapi.MinerInfo)
 		jobsCh := make(chan minerapi.SealingJobs)
 		count := 0
 		for {
 			showSectors := false
-			if count%3 == 0 {
+			if count%15 == 0 {
 				showSectors = true
 			}
 
