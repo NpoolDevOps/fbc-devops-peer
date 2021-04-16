@@ -147,11 +147,18 @@ func TipSetByHeight(host string, height uint64) ([]string, error) {
 	}
 
 	ts := types.TipSet{}
-	json.Unmarshal(bs, &ts)
+	err = json.Unmarshal(bs, &ts)
+	if err != nil {
+		return nil, err
+	}
 
 	cids := []string{}
 	for _, b := range ts.Blocks() {
 		cids = append(cids, fmt.Sprintf("%v", b.Cid()))
+	}
+
+	if len(cids) == 0 {
+		return nil, xerrors.Errorf("Invalid block")
 	}
 
 	return cids, nil
