@@ -184,6 +184,7 @@ func (ml *MinerLog) GetBlockTooks() []uint64 {
 func (ml *MinerLog) GetForkBlocks() uint64 {
 	ml.mutex.Lock()
 	forkBlocks := ml.forkBlocks
+	ml.forkBlocks = 0
 	ml.mutex.Unlock()
 	return forkBlocks
 }
@@ -191,6 +192,7 @@ func (ml *MinerLog) GetForkBlocks() uint64 {
 func (ml *MinerLog) GetPastBlocks() uint64 {
 	ml.mutex.Lock()
 	pastBlocks := ml.pastBlocks
+	ml.pastBlocks = 0
 	ml.mutex.Unlock()
 	return pastBlocks
 }
@@ -198,6 +200,7 @@ func (ml *MinerLog) GetPastBlocks() uint64 {
 func (ml *MinerLog) GetFailedBlocks() uint64 {
 	ml.mutex.Lock()
 	failedBlocks := ml.failedBlocks
+	ml.failedBlocks = 0
 	ml.mutex.Unlock()
 	return failedBlocks
 }
