@@ -139,10 +139,17 @@ func GetSealingJobs(ch chan SealingJobs) {
 			Jobs: map[string]map[string]SealingJob{},
 		}
 
+		titleLine := true
+
 		for {
 			line, _, err := br.ReadLine()
 			if err != nil {
 				break
+			}
+
+			if !titleLine {
+				titleLine = false
+				continue
 			}
 
 			lineStr := strings.TrimSpace(string(line))
@@ -156,11 +163,14 @@ func GetSealingJobs(ch chan SealingJobs) {
 			}
 			job := jobs[items[3]]
 
-			elapsedDuration, _ := time.ParseDuration(items[6])
+			elapsedDuration, err := time.ParseDuration(items[6])
+			if err != nil {
+				log.Errorf(log.Fields{}, "cannot parse %v to duration: %v", items[6], err)
+			}
 			elapsed := uint64(elapsedDuration.Milliseconds())
 
 			switch items[5] {
-			case "Running":
+			case "running":
 				job.Running += 1
 				if job.MaxRunning < elapsed {
 					job.MaxRunning = elapsed
