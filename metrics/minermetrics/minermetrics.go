@@ -100,7 +100,9 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 			minMs = took
 		}
 	}
-	avgMs = avgMs / uint64(len(tooks))
+	if 0 < len(tooks) {
+		avgMs = avgMs / uint64(len(tooks))
+	}
 
 	ch <- prometheus.MustNewConstMetric(m.ForkBlocks, prometheus.CounterValue, float64(forkBlocks))
 	ch <- prometheus.MustNewConstMetric(m.PastBlocks, prometheus.CounterValue, float64(pastBlocks))
