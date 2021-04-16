@@ -116,7 +116,6 @@ func (ml *MinerLog) processMinedNewBlock(line logbase.LogLine) {
 		log.Errorf(log.Fields{}, "fail to unmarshal %v: %v", line.Line, err)
 		return
 	}
-	log.Infof(log.Fields{}, "candidate block at height %v, took %v", mline.Height, mline.Took)
 	ml.candidateBlocks = append(ml.candidateBlocks, mline)
 }
 
@@ -155,8 +154,6 @@ func (ml *MinerLog) processLine(line logbase.LogLine) {
 		if !ml.logbase.LineMatchKey(line.Line, item.RegName) {
 			continue
 		}
-
-		log.Infof(log.Fields{}, "match %v -> %v", item.RegName, string(line.Line))
 
 		switch item.RegName {
 		case RegMinedNewBlock:
@@ -202,9 +199,6 @@ func (ml *MinerLog) processCandidateBlocks() {
 			}
 		}
 
-		log.Infof(log.Fields{}, "process block at height %v, took %v | %v",
-			b.Height, b.Took, found)
-
 		if !found {
 			ml.mutex.Lock()
 			ml.forkBlocks += 1
@@ -225,7 +219,6 @@ func (ml *MinerLog) processCandidateBlocks() {
 func (ml *MinerLog) watch() {
 	for {
 		line := <-ml.newline
-		log.Infof(log.Fields{}, "new line %v", line.Line)
 		ml.processLine(line)
 		ml.processCandidateBlocks()
 	}
