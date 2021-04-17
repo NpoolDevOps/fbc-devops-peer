@@ -16,6 +16,7 @@ type LotusMetrics struct {
 	SyncError          *prometheus.Desc
 	ConnectionRefuseds *prometheus.Desc
 	ConnectionTimeouts *prometheus.Desc
+	LogFileSize        *prometheus.Desc
 
 	host    string
 	hasHost bool
@@ -60,6 +61,11 @@ func NewLotusMetrics(logfile string) *LotusMetrics {
 			"Show errors of lotus network connection timeouts",
 			nil, nil,
 		),
+		LogFileSize: prometheus.NewDesc(
+			"lotus_daemon_log_filesize",
+			"Show daemon log filesize",
+			nil, nil,
+		),
 	}
 }
 
@@ -73,6 +79,10 @@ func (m *LotusMetrics) Describe(ch chan<- *prometheus.Desc) {
 	ch <- m.BlockElapsed
 	ch <- m.NetPeers
 	ch <- m.LotusError
+	ch <- m.SyncError
+	ch <- m.ConnectionRefuseds
+	ch <- m.ConnectionTimeouts
+	ch <- m.LogFileSize
 }
 
 func (m *LotusMetrics) Collect(ch chan<- prometheus.Metric) {
@@ -97,6 +107,7 @@ func (m *LotusMetrics) Collect(ch chan<- prometheus.Metric) {
 
 	refuseds := m.ll.GetRefuseds()
 	timeouts := m.ll.GetTimeouts()
+	filesize := m.ll.LogFileSize()
 
 	ch <- prometheus.MustNewConstMetric(m.LotusError, prometheus.CounterValue, float64(m.errors))
 	ch <- prometheus.MustNewConstMetric(m.HeightDiff, prometheus.CounterValue, float64(state.HeightDiff))
@@ -105,4 +116,5 @@ func (m *LotusMetrics) Collect(ch chan<- prometheus.Metric) {
 	ch <- prometheus.MustNewConstMetric(m.SyncError, prometheus.CounterValue, float64(int(syncError)))
 	ch <- prometheus.MustNewConstMetric(m.ConnectionRefuseds, prometheus.CounterValue, float64(int(refuseds)))
 	ch <- prometheus.MustNewConstMetric(m.ConnectionTimeouts, prometheus.CounterValue, float64(int(timeouts)))
+	ch <- prometheus.MustNewConstMetric(m.LogFileSize, prometheus.CounterValue, float64(int(filesize)))
 }

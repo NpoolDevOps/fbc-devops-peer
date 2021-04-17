@@ -103,5 +103,8 @@ func (ll *LotusLog) GetTimeouts() uint64 {
 	ll.timeouts = 0
 	ll.mutex.Unlock()
 	return timeouts
+}
 
+func (ll *LotusLog) LogFileSize() uint64 {
+	return ll.logbase.LogFileSize()
 }

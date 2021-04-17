@@ -103,3 +103,11 @@ func (lb *Logbase) Timestamp(line string) uint64 {
 func (lb *Logbase) LineMatchKey(line string, key string) bool {
 	return strings.Contains(line, key)
 }
+
+func (lb *Logbase) LogFileSize() uint64 {
+	s, err := os.Stat(lb.logfile)
+	if err == nil {
+		return uint64(s.Size())
+	}
+	return 0
+}

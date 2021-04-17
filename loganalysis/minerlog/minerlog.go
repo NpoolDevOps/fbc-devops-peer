@@ -370,3 +370,7 @@ func (ml *MinerLog) GetCheckSectors() map[int]CheckSectors {
 	ml.mutex.Unlock()
 	return sectors
 }
+
+func (ml *MinerLog) LogFileSize() uint64 {
+	return ml.logbase.LogFileSize()
+}

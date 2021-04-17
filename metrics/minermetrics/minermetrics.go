@@ -66,6 +66,8 @@ type MinerMetrics struct {
 	ProvingDeadlinePartitions       *prometheus.Desc
 	ProvingDeadlineProvenPartitions *prometheus.Desc
 
+	LogFileSize *prometheus.Desc
+
 	minerInfo   minerapi.MinerInfo
 	sealingJobs minerapi.SealingJobs
 	workerInfos minerapi.WorkerInfos
@@ -310,6 +312,11 @@ func NewMinerMetrics(logfile string) *MinerMetrics {
 			"Miner proving deadline proven partitions",
 			[]string{"deadline"}, nil,
 		),
+		LogFileSize: prometheus.NewDesc(
+			"miner_log_filesize",
+			"Miner log filesize",
+			nil, nil,
+		),
 	}
 
 	go func() {
@@ -411,6 +418,7 @@ func (m *MinerMetrics) Describe(ch chan<- *prometheus.Desc) {
 	ch <- m.ProvingDeadlineCurrent
 	ch <- m.ProvingDeadlinePartitions
 	ch <- m.ProvingDeadlineProvenPartitions
+	ch <- m.LogFileSize
 }
 
 func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
@@ -562,4 +570,7 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 			log.Errorf(log.Fields{}, "fail to get proving deadlines: %v", err)
 		}
 	}
+
+	filesize := m.ml.LogFileSize()
+	ch <- prometheus.MustNewConstMetric(m.LogFileSize, prometheus.CounterValue, float64(filesize))
 }
