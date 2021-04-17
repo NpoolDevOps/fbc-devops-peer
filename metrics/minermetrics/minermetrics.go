@@ -49,10 +49,15 @@ type MinerMetrics struct {
 	MinerSectorTaskRunning   *prometheus.Desc
 	MinerSectorTaskWaiting   *prometheus.Desc
 
-	MinerBaseFee *prometheus.Desc
+	MinerBaseFee           *prometheus.Desc
+	MinerWorkers           *prometheus.Desc
+	MinerWorkerGPUs        *prometheus.Desc
+	MinerWorkerMaintaining *prometheus.Desc
+	MinerWorkerRejectTask  *prometheus.Desc
 
 	minerInfo   minerapi.MinerInfo
 	sealingJobs minerapi.SealingJobs
+	workerInfos minerapi.WorkerInfos
 	mutex       sync.Mutex
 
 	errors       int
@@ -234,12 +239,33 @@ func NewMinerMetrics(logfile string) *MinerMetrics {
 			"Miner basefee",
 			nil, nil,
 		),
+		MinerWorkers: prometheus.NewDesc(
+			"miner_workers",
+			"Miner workers",
+			nil, nil,
+		),
+		MinerWorkerGPUs: prometheus.NewDesc(
+			"miner_worker_gpus",
+			"Miner worker gpus",
+			[]string{"worker"}, nil,
+		),
+		MinerWorkerMaintaining: prometheus.NewDesc(
+			"miner_worker_maintaining",
+			"Miner worker maintaining",
+			[]string{"worker"}, nil,
+		),
+		MinerWorkerRejectTask: prometheus.NewDesc(
+			"miner_worker_reject_task",
+			"Miner worker reject task",
+			[]string{"worker"}, nil,
+		),
 	}
 
 	go func() {
 		ticker := time.NewTicker(2 * time.Minute)
 		infoCh := make(chan minerapi.MinerInfo)
 		jobsCh := make(chan minerapi.SealingJobs)
+		workersCh := make(chan minerapi.WorkerInfos)
 		count := 0
 		for {
 			showSectors := false
@@ -261,6 +287,13 @@ func NewMinerMetrics(logfile string) *MinerMetrics {
 
 			mm.mutex.Lock()
 			mm.sealingJobs = jobs
+			mm.mutex.Unlock()
+
+			minerapi.GetWorkerInfos(workersCh)
+			workerInfos := <-workersCh
+
+			mm.mutex.Lock()
+			mm.workerInfos = workerInfos
 			mm.mutex.Unlock()
 
 			<-ticker.C
@@ -315,6 +348,10 @@ func (m *MinerMetrics) Describe(ch chan<- *prometheus.Desc) {
 	ch <- m.MinerSectorTaskRunning
 	ch <- m.MinerSectorTaskWaiting
 	ch <- m.MinerBaseFee
+	ch <- m.MinerWorkers
+	ch <- m.MinerWorkerGPUs
+	ch <- m.MinerWorkerMaintaining
+	ch <- m.MinerWorkerRejectTask
 }
 
 func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
@@ -424,4 +461,15 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 
 	basefee, _ := lotusapi.ChainBaseFee(m.fullnodeHost)
 	ch <- prometheus.MustNewConstMetric(m.MinerBaseFee, prometheus.CounterValue, basefee)
+
+	m.mutex.Lock()
+	workerInfos := m.workerInfos
+	m.mutex.Unlock()
+
+	ch <- prometheus.MustNewConstMetric(m.MinerWorkers, prometheus.CounterValue, float64(len(workerInfos.Infos)))
+	for worker, info := range workerInfos.Infos {
+		ch <- prometheus.MustNewConstMetric(m.MinerWorkerGPUs, prometheus.CounterValue, float64(info.GPUs), worker)
+		ch <- prometheus.MustNewConstMetric(m.MinerWorkerMaintaining, prometheus.CounterValue, float64(info.Maintaining), worker)
+		ch <- prometheus.MustNewConstMetric(m.MinerWorkerRejectTask, prometheus.CounterValue, float64(info.RejectTask), worker)
+	}
 }

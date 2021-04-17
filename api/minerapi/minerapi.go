@@ -186,3 +186,74 @@ func GetSealingJobs(ch chan SealingJobs) {
 		ch <- info
 	}()
 }
+
+type WorkerInfo struct {
+	GPUs        int
+	Maintaining int
+	RejectTask  int
+}
+
+type WorkerInfos struct {
+	Infos map[string]WorkerInfo
+}
+
+func GetWorkerInfos(ch chan WorkerInfos) {
+	go func() {
+		out, _ := exec.Command("lotus-miner", "sealing", "workers").Output()
+		br := bufio.NewReader(bytes.NewReader(out))
+
+		info := WorkerInfos{
+			Infos: map[string]WorkerInfo{},
+		}
+
+		curWorker := ""
+
+		for {
+			line, _, err := br.ReadLine()
+			if err != nil {
+				break
+			}
+
+			lineStr := string(line)
+			status := ""
+
+			if strings.HasPrefix(lineStr, "Worker ") {
+				hostStr := strings.Split(lineStr, ", host ")[1]
+				hostStrs := strings.Split(hostStr, "/")
+				if len(hostStrs) < 2 {
+					curWorker = hostStrs[0]
+				} else {
+					hostStrs = strings.Split(hostStrs[1], " ")
+					curWorker = hostStrs[0]
+					status = strings.Replace(hostStrs[1], "(", "", -1)
+					status = strings.Replace(status, "(", "", -1)
+				}
+			}
+
+			if _, ok := info.Infos[curWorker]; !ok {
+				maintaining := 0
+				if strings.Contains(status, "M") {
+					maintaining = 1
+				}
+				rejectTask := 0
+				if strings.Contains(status, "R") {
+					rejectTask = 1
+				}
+				info.Infos[curWorker] = WorkerInfo{
+					Maintaining: maintaining,
+					RejectTask:  rejectTask,
+				}
+			}
+
+			workerInfo := info.Infos[curWorker]
+
+			if strings.Contains(lineStr, "GPU: ") {
+				workerInfo.GPUs += 1
+			}
+
+			info.Infos[curWorker] = workerInfo
+		}
+
+		ch <- info
+	}()
+}
