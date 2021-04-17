@@ -112,7 +112,10 @@ func (p *Parser) readEnvFromAPIFile(filename string) error {
 		apiInfo: s[1],
 	}
 
-	os.Setenv(s[0], s[1])
+	envName := strings.TrimSpace(strings.Split(s[0], " ")[1])
+
+	log.Infof(log.Fields{}, "set environment %v -> %v", envName, s[1])
+	os.Setenv(envName, strings.TrimSpace(s[1]))
 
 	return nil
 }
