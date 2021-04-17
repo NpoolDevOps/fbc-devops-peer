@@ -5,6 +5,7 @@ import (
 	log "github.com/EntropyPool/entropy-logger"
 	lotusapi "github.com/NpoolDevOps/fbc-devops-peer/api/lotusapi"
 	"github.com/NpoolDevOps/fbc-devops-peer/loganalysis/logbase"
+	"math/rand"
 	"strconv"
 	"sync"
 	"time"
@@ -16,6 +17,7 @@ const (
 	RegMiningFailedBlock = "\"msg\":\"mining block failed"
 	RegRunTaskStart      = "run task start"
 	RegRunTaskEnd        = "run task end"
+	RegCheckSectors      = "\"msg\":\"Checked sectors\""
 )
 
 const (
@@ -24,6 +26,7 @@ const (
 	KeyMiningFailedBlock = RegMiningFailedBlock
 	KeyMinedForkBlock    = "mined fork block"
 	KeySectorTask        = "run task"
+	KeyCheckSectors      = RegCheckSectors
 )
 
 type LogRegKey struct {
@@ -52,6 +55,10 @@ var logRegKeys = []LogRegKey{
 		RegName:  RegRunTaskEnd,
 		ItemName: KeySectorTask,
 	},
+	LogRegKey{
+		RegName:  RegCheckSectors,
+		ItemName: KeyCheckSectors,
+	},
 }
 
 type minedBlock struct {
@@ -74,6 +81,12 @@ type sectorTask struct {
 	Error        string `json:"error"`
 }
 
+type CheckSectors struct {
+	Good     int `json:"good"`
+	Checked  int `json:"checked"`
+	Deadline int `json:"deadline"`
+}
+
 type MinerLog struct {
 	logbase         *logbase.Logbase
 	newline         chan logbase.LogLine
@@ -86,6 +99,7 @@ type MinerLog struct {
 	failedBlocks    uint64
 	sectorTasks     map[string]map[string]sectorTask
 	BootTime        uint64
+	checkSectors    map[int]CheckSectors
 	mutex           sync.Mutex
 }
 
@@ -141,6 +155,7 @@ func (ml *MinerLog) processSectorTask(line logbase.LogLine, end bool) {
 	err := json.Unmarshal([]byte(line.Line), &mline)
 	if err != nil {
 		log.Errorf(log.Fields{}, "fail to unmarshal %v: %v", line.Line, err)
+		return
 	}
 
 	ml.mutex.Lock()
@@ -166,6 +181,25 @@ func (ml *MinerLog) processSectorTask(line logbase.LogLine, end bool) {
 	ml.mutex.Unlock()
 }
 
+func (ml *MinerLog) processCheckSectors(line logbase.LogLine) {
+	cs := CheckSectors{
+		Deadline: -1,
+	}
+	err := json.Unmarshal([]byte(line.Line), &cs)
+	if err != nil {
+		log.Errorf(log.Fields{}, "cannot parse %v to check sectors: %v", line.Line, err)
+		return
+	}
+
+	if cs.Deadline < 0 {
+		cs.Deadline = rand.Int()
+	}
+
+	ml.mutex.Lock()
+	ml.checkSectors[cs.Deadline] = cs
+	ml.mutex.Unlock()
+}
+
 func (ml *MinerLog) processLine(line logbase.LogLine) {
 	for _, item := range logRegKeys {
 		if !ml.logbase.LineMatchKey(line.Line, item.RegName) {
@@ -188,6 +222,8 @@ func (ml *MinerLog) processLine(line logbase.LogLine) {
 			ml.processSectorTask(line, false)
 		case RegRunTaskEnd:
 			ml.processSectorTask(line, true)
+		case RegCheckSectors:
+			ml.processCheckSectors(line)
 		}
 
 		break
@@ -324,4 +360,12 @@ func (ml *MinerLog) GetSectorTasks() map[string]map[string][]SectorTaskStat {
 	ml.mutex.Unlock()
 
 	return tasks
+}
+
+func (ml *MinerLog) GetCheckSectors() map[int]CheckSectors {
+	ml.mutex.Lock()
+	sectors := ml.checkSectors
+	ml.checkSectors = map[int]CheckSectors{}
+	ml.mutex.Unlock()
+	return sectors
 }

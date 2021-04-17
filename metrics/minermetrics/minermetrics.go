@@ -1,6 +1,7 @@
 package minermetrics
 
 import (
+	"fmt"
 	"github.com/NpoolDevOps/fbc-devops-peer/api/lotusapi"
 	"github.com/NpoolDevOps/fbc-devops-peer/api/minerapi"
 	"github.com/NpoolDevOps/fbc-devops-peer/loganalysis/minerlog"
@@ -49,11 +50,13 @@ type MinerMetrics struct {
 	MinerSectorTaskRunning   *prometheus.Desc
 	MinerSectorTaskWaiting   *prometheus.Desc
 
-	MinerBaseFee           *prometheus.Desc
-	MinerWorkers           *prometheus.Desc
-	MinerWorkerGPUs        *prometheus.Desc
-	MinerWorkerMaintaining *prometheus.Desc
-	MinerWorkerRejectTask  *prometheus.Desc
+	MinerBaseFee             *prometheus.Desc
+	MinerWorkers             *prometheus.Desc
+	MinerWorkerGPUs          *prometheus.Desc
+	MinerWorkerMaintaining   *prometheus.Desc
+	MinerWorkerRejectTask    *prometheus.Desc
+	MinerCheckSectorsChecked *prometheus.Desc
+	MinerCheckSectorsGood    *prometheus.Desc
 
 	minerInfo   minerapi.MinerInfo
 	sealingJobs minerapi.SealingJobs
@@ -259,6 +262,16 @@ func NewMinerMetrics(logfile string) *MinerMetrics {
 			"Miner worker reject task",
 			[]string{"worker"}, nil,
 		),
+		MinerCheckSectorsGood: prometheus.NewDesc(
+			"miner_check_sectors_good",
+			"Miner check sectors good",
+			[]string{"deadline"}, nil,
+		),
+		MinerCheckSectorsChecked: prometheus.NewDesc(
+			"miner_check_sectors_checked",
+			"Miner check sectors checked",
+			[]string{"deadline"}, nil,
+		),
 	}
 
 	go func() {
@@ -352,6 +365,8 @@ func (m *MinerMetrics) Describe(ch chan<- *prometheus.Desc) {
 	ch <- m.MinerWorkerGPUs
 	ch <- m.MinerWorkerMaintaining
 	ch <- m.MinerWorkerRejectTask
+	ch <- m.MinerCheckSectorsGood
+	ch <- m.MinerCheckSectorsChecked
 }
 
 func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
@@ -471,5 +486,11 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 		ch <- prometheus.MustNewConstMetric(m.MinerWorkerGPUs, prometheus.CounterValue, float64(info.GPUs), worker)
 		ch <- prometheus.MustNewConstMetric(m.MinerWorkerMaintaining, prometheus.CounterValue, float64(info.Maintaining), worker)
 		ch <- prometheus.MustNewConstMetric(m.MinerWorkerRejectTask, prometheus.CounterValue, float64(info.RejectTask), worker)
+	}
+
+	checkSectors := m.ml.GetCheckSectors()
+	for deadline, sectors := range checkSectors {
+		ch <- prometheus.MustNewConstMetric(m.MinerCheckSectorsGood, prometheus.CounterValue, float64(sectors.Good), fmt.Sprintf("%v", deadline))
+		ch <- prometheus.MustNewConstMetric(m.MinerCheckSectorsChecked, prometheus.CounterValue, float64(sectors.Checked), fmt.Sprintf("%v", deadline))
 	}
 }
