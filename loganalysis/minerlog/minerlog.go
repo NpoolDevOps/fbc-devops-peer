@@ -56,11 +56,12 @@ var logRegKeys = []LogRegKey{
 
 type minedBlock struct {
 	logbase.LogLine
-	Cid     string   `json:"cid"`
-	Height  string   `json:"height"`
-	Miner   string   `json:"miner"`
-	Parents []string `json:"parents"`
-	Took    float64  `json:"took"`
+	Cid       string   `json:"cid"`
+	Height    string   `json:"height"`
+	Miner     string   `json:"miner"`
+	Parents   []string `json:"parents"`
+	Took      float64  `json:"took"`
+	InThePast bool
 }
 
 type sectorTask struct {
@@ -119,6 +120,22 @@ func (ml *MinerLog) processMinedNewBlock(line logbase.LogLine) {
 	ml.candidateBlocks = append(ml.candidateBlocks, mline)
 }
 
+func (ml *MinerLog) processMinedInPastBlock(line logbase.LogLine) {
+	mline := minedBlock{}
+	err := json.Unmarshal([]byte(line.Line), &mline)
+	if err != nil {
+		log.Errorf(log.Fields{}, "fail to unmarshal %v: %v", line.Line, err)
+		return
+	}
+
+	for i, b := range ml.candidateBlocks {
+		if b.Cid == mline.Cid {
+			ml.candidateBlocks[i].InThePast = true
+			break
+		}
+	}
+}
+
 func (ml *MinerLog) processSectorTask(line logbase.LogLine, end bool) {
 	mline := sectorTask{}
 	err := json.Unmarshal([]byte(line.Line), &mline)
@@ -161,6 +178,7 @@ func (ml *MinerLog) processLine(line logbase.LogLine) {
 		case RegMinedPastBlock:
 			ml.mutex.Lock()
 			ml.pastBlocks += 1
+			ml.processMinedInPastBlock(line)
 			ml.mutex.Unlock()
 		case RegMiningFailedBlock:
 			ml.mutex.Lock()
@@ -184,6 +202,10 @@ func (ml *MinerLog) processCandidateBlocks() {
 	blocks := []minedBlock{}
 
 	for _, b := range ml.candidateBlocks {
+		if b.InThePast {
+			continue
+		}
+
 		height, _ := strconv.ParseUint(b.Height, 10, 64)
 		cids, err := lotusapi.TipSetByHeight(ml.fullnodeHost, height)
 		if err != nil {

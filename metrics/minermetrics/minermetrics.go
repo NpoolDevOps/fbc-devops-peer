@@ -312,8 +312,6 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 	pastBlocks := m.ml.GetPastBlocks()
 	failedBlocks := m.ml.GetFailedBlocks()
 
-	minerapi.GetMinerInfo(make(chan minerapi.MinerInfo), false)
-
 	avgMs := uint64(0)
 	maxMs := uint64(0)
 	minMs := uint64(0)
@@ -340,10 +338,9 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 	ch <- prometheus.MustNewConstMetric(m.Blocks, prometheus.CounterValue, float64(len(tooks)))
 
 	sectorTasks := m.ml.GetSectorTasks()
-	totalConcurrent := 0
-	totalDones := 0
-
 	for taskType, typedTasks := range sectorTasks {
+		totalConcurrent := 0
+		totalDones := 0
 		for worker, workerTasks := range typedTasks {
 			elapsed := uint64(0)
 			concurrent := uint64(0)
