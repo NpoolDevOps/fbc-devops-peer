@@ -177,7 +177,7 @@ func ChainBaseFee(host string) (float64, error) {
 	basefee := head.MinTicketBlock().ParentBaseFee
 	feeStr := fmt.Sprintf("%v", basefee)
 	ffee, _ := strconv.ParseFloat(feeStr, 64)
-	ffee = ffee * 10e-9
+	ffee = ffee * 10e-10
 
 	return ffee, nil
 }
