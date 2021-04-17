@@ -101,7 +101,7 @@ func (m *LotusMetrics) Collect(ch chan<- prometheus.Metric) {
 	}
 
 	syncError := 0
-	if state.SyncError {
+	if state == nil || state.SyncError {
 		syncError = 1
 	}
 
