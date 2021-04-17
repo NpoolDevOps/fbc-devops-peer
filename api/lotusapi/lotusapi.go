@@ -9,6 +9,7 @@ import (
 	"github.com/filecoin-project/lotus/chain/types"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"golang.org/x/xerrors"
+	"strconv"
 	"time"
 )
 
@@ -162,4 +163,21 @@ func TipSetByHeight(host string, height uint64) ([]string, error) {
 	}
 
 	return cids, nil
+}
+
+func ChainBaseFee(host string) (float64, error) {
+	bh, err := lotusbase.Request(lotusRpcUrl(host), []string{}, "Filecoin.ChainHead")
+	if err != nil {
+		return -1, err
+	}
+
+	head := types.TipSet{}
+	json.Unmarshal(bh, &head)
+
+	basefee := head.MinTicketBlock().ParentBaseFee
+	feeStr := fmt.Sprintf("%v", basefee)
+	ffee, _ := strconv.ParseFloat(feeStr, 64)
+	ffee = ffee * 10e-9
+
+	return ffee, nil
 }

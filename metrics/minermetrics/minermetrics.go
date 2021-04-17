@@ -1,6 +1,7 @@
 package minermetrics
 
 import (
+	"github.com/NpoolDevOps/fbc-devops-peer/api/lotusapi"
 	"github.com/NpoolDevOps/fbc-devops-peer/api/minerapi"
 	"github.com/NpoolDevOps/fbc-devops-peer/loganalysis/minerlog"
 	"github.com/prometheus/client_golang/prometheus"
@@ -47,6 +48,8 @@ type MinerMetrics struct {
 	SectorTaskWaitingElapsed *prometheus.Desc
 	MinerSectorTaskRunning   *prometheus.Desc
 	MinerSectorTaskWaiting   *prometheus.Desc
+
+	MinerBaseFee *prometheus.Desc
 
 	minerInfo   minerapi.MinerInfo
 	sealingJobs minerapi.SealingJobs
@@ -226,6 +229,11 @@ func NewMinerMetrics(logfile string) *MinerMetrics {
 			"Miner sector task waiting total",
 			[]string{"tasktype"}, nil,
 		),
+		MinerBaseFee: prometheus.NewDesc(
+			"miner_basefee",
+			"Miner basefee",
+			nil, nil,
+		),
 	}
 
 	go func() {
@@ -264,9 +272,11 @@ func NewMinerMetrics(logfile string) *MinerMetrics {
 
 func (m *MinerMetrics) SetHost(host string) {
 	m.host = host
+	m.hasHost = true
 }
 
 func (m *MinerMetrics) SetFullnodeHost(host string) {
+	m.fullnodeHost = host
 	m.ml.SetFullnodeHost(host)
 }
 
@@ -304,6 +314,7 @@ func (m *MinerMetrics) Describe(ch chan<- *prometheus.Desc) {
 	ch <- m.SectorTaskWaitingElapsed
 	ch <- m.MinerSectorTaskRunning
 	ch <- m.MinerSectorTaskWaiting
+	ch <- m.MinerBaseFee
 }
 
 func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
@@ -339,8 +350,8 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 
 	sectorTasks := m.ml.GetSectorTasks()
 	for taskType, typedTasks := range sectorTasks {
-		totalConcurrent := 0
-		totalDones := 0
+		totalConcurrent := uint64(0)
+		totalDones := uint64(0)
 		for worker, workerTasks := range typedTasks {
 			elapsed := uint64(0)
 			concurrent := uint64(0)
@@ -410,4 +421,7 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 	for state, count := range info.State {
 		ch <- prometheus.MustNewConstMetric(m.MinerTaskState, prometheus.CounterValue, float64(count), state)
 	}
+
+	basefee, _ := lotusapi.ChainBaseFee(m.fullnodeHost)
+	ch <- prometheus.MustNewConstMetric(m.MinerBaseFee, prometheus.CounterValue, basefee)
 }
