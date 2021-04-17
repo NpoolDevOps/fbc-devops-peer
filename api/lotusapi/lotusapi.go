@@ -3,8 +3,10 @@ package lotusapi
 import (
 	"encoding/json"
 	"fmt"
+	log "github.com/EntropyPool/entropy-logger"
 	"github.com/NpoolDevOps/fbc-devops-peer/api/lotusbase"
 	"github.com/NpoolDevOps/fbc-devops-peer/version"
+	"github.com/filecoin-project/go-state-types/dline"
 	"github.com/filecoin-project/lotus/api"
 	"github.com/filecoin-project/lotus/chain/types"
 	"github.com/libp2p/go-libp2p-core/peer"
@@ -180,4 +182,79 @@ func ChainBaseFee(host string) (float64, error) {
 	ffee = ffee * 10e-10
 
 	return ffee, nil
+}
+
+type ProvingDeadline struct {
+	AllSectors       uint64
+	FaultySectors    uint64
+	Partitions       uint64
+	ProvenPartitions uint64
+	Current          bool
+}
+
+type Deadlines struct {
+	Deadlines []ProvingDeadline
+}
+
+func ProvingDeadlines(host string, minerId string) (*Deadlines, error) {
+	bh, err := lotusbase.Request(lotusRpcUrl(host), []interface{}{minerId, nil}, "Filecoin.StateMinerDeadlines")
+	if err != nil {
+		log.Errorf(log.Fields{}, "state miner deadlines fail: %v", err)
+		return nil, err
+	}
+
+	deadlines := []api.Deadline{}
+	json.Unmarshal(bh, &deadlines)
+
+	bh, err = lotusbase.Request(lotusRpcUrl(host), []interface{}{minerId, nil}, "Filecoin.StateMinerProvingDeadline")
+	if err != nil {
+		log.Errorf(log.Fields{}, "state miner proving deadline fail: %v", err)
+		return nil, err
+	}
+
+	di := dline.Info{}
+	json.Unmarshal(bh, &di)
+
+	provingDeadlines := Deadlines{
+		Deadlines: []ProvingDeadline{},
+	}
+
+	for dlIdx, deadline := range deadlines {
+		bh, err = lotusbase.Request(lotusRpcUrl(host), []interface{}{minerId, dlIdx, nil}, "Filecoin.StateMinerPartitions")
+		if err != nil {
+			log.Errorf(log.Fields{}, "state miner deadline partition fail: %v", err)
+			return nil, err
+		}
+
+		partitions := []api.Partition{}
+		json.Unmarshal(bh, &partitions)
+		provenPartitions, err := deadline.PostSubmissions.Count()
+		if err != nil {
+			return nil, err
+		}
+
+		provingDeadline := ProvingDeadline{
+			Partitions:       uint64(len(partitions)),
+			ProvenPartitions: provenPartitions,
+			Current:          uint64(dlIdx) == di.Index,
+		}
+
+		for _, partition := range partitions {
+			sector, err := partition.AllSectors.Count()
+			if err != nil {
+				return nil, err
+			}
+			faulty, err := partition.FaultySectors.Count()
+			if err != nil {
+				return nil, err
+			}
+
+			provingDeadline.AllSectors += sector
+			provingDeadline.FaultySectors += faulty
+		}
+
+		provingDeadlines.Deadlines = append(provingDeadlines.Deadlines, provingDeadline)
+	}
+
+	return &provingDeadlines, nil
 }

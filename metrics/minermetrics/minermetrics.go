@@ -2,6 +2,7 @@ package minermetrics
 
 import (
 	"fmt"
+	log "github.com/EntropyPool/entropy-logger"
 	"github.com/NpoolDevOps/fbc-devops-peer/api/lotusapi"
 	"github.com/NpoolDevOps/fbc-devops-peer/api/minerapi"
 	"github.com/NpoolDevOps/fbc-devops-peer/loganalysis/minerlog"
@@ -58,6 +59,12 @@ type MinerMetrics struct {
 	MinerWorkerRejectTask    *prometheus.Desc
 	MinerCheckSectorsChecked *prometheus.Desc
 	MinerCheckSectorsGood    *prometheus.Desc
+
+	ProvingDeadlineAllSectors       *prometheus.Desc
+	ProvingDeadlineFaultySectors    *prometheus.Desc
+	ProvingDeadlineCurrent          *prometheus.Desc
+	ProvingDeadlinePartitions       *prometheus.Desc
+	ProvingDeadlineProvenPartitions *prometheus.Desc
 
 	minerInfo   minerapi.MinerInfo
 	sealingJobs minerapi.SealingJobs
@@ -278,6 +285,31 @@ func NewMinerMetrics(logfile string) *MinerMetrics {
 			"Miner check sectors checked",
 			[]string{"deadline"}, nil,
 		),
+		ProvingDeadlineAllSectors: prometheus.NewDesc(
+			"miner_proving_deadline_all_sectors",
+			"Miner proving deadline all sectors",
+			[]string{"deadline"}, nil,
+		),
+		ProvingDeadlineFaultySectors: prometheus.NewDesc(
+			"miner_proving_deadline_faulty_sectors",
+			"Miner proving deadline faulty sectors",
+			[]string{"deadline"}, nil,
+		),
+		ProvingDeadlineCurrent: prometheus.NewDesc(
+			"miner_proving_deadline_current",
+			"Miner proving deadline current",
+			[]string{"deadline"}, nil,
+		),
+		ProvingDeadlinePartitions: prometheus.NewDesc(
+			"miner_proving_deadline_partitions",
+			"Miner proving deadline partitions",
+			[]string{"deadline"}, nil,
+		),
+		ProvingDeadlineProvenPartitions: prometheus.NewDesc(
+			"miner_proving_deadline_proven_partitions",
+			"Miner proving deadline proven partitions",
+			[]string{"deadline"}, nil,
+		),
 	}
 
 	go func() {
@@ -374,6 +406,11 @@ func (m *MinerMetrics) Describe(ch chan<- *prometheus.Desc) {
 	ch <- m.MinerWorkerRejectTask
 	ch <- m.MinerCheckSectorsGood
 	ch <- m.MinerCheckSectorsChecked
+	ch <- m.ProvingDeadlineAllSectors
+	ch <- m.ProvingDeadlineFaultySectors
+	ch <- m.ProvingDeadlineCurrent
+	ch <- m.ProvingDeadlinePartitions
+	ch <- m.ProvingDeadlineProvenPartitions
 }
 
 func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
@@ -502,5 +539,27 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 	for deadline, sectors := range checkSectors {
 		ch <- prometheus.MustNewConstMetric(m.MinerCheckSectorsGood, prometheus.CounterValue, float64(sectors.Good), fmt.Sprintf("%v", deadline))
 		ch <- prometheus.MustNewConstMetric(m.MinerCheckSectorsChecked, prometheus.CounterValue, float64(sectors.Checked), fmt.Sprintf("%v", deadline))
+	}
+	m.mutex.Lock()
+	minerId := m.minerInfo.MinerId
+	m.mutex.Unlock()
+
+	if 0 < len(minerId) {
+		deadlines, err := lotusapi.ProvingDeadlines(m.host, minerId)
+		if err == nil {
+			for dlIdx, deadline := range deadlines.Deadlines {
+				current := 0
+				if deadline.Current {
+					current = 1
+				}
+				ch <- prometheus.MustNewConstMetric(m.ProvingDeadlineAllSectors, prometheus.CounterValue, float64(deadline.AllSectors), fmt.Sprintf("%v", dlIdx))
+				ch <- prometheus.MustNewConstMetric(m.ProvingDeadlineFaultySectors, prometheus.CounterValue, float64(deadline.FaultySectors), fmt.Sprintf("%v", dlIdx))
+				ch <- prometheus.MustNewConstMetric(m.ProvingDeadlineCurrent, prometheus.CounterValue, float64(current), fmt.Sprintf("%v", dlIdx))
+				ch <- prometheus.MustNewConstMetric(m.ProvingDeadlinePartitions, prometheus.CounterValue, float64(deadline.Partitions), fmt.Sprintf("%v", dlIdx))
+				ch <- prometheus.MustNewConstMetric(m.ProvingDeadlineProvenPartitions, prometheus.CounterValue, float64(deadline.ProvenPartitions), fmt.Sprintf("%v", dlIdx))
+			}
+		} else {
+			log.Errorf(log.Fields{}, "fail to get proving deadlines: %v", err)
+		}
 	}
 }
