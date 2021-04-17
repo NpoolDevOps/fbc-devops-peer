@@ -112,6 +112,7 @@ func NewMinerLog(logfile string) *MinerLog {
 		hasFullnodeHost: false,
 		sectorTasks:     map[string]map[string]sectorTask{},
 		BootTime:        uint64(time.Now().Unix()),
+		checkSectors:    map[int]CheckSectors{},
 	}
 
 	go ml.watch()
