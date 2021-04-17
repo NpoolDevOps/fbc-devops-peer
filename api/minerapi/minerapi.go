@@ -3,6 +3,8 @@ package minerapi
 import (
 	"bufio"
 	"bytes"
+	log "github.com/EntropyPool/entropy-logger"
+	"os"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -38,6 +40,15 @@ func parseBalance(line string) float64 {
 	return b
 }
 
+func runCommand(cmd *exec.Cmd) ([]byte, error) {
+	cmd.Stderr = os.Stderr
+	out, err := cmd.Output()
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func GetMinerInfo(ch chan MinerInfo, sectors bool) {
 	go func() {
 		inSectorState := false
@@ -46,12 +57,18 @@ func GetMinerInfo(ch chan MinerInfo, sectors bool) {
 			hideSector = "--hide-sectors-info=false"
 		}
 
-		out, _ := exec.Command("lotus-miner", "info", hideSector).Output()
-		br := bufio.NewReader(bytes.NewReader(out))
-
 		info := MinerInfo{
 			State: map[string]uint64{},
 		}
+
+		out, err := runCommand(exec.Command("/usr/local/bin/lotus-miner", "info", hideSector))
+		if err != nil {
+			log.Errorf(log.Fields{}, "fail to run lotus-miner info: %v", err)
+			ch <- info
+			return
+		}
+
+		br := bufio.NewReader(bytes.NewReader(out))
 
 		for {
 			line, _, err := br.ReadLine()
@@ -132,12 +149,18 @@ type SealingJobs struct {
 
 func GetSealingJobs(ch chan SealingJobs) {
 	go func() {
-		out, _ := exec.Command("lotus-miner", "sealing", "jobs").Output()
-		br := bufio.NewReader(bytes.NewReader(out))
-
 		info := SealingJobs{
 			Jobs: map[string]map[string]SealingJob{},
 		}
+
+		out, err := runCommand(exec.Command("/usr/local/bin/lotus-miner", "sealing", "jobs"))
+		if err != nil {
+			log.Errorf(log.Fields{}, "fail to run lotus-miner sealing jobs: %v", err)
+			ch <- info
+			return
+		}
+
+		br := bufio.NewReader(bytes.NewReader(out))
 
 		titleLine := true
 
@@ -199,13 +222,18 @@ type WorkerInfos struct {
 
 func GetWorkerInfos(ch chan WorkerInfos) {
 	go func() {
-		out, _ := exec.Command("lotus-miner", "sealing", "workers").Output()
-		br := bufio.NewReader(bytes.NewReader(out))
-
 		info := WorkerInfos{
 			Infos: map[string]WorkerInfo{},
 		}
 
+		out, err := runCommand(exec.Command("/usr/local/bin/lotus-miner", "sealing", "workers"))
+		if err != nil {
+			log.Errorf(log.Fields{}, "fail to run lotus-miner sealing workers: %v", err)
+			ch <- info
+			return
+		}
+
+		br := bufio.NewReader(bytes.NewReader(out))
 		curWorker := ""
 
 		for {
