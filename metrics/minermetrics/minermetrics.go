@@ -52,6 +52,7 @@ type MinerMetrics struct {
 
 	MinerBaseFee             *prometheus.Desc
 	MinerWorkers             *prometheus.Desc
+	MinerGPUs                *prometheus.Desc
 	MinerWorkerGPUs          *prometheus.Desc
 	MinerWorkerMaintaining   *prometheus.Desc
 	MinerWorkerRejectTask    *prometheus.Desc
@@ -252,6 +253,11 @@ func NewMinerMetrics(logfile string) *MinerMetrics {
 			"Miner worker gpus",
 			[]string{"worker"}, nil,
 		),
+		MinerGPUs: prometheus.NewDesc(
+			"miner_gpus",
+			"Miner gpus",
+			nil, nil,
+		),
 		MinerWorkerMaintaining: prometheus.NewDesc(
 			"miner_worker_maintaining",
 			"Miner worker maintaining",
@@ -362,6 +368,7 @@ func (m *MinerMetrics) Describe(ch chan<- *prometheus.Desc) {
 	ch <- m.MinerSectorTaskWaiting
 	ch <- m.MinerBaseFee
 	ch <- m.MinerWorkers
+	ch <- m.MinerGPUs
 	ch <- m.MinerWorkerGPUs
 	ch <- m.MinerWorkerMaintaining
 	ch <- m.MinerWorkerRejectTask
@@ -481,12 +488,15 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 	workerInfos := m.workerInfos
 	m.mutex.Unlock()
 
+	gpus := 0
 	ch <- prometheus.MustNewConstMetric(m.MinerWorkers, prometheus.CounterValue, float64(len(workerInfos.Infos)))
 	for worker, info := range workerInfos.Infos {
 		ch <- prometheus.MustNewConstMetric(m.MinerWorkerGPUs, prometheus.CounterValue, float64(info.GPUs), worker)
 		ch <- prometheus.MustNewConstMetric(m.MinerWorkerMaintaining, prometheus.CounterValue, float64(info.Maintaining), worker)
 		ch <- prometheus.MustNewConstMetric(m.MinerWorkerRejectTask, prometheus.CounterValue, float64(info.RejectTask), worker)
+		gpus += info.GPUs
 	}
+	ch <- prometheus.MustNewConstMetric(m.MinerGPUs, prometheus.CounterValue, float64(gpus))
 
 	checkSectors := m.ml.GetCheckSectors()
 	for deadline, sectors := range checkSectors {
