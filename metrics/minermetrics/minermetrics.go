@@ -66,7 +66,8 @@ type MinerMetrics struct {
 	ProvingDeadlinePartitions       *prometheus.Desc
 	ProvingDeadlineProvenPartitions *prometheus.Desc
 
-	LogFileSize *prometheus.Desc
+	LogFileSize           *prometheus.Desc
+	ChainSyncNotCompleted *prometheus.Desc
 
 	minerInfo   minerapi.MinerInfo
 	sealingJobs minerapi.SealingJobs
@@ -317,6 +318,11 @@ func NewMinerMetrics(logfile string) *MinerMetrics {
 			"Miner log filesize",
 			nil, nil,
 		),
+		ChainSyncNotCompleted: prometheus.NewDesc(
+			"miner_chain_sync_not_completed",
+			"Miner chain sync not completed",
+			[]string{"fullnode"}, nil,
+		),
 	}
 
 	go func() {
@@ -419,6 +425,7 @@ func (m *MinerMetrics) Describe(ch chan<- *prometheus.Desc) {
 	ch <- m.ProvingDeadlinePartitions
 	ch <- m.ProvingDeadlineProvenPartitions
 	ch <- m.LogFileSize
+	ch <- m.ChainSyncNotCompleted
 }
 
 func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
@@ -573,4 +580,9 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 
 	filesize := m.ml.LogFileSize()
 	ch <- prometheus.MustNewConstMetric(m.LogFileSize, prometheus.CounterValue, float64(filesize))
+
+	chainSyncNotCompletedHosts := m.ml.GetChainSyncNotCompletedHosts()
+	for host, _ := range chainSyncNotCompletedHosts {
+		ch <- prometheus.MustNewConstMetric(m.ChainSyncNotCompleted, prometheus.CounterValue, float64(1), host)
+	}
 }

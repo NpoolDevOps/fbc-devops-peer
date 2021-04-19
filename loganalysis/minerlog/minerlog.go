@@ -7,26 +7,29 @@ import (
 	"github.com/NpoolDevOps/fbc-devops-peer/loganalysis/logbase"
 	"math/rand"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
 
 const (
-	RegMinedNewBlock     = "\"msg\":\"mined new block\""
-	RegMinedPastBlock    = "mined block in the past"
-	RegMiningFailedBlock = "\"msg\":\"mining block failed"
-	RegRunTaskStart      = "run task start"
-	RegRunTaskEnd        = "run task end"
-	RegCheckSectors      = "\"msg\":\"Checked sectors\""
+	RegMinedNewBlock         = "\"msg\":\"mined new block\""
+	RegMinedPastBlock        = "mined block in the past"
+	RegMiningFailedBlock     = "\"msg\":\"mining block failed"
+	RegRunTaskStart          = "run task start"
+	RegRunTaskEnd            = "run task end"
+	RegCheckSectors          = "\"msg\":\"Checked sectors\""
+	RegChainSyncNotCompleted = "chain sync state is not completed of "
 )
 
 const (
-	KeyMinedNewBlock     = RegMinedNewBlock
-	KeyMinedPastBlock    = RegMinedPastBlock
-	KeyMiningFailedBlock = RegMiningFailedBlock
-	KeyMinedForkBlock    = "mined fork block"
-	KeySectorTask        = "run task"
-	KeyCheckSectors      = RegCheckSectors
+	KeyMinedNewBlock         = RegMinedNewBlock
+	KeyMinedPastBlock        = RegMinedPastBlock
+	KeyMiningFailedBlock     = RegMiningFailedBlock
+	KeyMinedForkBlock        = "mined fork block"
+	KeySectorTask            = "run task"
+	KeyCheckSectors          = RegCheckSectors
+	KeyChainSyncNotCompleted = RegChainSyncNotCompleted
 )
 
 type LogRegKey struct {
@@ -59,6 +62,10 @@ var logRegKeys = []LogRegKey{
 		RegName:  RegCheckSectors,
 		ItemName: KeyCheckSectors,
 	},
+	LogRegKey{
+		RegName:  RegChainSyncNotCompleted,
+		ItemName: KeyChainSyncNotCompleted,
+	},
 }
 
 type minedBlock struct {
@@ -88,31 +95,33 @@ type CheckSectors struct {
 }
 
 type MinerLog struct {
-	logbase         *logbase.Logbase
-	newline         chan logbase.LogLine
-	items           map[string][]uint64
-	fullnodeHost    string
-	hasFullnodeHost bool
-	candidateBlocks []minedBlock
-	forkBlocks      uint64
-	pastBlocks      uint64
-	failedBlocks    uint64
-	sectorTasks     map[string]map[string]sectorTask
-	BootTime        uint64
-	checkSectors    map[int]CheckSectors
-	mutex           sync.Mutex
+	logbase                    *logbase.Logbase
+	newline                    chan logbase.LogLine
+	items                      map[string][]uint64
+	fullnodeHost               string
+	hasFullnodeHost            bool
+	candidateBlocks            []minedBlock
+	forkBlocks                 uint64
+	pastBlocks                 uint64
+	failedBlocks               uint64
+	sectorTasks                map[string]map[string]sectorTask
+	BootTime                   uint64
+	checkSectors               map[int]CheckSectors
+	chainSyncNotCompletedHosts map[string]struct{}
+	mutex                      sync.Mutex
 }
 
 func NewMinerLog(logfile string) *MinerLog {
 	newline := make(chan logbase.LogLine)
 	ml := &MinerLog{
-		logbase:         logbase.NewLogbase(logfile, newline),
-		newline:         newline,
-		items:           map[string][]uint64{},
-		hasFullnodeHost: false,
-		sectorTasks:     map[string]map[string]sectorTask{},
-		BootTime:        uint64(time.Now().Unix()),
-		checkSectors:    map[int]CheckSectors{},
+		logbase:                    logbase.NewLogbase(logfile, newline),
+		newline:                    newline,
+		items:                      map[string][]uint64{},
+		hasFullnodeHost:            false,
+		sectorTasks:                map[string]map[string]sectorTask{},
+		BootTime:                   uint64(time.Now().Unix()),
+		checkSectors:               map[int]CheckSectors{},
+		chainSyncNotCompletedHosts: map[string]struct{}{},
 	}
 
 	go ml.watch()
@@ -201,6 +210,28 @@ func (ml *MinerLog) processCheckSectors(line logbase.LogLine) {
 	ml.mutex.Unlock()
 }
 
+func (ml *MinerLog) processChainSyncNotCompleted(line logbase.LogLine) {
+	msg := strings.Replace(line.Msg, RegChainSyncNotCompleted, "", -1)
+
+	host := ""
+	if strings.HasPrefix(msg, "ws://") {
+		ss := strings.Split(line.Msg, "ws://")
+		if len(ss) < 2 {
+			log.Errorf(log.Fields{}, "cannot parse line: %v", line.Msg)
+			return
+		}
+		ss = strings.Split(ss[1], ":")
+		if len(ss) < 2 {
+			log.Errorf(log.Fields{}, "cannot parse line: %v", line.Msg)
+			return
+		}
+		host = ss[0]
+	} else if strings.HasPrefix(msg, "mainnode") {
+		host = "mainnode"
+	}
+	ml.chainSyncNotCompletedHosts[host] = struct{}{}
+}
+
 func (ml *MinerLog) processLine(line logbase.LogLine) {
 	for _, item := range logRegKeys {
 		if !ml.logbase.LineMatchKey(line.Line, item.RegName) {
@@ -225,6 +256,8 @@ func (ml *MinerLog) processLine(line logbase.LogLine) {
 			ml.processSectorTask(line, true)
 		case RegCheckSectors:
 			ml.processCheckSectors(line)
+		case RegChainSyncNotCompleted:
+			ml.processChainSyncNotCompleted(line)
 		}
 
 		break
@@ -313,6 +346,14 @@ func (ml *MinerLog) GetFailedBlocks() uint64 {
 	ml.failedBlocks = 0
 	ml.mutex.Unlock()
 	return failedBlocks
+}
+
+func (ml *MinerLog) GetChainSyncNotCompletedHosts() map[string]struct{} {
+	ml.mutex.Lock()
+	hosts := ml.chainSyncNotCompletedHosts
+	ml.chainSyncNotCompletedHosts = map[string]struct{}{}
+	ml.mutex.Unlock()
+	return hosts
 }
 
 type SectorTaskStat struct {
