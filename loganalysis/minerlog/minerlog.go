@@ -20,6 +20,7 @@ const (
 	RegRunTaskEnd            = "run task end"
 	RegCheckSectors          = "\"msg\":\"Checked sectors\""
 	RegChainSyncNotCompleted = "chain sync state is not completed of "
+	RegChainNotSuitable      = "cannot find suitable fullnode"
 )
 
 const (
@@ -30,6 +31,7 @@ const (
 	KeySectorTask            = "run task"
 	KeyCheckSectors          = RegCheckSectors
 	KeyChainSyncNotCompleted = RegChainSyncNotCompleted
+	KeyChainNotSuitable      = RegChainNotSuitable
 )
 
 type LogRegKey struct {
@@ -65,6 +67,10 @@ var logRegKeys = []LogRegKey{
 	LogRegKey{
 		RegName:  RegChainSyncNotCompleted,
 		ItemName: KeyChainSyncNotCompleted,
+	},
+	LogRegKey{
+		RegName:  RegChainNotSuitable,
+		ItemName: KeyChainNotSuitable,
 	},
 }
 
@@ -108,6 +114,7 @@ type MinerLog struct {
 	BootTime                   uint64
 	checkSectors               map[int]CheckSectors
 	chainSyncNotCompletedHosts map[string]struct{}
+	chainNotSuitable           uint64
 	mutex                      sync.Mutex
 }
 
@@ -215,7 +222,7 @@ func (ml *MinerLog) processChainSyncNotCompleted(line logbase.LogLine) {
 
 	host := ""
 	if strings.HasPrefix(msg, "ws://") {
-		ss := strings.Split(line.Msg, "ws://")
+		ss := strings.Split(msg, "ws://")
 		if len(ss) < 2 {
 			log.Errorf(log.Fields{}, "cannot parse line: %v", line.Msg)
 			return
@@ -258,6 +265,10 @@ func (ml *MinerLog) processLine(line logbase.LogLine) {
 			ml.processCheckSectors(line)
 		case RegChainSyncNotCompleted:
 			ml.processChainSyncNotCompleted(line)
+		case RegChainNotSuitable:
+			ml.mutex.Lock()
+			ml.chainNotSuitable = 1
+			ml.mutex.Unlock()
 		}
 
 		break
@@ -354,6 +365,14 @@ func (ml *MinerLog) GetChainSyncNotCompletedHosts() map[string]struct{} {
 	ml.chainSyncNotCompletedHosts = map[string]struct{}{}
 	ml.mutex.Unlock()
 	return hosts
+}
+
+func (ml *MinerLog) GetChainNotSuitable() uint64 {
+	ml.mutex.Lock()
+	chainNotSuitable := ml.chainNotSuitable
+	ml.chainNotSuitable = 0
+	ml.mutex.Unlock()
+	return chainNotSuitable
 }
 
 type SectorTaskStat struct {

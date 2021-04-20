@@ -68,6 +68,7 @@ type MinerMetrics struct {
 
 	LogFileSize           *prometheus.Desc
 	ChainSyncNotCompleted *prometheus.Desc
+	ChainNotSuitable      *prometheus.Desc
 
 	minerInfo   minerapi.MinerInfo
 	sealingJobs minerapi.SealingJobs
@@ -323,6 +324,11 @@ func NewMinerMetrics(logfile string) *MinerMetrics {
 			"Miner chain sync not completed",
 			[]string{"fullnode"}, nil,
 		),
+		ChainNotSuitable: prometheus.NewDesc(
+			"miner_chain_not_suitable",
+			"Miner chain not suitable",
+			nil, nil,
+		),
 	}
 
 	go func() {
@@ -426,6 +432,7 @@ func (m *MinerMetrics) Describe(ch chan<- *prometheus.Desc) {
 	ch <- m.ProvingDeadlineProvenPartitions
 	ch <- m.LogFileSize
 	ch <- m.ChainSyncNotCompleted
+	ch <- m.ChainNotSuitable
 }
 
 func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
@@ -585,4 +592,6 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 	for host, _ := range chainSyncNotCompletedHosts {
 		ch <- prometheus.MustNewConstMetric(m.ChainSyncNotCompleted, prometheus.CounterValue, float64(1), host)
 	}
+	chainNotSuitable := m.ml.GetChainNotSuitable()
+	ch <- prometheus.MustNewConstMetric(m.ChainNotSuitable, prometheus.CounterValue, float64(chainNotSuitable))
 }
