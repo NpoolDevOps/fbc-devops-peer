@@ -21,6 +21,7 @@ const (
 	RegCheckSectors          = "\"msg\":\"Checked sectors\""
 	RegChainSyncNotCompleted = "chain sync state is not completed of "
 	RegChainNotSuitable      = "cannot find suitable fullnode"
+	RegChainHeadListen       = "success to listen chain head from "
 )
 
 const (
@@ -32,6 +33,7 @@ const (
 	KeyCheckSectors          = RegCheckSectors
 	KeyChainSyncNotCompleted = RegChainSyncNotCompleted
 	KeyChainNotSuitable      = RegChainNotSuitable
+	KeyChainHeadListen       = RegChainHeadListen
 )
 
 type LogRegKey struct {
@@ -71,6 +73,10 @@ var logRegKeys = []LogRegKey{
 	LogRegKey{
 		RegName:  RegChainNotSuitable,
 		ItemName: KeyChainNotSuitable,
+	},
+	LogRegKey{
+		RegName:  RegChainHeadListen,
+		ItemName: KeyChainHeadListen,
 	},
 }
 
@@ -115,6 +121,7 @@ type MinerLog struct {
 	checkSectors               map[int]CheckSectors
 	chainSyncNotCompletedHosts map[string]struct{}
 	chainNotSuitable           uint64
+	chainHeadListenHosts       map[string]uint64
 	mutex                      sync.Mutex
 }
 
@@ -129,6 +136,7 @@ func NewMinerLog(logfile string) *MinerLog {
 		BootTime:                   uint64(time.Now().Unix()),
 		checkSectors:               map[int]CheckSectors{},
 		chainSyncNotCompletedHosts: map[string]struct{}{},
+		chainHeadListenHosts:       map[string]uint64{},
 	}
 
 	go ml.watch()
@@ -239,6 +247,30 @@ func (ml *MinerLog) processChainSyncNotCompleted(line logbase.LogLine) {
 	ml.chainSyncNotCompletedHosts[host] = struct{}{}
 }
 
+func (ml *MinerLog) processChainHeadListen(line logbase.LogLine) {
+	msg := strings.Replace(line.Msg, RegChainHeadListen, "", -1)
+
+	host := ""
+	if strings.HasPrefix(msg, "ws://") {
+		ss := strings.Split(msg, "ws://")
+		if len(ss) < 2 {
+			log.Errorf(log.Fields{}, "cannot parse line: %v", line.Msg)
+			return
+		}
+		ss = strings.Split(ss[1], ":")
+		if len(ss) < 2 {
+			log.Errorf(log.Fields{}, "cannot parse line: %v", line.Msg)
+			return
+		}
+		host = ss[0]
+	} else if strings.HasPrefix(msg, "mainnode") {
+		host = "mainnode"
+	}
+	curepoch := strings.Split(msg, " ")[2]
+	epoch, _ := strconv.ParseInt(curepoch, 10, 64)
+	ml.chainHeadListenHosts[host] = uint64(epoch)
+}
+
 func (ml *MinerLog) processLine(line logbase.LogLine) {
 	for _, item := range logRegKeys {
 		if !ml.logbase.LineMatchKey(line.Line, item.RegName) {
@@ -269,6 +301,8 @@ func (ml *MinerLog) processLine(line logbase.LogLine) {
 			ml.mutex.Lock()
 			ml.chainNotSuitable = 1
 			ml.mutex.Unlock()
+		case RegChainHeadListen:
+			ml.processChainHeadListen(line)
 		}
 
 		break
@@ -373,6 +407,14 @@ func (ml *MinerLog) GetChainNotSuitable() uint64 {
 	ml.chainNotSuitable = 0
 	ml.mutex.Unlock()
 	return chainNotSuitable
+}
+
+func (ml *MinerLog) GetChainHeadListenSuccessHosts() map[string]uint64 {
+	ml.mutex.Lock()
+	hosts := ml.chainHeadListenHosts
+	ml.chainHeadListenHosts = map[string]uint64{}
+	ml.mutex.Unlock()
+	return hosts
 }
 
 type SectorTaskStat struct {

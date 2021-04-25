@@ -69,6 +69,7 @@ type MinerMetrics struct {
 	LogFileSize           *prometheus.Desc
 	ChainSyncNotCompleted *prometheus.Desc
 	ChainNotSuitable      *prometheus.Desc
+	ChainHeadListen       *prometheus.Desc
 
 	minerInfo   minerapi.MinerInfo
 	sealingJobs minerapi.SealingJobs
@@ -329,6 +330,11 @@ func NewMinerMetrics(logfile string) *MinerMetrics {
 			"Miner chain not suitable",
 			nil, nil,
 		),
+		ChainHeadListen: prometheus.NewDesc(
+			"miner_chain_head_epoch",
+			"Miner chain head epoch",
+			[]string{"fullnode"}, nil,
+		),
 	}
 
 	go func() {
@@ -433,6 +439,7 @@ func (m *MinerMetrics) Describe(ch chan<- *prometheus.Desc) {
 	ch <- m.LogFileSize
 	ch <- m.ChainSyncNotCompleted
 	ch <- m.ChainNotSuitable
+	ch <- m.ChainHeadListen
 }
 
 func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
@@ -594,4 +601,9 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 	}
 	chainNotSuitable := m.ml.GetChainNotSuitable()
 	ch <- prometheus.MustNewConstMetric(m.ChainNotSuitable, prometheus.CounterValue, float64(chainNotSuitable))
+
+	chainHeadListenSuccessHosts := m.ml.GetChainHeadListenSuccessHosts()
+	for host, epoch := range chainHeadListenSuccessHosts {
+		ch <- prometheus.MustNewConstMetric(m.ChainHeadListen, prometheus.CounterValue, float64(epoch), host)
+	}
 }
