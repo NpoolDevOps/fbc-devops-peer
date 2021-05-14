@@ -288,5 +288,5 @@ func WalletExists(host string, address string, bearerToken string) (bool, error)
 		return false, err
 	}
 
-	return exists.(bool), err
+	return string(exists.([]byte)) == "true", err
 }
