@@ -42,8 +42,13 @@ func NewRpcParam(method string, params interface{}) *RpcParam {
 }
 
 func Request(url string, params interface{}, method string) ([]byte, error) {
+	return RequestWithBearerToken(url, params, method, "")
+}
+
+func RequestWithBearerToken(url string, params interface{}, method string, token string) ([]byte, error) {
 	resp, err := httpdaemon.R().
 		SetHeader("Content-Type", "application/json").
+		SetHeader("Authorization", token).
 		SetBody(NewRpcParam(method, params)).
 		Post(url)
 	if err != nil {

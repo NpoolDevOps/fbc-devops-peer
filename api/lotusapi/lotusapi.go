@@ -261,7 +261,7 @@ func ProvingDeadlines(host string, minerId string) (*Deadlines, error) {
 	return &provingDeadlines, nil
 }
 
-func ImportWallet(host string, privateKey string) (string, error) {
+func ImportWallet(host string, privateKey string, bearerToken string) (string, error) {
 	data, err := hex.DecodeString(strings.TrimSpace(privateKey))
 	if err != nil {
 		return "", err
@@ -272,7 +272,7 @@ func ImportWallet(host string, privateKey string) (string, error) {
 		return "", err
 	}
 
-	addr, err := lotusbase.Request(lotusRpcUrl(host), []interface{}{ki}, "Filecoin.WalletImport")
+	addr, err := lotusbase.RequestWithBearerToken(lotusRpcUrl(host), []interface{}{ki}, "Filecoin.WalletImport", bearerToken)
 	if err != nil {
 		log.Errorf(log.Fields{}, "import wallet fail: %v", err)
 		return "", err
