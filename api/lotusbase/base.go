@@ -42,10 +42,11 @@ func NewRpcParam(method string, params interface{}) *RpcParam {
 }
 
 func Request(url string, params interface{}, method string) ([]byte, error) {
-	return RequestWithBearerToken(url, params, method, "")
+	ret, err := RequestWithBearerToken(url, params, method, "")
+	return ret.([]byte), err
 }
 
-func RequestWithBearerToken(url string, params interface{}, method string, token string) ([]byte, error) {
+func RequestWithBearerToken(url string, params interface{}, method string, token string) (interface{}, error) {
 	resp, err := httpdaemon.R().
 		SetHeader("Content-Type", "application/json").
 		SetHeader("Authorization", token).
@@ -61,7 +62,10 @@ func RequestWithBearerToken(url string, params interface{}, method string, token
 	result := RpcResult{}
 	json.Unmarshal(resp.Body(), &result)
 
-	b, _ := json.Marshal(result.Result)
+	b, err := json.Marshal(result.Result)
+	if err != nil {
+		return result.Result, nil
+	}
 
 	return b, nil
 }
