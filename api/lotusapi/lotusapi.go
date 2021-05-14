@@ -282,7 +282,7 @@ func ImportWallet(host string, privateKey string, bearerToken string) (string, e
 }
 
 func WalletExists(host string, address string, bearerToken string) (bool, error) {
-	exists, err := lotusbase.RequestWithBearerToken(lotusRpcUrl(host), []interface{}{address}, "Filecoin.WalletImport", bearerToken)
+	exists, err := lotusbase.RequestWithBearerToken(lotusRpcUrl(host), []interface{}{address}, "Filecoin.WalletHas", bearerToken)
 	if err != nil {
 		log.Errorf(log.Fields{}, "check wallet exists fail: %v", err)
 		return false, err
