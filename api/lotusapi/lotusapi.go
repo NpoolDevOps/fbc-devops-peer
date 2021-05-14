@@ -1,6 +1,7 @@
 package lotusapi
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	log "github.com/EntropyPool/entropy-logger"
@@ -12,6 +13,7 @@ import (
 	"github.com/libp2p/go-libp2p-core/peer"
 	"golang.org/x/xerrors"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -257,4 +259,24 @@ func ProvingDeadlines(host string, minerId string) (*Deadlines, error) {
 	}
 
 	return &provingDeadlines, nil
+}
+
+func ImportWallet(host string, privateKey string) (string, error) {
+	data, err := hex.DecodeString(strings.TrimSpace(privateKey))
+	if err != nil {
+		return "", err
+	}
+
+	var ki types.KeyInfo
+	if err := json.Unmarshal(data, &ki); err != nil {
+		return "", err
+	}
+
+	addr, err := lotusbase.Request(lotusRpcUrl(host), []interface{}{ki}, "Filecoin.WalletImport")
+	if err != nil {
+		log.Errorf(log.Fields{}, "import wallet fail: %v", err)
+		return "", err
+	}
+
+	return string(addr), err
 }
