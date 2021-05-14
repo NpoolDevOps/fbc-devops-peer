@@ -2,6 +2,7 @@ package lotusbase
 
 import (
 	"encoding/json"
+	log "github.com/EntropyPool/entropy-logger"
 	"github.com/NpoolRD/http-daemon"
 	"golang.org/x/xerrors"
 	"sync"
@@ -64,6 +65,7 @@ func RequestWithBearerToken(url string, params interface{}, method string, token
 
 	b, err := json.Marshal(result.Result)
 	if err != nil {
+		log.Infof(log.Fields{}, "cannot marshal '%v', fallback", result.Result)
 		return result.Result, nil
 	}
 
