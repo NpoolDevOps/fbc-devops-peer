@@ -72,7 +72,9 @@ func acceptanceExec(params string) (interface{}, error) {
 
 	if p.Cpus != cpus {
 		results.Results = append(results.Results, newAcceptanceIntResult("CPU Count", p.Cpus, cpus, ""))
+	} else {
+		results.Results = append(results.Results, newAcceptanceIntResult("CPU Count", p.Cpus, cpus, ""))
 	}
 
-	return nil, nil
+	return results, nil
 }
