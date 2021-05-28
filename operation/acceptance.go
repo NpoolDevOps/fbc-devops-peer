@@ -1,7 +1,9 @@
 package operation
 
 import (
-	_ "encoding/json"
+	"encoding/json"
+	"fmt"
+	runtime "github.com/NpoolDevOps/fbc-devops-peer/runtime"
 )
 
 type bondConfig struct {
@@ -26,6 +28,51 @@ type acceptanceParams struct {
 	EthernetBondConfig bondConfig `json:"ethernet_bond_config"`
 }
 
+type acceptanceResult struct {
+	Result      string `json:"result"`
+	TestName    string `json:"test_name"`
+	Description string `json:"description"`
+}
+
+type acceptanceResults struct {
+	Results []acceptanceResult `json:"acceptance_results"`
+}
+
+func newAcceptanceIntResult(name string, expect, result int, err string) acceptanceResult {
+	if expect == result {
+		return acceptanceResult{
+			Result:      "OK",
+			TestName:    name,
+			Description: fmt.Sprintf("CHECK %v [%v = %v]", name, expect, result),
+		}
+	}
+
+	return acceptanceResult{
+		Result:      "ERROR",
+		TestName:    name,
+		Description: fmt.Sprintf("CHECK %v [%v != %v](%v)", name, expect, result, err),
+	}
+}
+
 func acceptanceExec(params string) (interface{}, error) {
+	p := acceptanceParams{}
+	err := json.Unmarshal([]byte(params), &p)
+	if err != nil {
+		return nil, err
+	}
+
+	results := acceptanceResults{
+		Results: []acceptanceResult{},
+	}
+
+	cpus, err := runtime.GetCpuCount()
+	if err != nil {
+		results.Results = append(results.Results, newAcceptanceIntResult("CPU Count", p.Cpus, -1, err.Error()))
+	}
+
+	if p.Cpus != cpus {
+		results.Results = append(results.Results, newAcceptanceIntResult("CPU Count", p.Cpus, cpus, ""))
+	}
+
 	return nil, nil
 }
