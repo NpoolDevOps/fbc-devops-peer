@@ -131,12 +131,16 @@ processDmesgLoop:
 	}
 
 	// If no memory error, do simple NVME | HDD test to check IO error
+	// If nvme or hdd is mounted, notify to deployer to check, or pass force to umount and test them
 	// Get nvme count
 	// Get nvme parameter
 	// Simple test nvme and collect test result, and kernel error
 	// Get hdd count
 	// Get hdd parameter
 	// Simple test hdd and collect test result, and kernel error
+
+	// Check GPU
+	// Check Ethernet
 
 	return results, nil
 }
