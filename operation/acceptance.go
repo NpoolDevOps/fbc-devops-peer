@@ -87,11 +87,7 @@ func acceptanceExec(params string) (interface{}, error) {
 	}
 
 	for _, desc := range cpuDesc {
-		if !strings.Contains(desc, p.CpuBrand) {
-			results.Results = append(results.Results, newAcceptanceResult("CPU Desc", p.CpuBrand, desc, err))
-		} else {
-
-		}
+		results.Results = append(results.Results, newAcceptanceResult("CPU Desc", p.CpuBrand, desc, err))
 	}
 
 	return results, nil
