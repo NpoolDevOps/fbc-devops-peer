@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	runtime "github.com/NpoolDevOps/fbc-devops-peer/runtime"
+	"strings"
 )
 
 type bondConfig struct {
@@ -38,8 +39,20 @@ type acceptanceResults struct {
 	Results []acceptanceResult `json:"acceptance_results"`
 }
 
-func newAcceptanceIntResult(name string, expect, result int, err string) acceptanceResult {
-	if expect == result {
+func newAcceptanceResult(name string, expect, result interface{}, err error) acceptanceResult {
+	testOk := false
+
+	_, ok := expect.(string)
+	if ok {
+		testOk = strings.Contains(result.(string), expect.(string))
+	} else {
+		_, ok := expect.(int)
+		if ok {
+			testOk = expect.(int) == result.(int)
+		}
+	}
+
+	if testOk {
 		return acceptanceResult{
 			Result:      "OK",
 			TestName:    name,
@@ -66,14 +79,19 @@ func acceptanceExec(params string) (interface{}, error) {
 	}
 
 	cpus, err := runtime.GetCpuCount()
+	results.Results = append(results.Results, newAcceptanceResult("CPU Count", p.Cpus, cpus, err))
+
+	cpuDesc, err := runtime.GetCpuDesc()
 	if err != nil {
-		results.Results = append(results.Results, newAcceptanceIntResult("CPU Count", p.Cpus, -1, err.Error()))
+		results.Results = append(results.Results, newAcceptanceResult("CPU Desc", p.CpuBrand, "", err))
 	}
 
-	if p.Cpus != cpus {
-		results.Results = append(results.Results, newAcceptanceIntResult("CPU Count", p.Cpus, cpus, ""))
-	} else {
-		results.Results = append(results.Results, newAcceptanceIntResult("CPU Count", p.Cpus, cpus, ""))
+	for _, desc := range cpuDesc {
+		if !strings.Contains(desc, p.CpuBrand) {
+			results.Results = append(results.Results, newAcceptanceResult("CPU Desc", p.CpuBrand, desc, err))
+		} else {
+
+		}
 	}
 
 	return results, nil

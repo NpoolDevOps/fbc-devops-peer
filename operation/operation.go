@@ -15,11 +15,13 @@ func NewOperation() *Operation {
 }
 
 const (
-	ActionAcceptance = "acceptance"
-	ActionPreinstall = "preinstall"
-	ActionInstall    = "install"
-	ActionInstallBin = "installbin"
-	ActionReleaseBin = "releasebin"
+	ActionAcceptance   = "acceptance"
+	ActionBaselineTest = "baselinetest"
+	ActionPresureTest  = "presuretest"
+	ActionPreinstall   = "preinstall"
+	ActionInstall      = "install"
+	ActionInstallBin   = "installbin"
+	ActionReleaseBin   = "releasebin"
 )
 
 func (op *Operation) onAcceptance(params string) (interface{}, error) {
@@ -32,6 +34,8 @@ func (op *Operation) Exec(action types.OperationAction) (interface{}, error) {
 	switch action.Action {
 	case ActionAcceptance:
 		return op.onAcceptance(string(b))
+	case ActionBaselineTest:
+	case ActionPresureTest:
 	case ActionPreinstall:
 	case ActionInstall:
 	case ActionInstallBin:
