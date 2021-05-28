@@ -144,6 +144,8 @@ func main() {
 				node = worker.NewWorkerNode(config, client)
 			case types.StorageNode:
 				node = storage.NewStorageNode(config, client)
+			default:
+				node = basenode.NewBasenode(config, client)
 			}
 
 			if node == nil {

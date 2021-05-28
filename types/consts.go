@@ -13,6 +13,7 @@ const (
 	WorkerNode    = "worker"
 	StorageNode   = "storage"
 	GatewayNode   = "gateway"
+	ChiaMinerNode = "chiaminer"
 )
 
 const (
