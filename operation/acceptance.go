@@ -6,6 +6,7 @@ import (
 	runtime "github.com/NpoolDevOps/fbc-devops-peer/runtime"
 	"github.com/euank/go-kmsg-parser/kmsgparser"
 	"strings"
+	"time"
 )
 
 type bondConfig struct {
@@ -104,9 +105,13 @@ func acceptanceExec(params string) (interface{}, error) {
 	msgCh := parser.Parse()
 	errSpec := []string{
 		"CE memory read error",
-		"I/O error, dev sd",
 	}
 	specMap := map[string]struct{}{}
+
+	go func() {
+		time.Sleep(10 * time.Second)
+		parser.Close()
+	}()
 
 processDmesgLoop:
 	for {
@@ -124,6 +129,8 @@ processDmesgLoop:
 			}
 		}
 	}
+
+	// If no memory error, do simple NVME | HDD test to check IO error
 
 	return results, nil
 }
