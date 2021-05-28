@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	runtime "github.com/NpoolDevOps/fbc-devops-peer/runtime"
+	"github.com/euank/go-kmsg-parser/kmsgparser"
 	"strings"
 )
 
@@ -27,6 +28,7 @@ type acceptanceParams struct {
 	Ethernets          int        `json:"ethernets"`
 	EthernetSpeed      string     `json:"ethernet_speed"`
 	EthernetBondConfig bondConfig `json:"ethernet_bond_config"`
+	OsSpec             string     `json:"os_spec"`
 }
 
 type acceptanceResult struct {
@@ -44,7 +46,9 @@ func newAcceptanceResult(name string, expect, result interface{}, err error) acc
 
 	_, ok := expect.(string)
 	if ok {
-		testOk = strings.Contains(result.(string), expect.(string))
+		if 0 < len(expect.(string)) {
+			testOk = strings.Contains(result.(string), expect.(string))
+		}
 	} else {
 		_, ok := expect.(int)
 		if ok {
@@ -78,16 +82,46 @@ func acceptanceExec(params string) (interface{}, error) {
 		Results: []acceptanceResult{},
 	}
 
-	cpus, err := runtime.GetCpuCount()
-	results.Results = append(results.Results, newAcceptanceResult("CPU Count", p.Cpus, cpus, err))
+	if 0 < p.Cpus {
+		cpus, err := runtime.GetCpuCount()
+		results.Results = append(results.Results, newAcceptanceResult("CPU Count", p.Cpus, cpus, err))
 
-	cpuDesc, err := runtime.GetCpuDesc()
-	if err != nil {
-		results.Results = append(results.Results, newAcceptanceResult("CPU Desc", p.CpuBrand, "", err))
+		cpuDesc, err := runtime.GetCpuDesc()
+		if err != nil {
+			results.Results = append(results.Results, newAcceptanceResult("CPU Desc", p.CpuBrand, "", err))
+		}
+
+		for i, desc := range cpuDesc {
+			results.Results = append(results.Results, newAcceptanceResult(fmt.Sprintf("CPU %v Desc", i), p.CpuBrand, desc, err))
+		}
 	}
 
-	for i, desc := range cpuDesc {
-		results.Results = append(results.Results, newAcceptanceResult(fmt.Sprintf("CPU %v Desc", i), p.CpuBrand, desc, err))
+	parser, err := kmsgparser.NewParser()
+	if err != nil {
+		results.Results = append(results.Results, newAcceptanceResult("Kernel Error", err.Error(), "", err))
+	}
+
+	msgCh := parser.Parse()
+	errSpec := []string{
+		"CE memory read error",
+	}
+	specMap := map[string]struct{}{}
+
+processDmesgLoop:
+	for {
+		select {
+		case msg, ok := <-msgCh:
+			if !ok {
+				break processDmesgLoop
+			}
+			for _, spec := range errSpec {
+				_, ok := specMap[spec]
+				if ok && strings.Contains(msg.Message, spec) {
+					specMap[spec] = struct{}{}
+					results.Results = append(results.Results, newAcceptanceResult("Kernel Error", "", msg.Message, err))
+				}
+			}
+		}
 	}
 
 	return results, nil

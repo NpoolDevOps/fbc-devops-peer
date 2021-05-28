@@ -10,6 +10,7 @@ require (
 	github.com/NpoolDevOps/fbc-license-service v0.0.0-20210328062839-d1527bc31f7e
 	github.com/NpoolRD/http-daemon v0.0.0-20210324100344-82fee56de8ac
 	github.com/docker/go-units v0.4.0
+	github.com/euank/go-kmsg-parser v2.0.0+incompatible
 	github.com/facebookgo/stack v0.0.0-20160209184415-751773369052 // indirect
 	github.com/filecoin-project/go-state-types v0.1.0
 	github.com/filecoin-project/lotus v1.5.3
