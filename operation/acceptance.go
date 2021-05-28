@@ -104,6 +104,7 @@ func acceptanceExec(params string) (interface{}, error) {
 	msgCh := parser.Parse()
 	errSpec := []string{
 		"CE memory read error",
+		"I/O error, dev sd",
 	}
 	specMap := map[string]struct{}{}
 
