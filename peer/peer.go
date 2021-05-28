@@ -6,6 +6,7 @@ import (
 	log "github.com/EntropyPool/entropy-logger"
 	machspec "github.com/EntropyPool/machine-spec"
 	"github.com/NpoolDevOps/fbc-devops-peer/node"
+	"github.com/NpoolDevOps/fbc-devops-peer/operation"
 	types "github.com/NpoolDevOps/fbc-devops-peer/types"
 	"github.com/NpoolRD/http-daemon"
 	"golang.org/x/xerrors"
@@ -20,6 +21,7 @@ type Peer struct {
 	Node             node.Node
 	parentSpecTicker *time.Ticker
 	spec             string
+	operation        *operation.Operation
 }
 
 func NewPeer(node node.Node) *Peer {
@@ -30,6 +32,7 @@ func NewPeer(node node.Node) *Peer {
 		Node:             node,
 		parentSpecTicker: time.NewTicker(2 * time.Minute),
 		spec:             spec.SN(),
+		operation:        operation.NewOperation(),
 	}
 
 	return conn
@@ -84,6 +87,24 @@ func (p *Peer) HeartbeatRequest(w http.ResponseWriter, req *http.Request) (inter
 	return nil, "", 0
 }
 
+func (p *Peer) OperationRequest(w http.ResponseWriter, req *http.Request) (interface{}, string, int) {
+	b, err := ioutil.ReadAll(req.Body)
+	if err != nil {
+		return nil, err.Error(), -1
+	}
+	input := types.OperationInput{}
+	json.Unmarshal(b, &input)
+
+	// TODO: verify public key or username / password
+
+	resp, err := p.operation.Exec(input.Action)
+	if err != nil {
+		return nil, err.Error(), -2
+	}
+
+	return resp, "", 0
+}
+
 func (p *Peer) Run() {
 	httpdaemon.RegisterRouter(httpdaemon.HttpRouter{
 		Location: types.ParentSpecAPI,
@@ -99,6 +120,11 @@ func (p *Peer) Run() {
 		Location: types.HeartbeatAPI,
 		Method:   "GET",
 		Handler:  p.HeartbeatRequest,
+	})
+	httpdaemon.RegisterRouter(httpdaemon.HttpRouter{
+		Location: types.OperationAPI,
+		Method:   "POST",
+		Handler:  p.OperationRequest,
 	})
 	httpdaemon.Run(peerHttpPort)
 	go p.handler()
