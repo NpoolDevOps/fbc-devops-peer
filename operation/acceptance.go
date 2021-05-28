@@ -86,8 +86,8 @@ func acceptanceExec(params string) (interface{}, error) {
 		results.Results = append(results.Results, newAcceptanceResult("CPU Desc", p.CpuBrand, "", err))
 	}
 
-	for _, desc := range cpuDesc {
-		results.Results = append(results.Results, newAcceptanceResult("CPU Desc", p.CpuBrand, desc, err))
+	for i, desc := range cpuDesc {
+		results.Results = append(results.Results, newAcceptanceResult(fmt.Sprintf("CPU %v Desc", i), p.CpuBrand, desc, err))
 	}
 
 	return results, nil
