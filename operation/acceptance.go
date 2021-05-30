@@ -3,10 +3,11 @@ package operation
 import (
 	"encoding/json"
 	"fmt"
-	runtime "github.com/NpoolDevOps/fbc-devops-peer/runtime"
-	"github.com/euank/go-kmsg-parser/kmsgparser"
 	"strings"
 	"time"
+
+	runtime "github.com/NpoolDevOps/fbc-devops-peer/runtime"
+	"github.com/euank/go-kmsg-parser/kmsgparser"
 )
 
 type bondConfig struct {
@@ -24,8 +25,10 @@ type acceptanceParams struct {
 	GpuBrand           string     `json:"gpu_brand"`
 	Nvmes              int        `json:"nvmes"`
 	NvmeUnitSize       string     `json:"nvme_unit_size"`
+	NvmeBrand          string     `json:"nvme_brand"`
 	Hdds               int        `json:"hdds"`
 	HddUnitSize        string     `json:"hdd_unit_size"`
+	HddBrand           string     `json:"hdd_brand"`
 	Ethernets          int        `json:"ethernets"`
 	EthernetSpeed      string     `json:"ethernet_speed"`
 	EthernetBondConfig bondConfig `json:"ethernet_bond_config"`
@@ -129,16 +132,49 @@ processDmesgLoop:
 			}
 		}
 	}
-
 	// If no memory error, do simple NVME | HDD test to check IO error
 	// If nvme or hdd is mounted, notify to deployer to check, or pass force to umount and test them
-	// Get nvme count
-	// Get nvme parameter
-	// Simple test nvme and collect test result, and kernel error
-	// Get hdd count
-	// Get hdd parameter
-	// Simple test hdd and collect test result, and kernel error
 
+	if 0 < p.Nvmes {
+		// Get nvme count
+		nvmes, _ := runtime.GetNvmeCount()
+		results.Results = append(results.Results, newAcceptanceResult("Nvme Count", p.Nvmes, nvmes, err))
+		// Get nvme parameter
+		nvmeDesc, err := runtime.GetNvmeDesc()
+		if err != nil {
+			results.Results = append(results.Results, newAcceptanceResult("Nvme Desc", p.NvmeBrand, "", err))
+		}
+		for i, desc := range nvmeDesc {
+			results.Results = append(results.Results, newAcceptanceResult(fmt.Sprintf("Nvme %v Desc", i), p.NvmeBrand, desc, err))
+		}
+
+		nvmeInfo, _ := runtime.GetNvmes()
+		for _, info := range nvmeInfo {
+			results.Results = append(results.Results, newAcceptanceResult(fmt.Sprintf("Nvme %v Size", info.Name), p.NvmeUnitSize, info.Size, nil))
+		}
+	}
+
+	// Simple test nvme and collect test result, and kernel error
+
+	if 0 < p.Hdds {
+		// Get hdd count
+		hdds, _ := runtime.GetHddCount()
+		results.Results = append(results.Results, newAcceptanceResult("Nvme Count", p.Hdds, hdds, err))
+		// Get hdd parameter
+		hddDesc, err := runtime.GetHddDesc()
+		if err != nil {
+			results.Results = append(results.Results, newAcceptanceResult("Hdd Desc", p.HddBrand, "", err))
+		}
+		for i, desc := range hddDesc {
+			results.Results = append(results.Results, newAcceptanceResult(fmt.Sprintf("Hdd %v Desc", i), p.HddBrand, desc, err))
+		}
+
+		hddInfo, _ := runtime.GetHdds()
+		for _, info := range hddInfo {
+			results.Results = append(results.Results, newAcceptanceResult(fmt.Sprintf("Hdd %v Size", info.Name), p.HddUnitSize, info.Size, nil))
+		}
+	}
+	// Simple test hdd and collect test result, and kernel error
 	// Check GPU
 	// Check Ethernet
 
