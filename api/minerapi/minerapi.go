@@ -3,12 +3,13 @@ package minerapi
 import (
 	"bufio"
 	"bytes"
-	log "github.com/EntropyPool/entropy-logger"
 	"os"
 	"os/exec"
 	"strconv"
 	"strings"
 	"time"
+
+	log "github.com/EntropyPool/entropy-logger"
 )
 
 type MinerInfo struct {
@@ -19,6 +20,8 @@ type MinerInfo struct {
 	Committed  float64
 	Proving    float64
 	Faulty     float64
+	//winning
+	Winning float64
 
 	MinerBalance     float64
 	InitialPledge    float64
@@ -91,6 +94,10 @@ func GetMinerInfo(ch chan MinerInfo, sectors bool) {
 			}
 			if strings.Contains(lineStr, "Committed: ") {
 				info.Committed, _ = strconv.ParseFloat(strings.Split(lineStr, " ")[1], 64)
+			}
+			//winning
+			if strings.Contains(lineStr, "Winning: ") {
+				info.Winning, _ = strconv.ParseFloat(strings.Split(lineStr, " ")[1], 64)
 			}
 			if !inSectorState {
 				if strings.Contains(lineStr, "Proving: ") {

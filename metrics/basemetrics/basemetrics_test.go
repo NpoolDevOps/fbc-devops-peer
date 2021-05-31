@@ -1,8 +1,9 @@
 package basemetrics
 
 import (
-	log "github.com/EntropyPool/entropy-logger"
 	"testing"
+
+	log "github.com/EntropyPool/entropy-logger"
 )
 
 func TestNewBaseMetrics(t *testing.T) {

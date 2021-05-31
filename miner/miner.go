@@ -31,3 +31,9 @@ func (n *MinerNode) Collect(ch chan<- prometheus.Metric) {
 func (n *MinerNode) CreateExporter() *exporter.Exporter {
 	return exporter.NewExporter(n)
 }
+
+func (n *MinerNode) Banner() {
+	log.Infof(log.Fields{}, "IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII")
+	log.Infof(log.Fields{}, "      MMMMMIIIIINNNNEEEERRRR      ")
+	log.Infof(log.Fields{}, "IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII")
+}

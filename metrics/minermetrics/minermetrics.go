@@ -2,13 +2,14 @@ package minermetrics
 
 import (
 	"fmt"
+	"sync"
+	"time"
+
 	log "github.com/EntropyPool/entropy-logger"
 	"github.com/NpoolDevOps/fbc-devops-peer/api/lotusapi"
 	"github.com/NpoolDevOps/fbc-devops-peer/api/minerapi"
 	"github.com/NpoolDevOps/fbc-devops-peer/loganalysis/minerlog"
 	"github.com/prometheus/client_golang/prometheus"
-	"sync"
-	"time"
 )
 
 type MinerMetrics struct {
@@ -43,6 +44,8 @@ type MinerMetrics struct {
 	WorkerBalance    *prometheus.Desc
 	ControlBalance   *prometheus.Desc
 	MinerTaskState   *prometheus.Desc
+	//winning
+	Winning *prometheus.Desc
 
 	SectorTaskRunning        *prometheus.Desc
 	SectorTaskWaiting        *prometheus.Desc
@@ -335,6 +338,11 @@ func NewMinerMetrics(logfile string) *MinerMetrics {
 			"Miner chain head epoch",
 			[]string{"fullnode"}, nil,
 		),
+		Winning: prometheus.NewDesc(
+			"miner_winning",
+			"Miner winning",
+			nil, nil,
+		),
 	}
 
 	go func() {
@@ -440,6 +448,7 @@ func (m *MinerMetrics) Describe(ch chan<- *prometheus.Desc) {
 	ch <- m.ChainSyncNotCompleted
 	ch <- m.ChainNotSuitable
 	ch <- m.ChainHeadListen
+	ch <- m.Winning
 }
 
 func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
@@ -543,6 +552,8 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 	ch <- prometheus.MustNewConstMetric(m.Available, prometheus.CounterValue, float64(info.Available))
 	ch <- prometheus.MustNewConstMetric(m.WorkerBalance, prometheus.CounterValue, float64(info.WorkerBalance))
 	ch <- prometheus.MustNewConstMetric(m.ControlBalance, prometheus.CounterValue, float64(info.ControlBalance))
+	//winning
+	ch <- prometheus.MustNewConstMetric(m.Winning, prometheus.CounterValue, float64(info.Winning))
 	for state, count := range info.State {
 		ch <- prometheus.MustNewConstMetric(m.MinerTaskState, prometheus.CounterValue, float64(count), state)
 	}
