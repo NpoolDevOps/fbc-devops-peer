@@ -150,8 +150,15 @@ func acceptanceExec(params string) (interface{}, error) {
 		}
 
 		nvmeUnitBytes, err := units.RAMInBytes(p.NvmeUnitSize)
-		for i, nvme := range nvmeList {
-			results.Results = append(results.Results, newAcceptanceResult(fmt.Sprintf("NVME %v Desc", i), nvmeUnitBytes, nvme.SizeBytes, err))
+		if err != nil {
+			results.Results = append(results.Results, newAcceptanceResult("NVME Unit Bytes", p.NvmeUnitSize, "0", err))
+		} else {
+			nvmeUnitBytes = nvmeUnitBytes / 1024 / 1024 / 1024
+
+			for i, nvme := range nvmeList {
+				sizeBytes := uint64(nvme.SizeBytes) / 1024 / 1024 / 1024
+				results.Results = append(results.Results, newAcceptanceResult(fmt.Sprintf("NVME %v Desc %v", i, p.NvmeUnitSize), nvmeUnitBytes, sizeBytes, err))
+			}
 		}
 	}
 
@@ -165,8 +172,15 @@ func acceptanceExec(params string) (interface{}, error) {
 		}
 
 		hddUnitBytes, err := units.RAMInBytes(p.HddUnitSize)
-		for i, hdd := range hddList {
-			results.Results = append(results.Results, newAcceptanceResult(fmt.Sprintf("HDD %v Desc", i), hddUnitBytes, hdd.SizeBytes, err))
+		if err != nil {
+			results.Results = append(results.Results, newAcceptanceResult("HDD Unit Bytes", p.HddUnitSize, "0", err))
+		} else {
+			hddUnitBytes1 := uint64(hddUnitBytes) / 1024 / 1024 / 1024
+
+			for i, hdd := range hddList {
+				sizeBytes := uint64(hdd.SizeBytes) / 1024 / 1024 / 1024
+				results.Results = append(results.Results, newAcceptanceResult(fmt.Sprintf("HDD %v Desc %v", i, p.HddUnitSize), hddUnitBytes1, sizeBytes, err))
+			}
 		}
 	}
 
