@@ -157,16 +157,16 @@ func acceptanceExec(params string) (interface{}, error) {
 
 	if 0 < p.Hdds {
 		hdds, err := runtime.GetHddCount()
-		results.Results = append(results.Results, newAcceptanceResult("NVME Count", p.Hdds, hdds, err))
+		results.Results = append(results.Results, newAcceptanceResult("HDD Count", p.Hdds, hdds, err))
 
 		hddList := runtime.GetHddList()
 		if err != nil {
-			results.Results = append(results.Results, newAcceptanceResult("NVME Desc", p.Hdds, 0, err))
+			results.Results = append(results.Results, newAcceptanceResult("HDD Desc", p.Hdds, 0, err))
 		}
 
 		hddUnitBytes, err := units.RAMInBytes(p.HddUnitSize)
 		for i, hdd := range hddList {
-			results.Results = append(results.Results, newAcceptanceResult(fmt.Sprintf("NVME %v Desc", i), hddUnitBytes, hdd.SizeBytes, err))
+			results.Results = append(results.Results, newAcceptanceResult(fmt.Sprintf("HDD %v Desc", i), hddUnitBytes, hdd.SizeBytes, err))
 		}
 	}
 
