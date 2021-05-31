@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	runtime "github.com/NpoolDevOps/fbc-devops-peer/runtime"
+	"github.com/docker/go-units"
 	"github.com/euank/go-kmsg-parser/kmsgparser"
 	"strings"
 	"time"
@@ -140,7 +141,33 @@ func acceptanceExec(params string) (interface{}, error) {
 	results.Results = append(results.Results, memoryErr[0:]...)
 
 	if 0 < p.Nvmes {
+		nvmes, err := runtime.GetNvmeCount()
+		results.Results = append(results.Results, newAcceptanceResult("NVME Count", p.Nvmes, nvmes, err))
 
+		nvmeList := runtime.GetNvmeList()
+		if err != nil {
+			results.Results = append(results.Results, newAcceptanceResult("NVME Desc", p.Nvmes, 0, err))
+		}
+
+		nvmeUnitBytes, err := units.RAMInBytes(p.NvmeUnitSize)
+		for i, nvme := range nvmeList {
+			results.Results = append(results.Results, newAcceptanceResult(fmt.Sprintf("NVME %v Desc", i), nvmeUnitBytes, nvme.SizeBytes, err))
+		}
+	}
+
+	if 0 < p.Hdds {
+		hdds, err := runtime.GetHddCount()
+		results.Results = append(results.Results, newAcceptanceResult("NVME Count", p.Hdds, hdds, err))
+
+		hddList := runtime.GetHddList()
+		if err != nil {
+			results.Results = append(results.Results, newAcceptanceResult("NVME Desc", p.Hdds, 0, err))
+		}
+
+		hddUnitBytes, err := units.RAMInBytes(p.HddUnitSize)
+		for i, hdd := range hddList {
+			results.Results = append(results.Results, newAcceptanceResult(fmt.Sprintf("NVME %v Desc", i), hddUnitBytes, hdd.SizeBytes, err))
+		}
 	}
 
 	// If no memory error, do simple NVME | HDD test to check IO error
