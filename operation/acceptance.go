@@ -72,6 +72,43 @@ func newAcceptanceResult(name string, expect, result interface{}, err error) acc
 	}
 }
 
+func kernelError(specs []string) []acceptanceResult {
+	results := []acceptanceResult{}
+
+	parser, err := kmsgparser.NewParser()
+	if err != nil {
+		results = append(results, newAcceptanceResult("Kernel Error", err.Error(), "", err))
+		return results
+	}
+
+	msgCh := parser.Parse()
+	specMap := map[string]struct{}{}
+
+	go func() {
+		time.Sleep(10 * time.Second)
+		parser.Close()
+	}()
+
+processDmesgLoop:
+	for {
+		select {
+		case msg, ok := <-msgCh:
+			if !ok {
+				break processDmesgLoop
+			}
+			for _, spec := range specs {
+				_, ok := specMap[spec]
+				if ok && strings.Contains(msg.Message, spec) {
+					specMap[spec] = struct{}{}
+					results = append(results, newAcceptanceResult("Kernel Error", "", msg.Message, err))
+				}
+			}
+		}
+	}
+
+	return results
+}
+
 func acceptanceExec(params string) (interface{}, error) {
 	p := acceptanceParams{}
 	err := json.Unmarshal([]byte(params), &p)
@@ -87,47 +124,23 @@ func acceptanceExec(params string) (interface{}, error) {
 		cpus, err := runtime.GetCpuCount()
 		results.Results = append(results.Results, newAcceptanceResult("CPU Count", p.Cpus, cpus, err))
 
-		cpuDesc, err := runtime.GetCpuDesc()
+		cpuList := runtime.GetCpuList()
 		if err != nil {
 			results.Results = append(results.Results, newAcceptanceResult("CPU Desc", p.CpuBrand, "", err))
 		}
 
-		for i, desc := range cpuDesc {
-			results.Results = append(results.Results, newAcceptanceResult(fmt.Sprintf("CPU %v Desc", i), p.CpuBrand, desc, err))
+		for i, cpu := range cpuList {
+			results.Results = append(results.Results, newAcceptanceResult(fmt.Sprintf("CPU %v Desc", i), p.CpuBrand, cpu.Model, err))
 		}
 	}
 
-	parser, err := kmsgparser.NewParser()
-	if err != nil {
-		results.Results = append(results.Results, newAcceptanceResult("Kernel Error", err.Error(), "", err))
-	}
-
-	msgCh := parser.Parse()
-	errSpec := []string{
+	memoryErr := kernelError([]string{
 		"CE memory read error",
-	}
-	specMap := map[string]struct{}{}
+	})
+	results.Results = append(results.Results, memoryErr[0:]...)
 
-	go func() {
-		time.Sleep(10 * time.Second)
-		parser.Close()
-	}()
+	if 0 < p.Nvmes {
 
-processDmesgLoop:
-	for {
-		select {
-		case msg, ok := <-msgCh:
-			if !ok {
-				break processDmesgLoop
-			}
-			for _, spec := range errSpec {
-				_, ok := specMap[spec]
-				if ok && strings.Contains(msg.Message, spec) {
-					specMap[spec] = struct{}{}
-					results.Results = append(results.Results, newAcceptanceResult("Kernel Error", "", msg.Message, err))
-				}
-			}
-		}
 	}
 
 	// If no memory error, do simple NVME | HDD test to check IO error
