@@ -64,7 +64,7 @@ func GetMinerInfo(ch chan MinerInfo, sectors bool) {
 			State: map[string]uint64{},
 		}
 
-		out, err := runCommand(exec.Command("/usr/local/bin/lotus-miner", "info", hideSector))
+		out, err := runCommand(exec.Command("/usr/local/bin/lotus-miner", "--miner-repo=/opt/data/lotusstorage/", "info", hideSector))
 		if err != nil {
 			log.Errorf(log.Fields{}, "fail to run lotus-miner info: %v", err)
 			ch <- info
@@ -160,7 +160,7 @@ func GetSealingJobs(ch chan SealingJobs) {
 			Jobs: map[string]map[string]SealingJob{},
 		}
 
-		out, err := runCommand(exec.Command("/usr/local/bin/lotus-miner", "sealing", "jobs"))
+		out, err := runCommand(exec.Command("/usr/local/bin/lotus-miner", "--miner-repo=/opt/data/lotusstorage/", "sealing", "jobs"))
 		if err != nil {
 			log.Errorf(log.Fields{}, "fail to run lotus-miner sealing jobs: %v", err)
 			ch <- info
@@ -233,7 +233,7 @@ func GetWorkerInfos(ch chan WorkerInfos) {
 			Infos: map[string]WorkerInfo{},
 		}
 
-		out, err := runCommand(exec.Command("/usr/local/bin/lotus-miner", "sealing", "workers"))
+		out, err := runCommand(exec.Command("/usr/local/bin/lotus-miner", "--miner-repo=/opt/data/lotusstorage/", "sealing", "workers"))
 		if err != nil {
 			log.Errorf(log.Fields{}, "fail to run lotus-miner sealing workers: %v", err)
 			ch <- info
