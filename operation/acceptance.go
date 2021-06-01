@@ -189,7 +189,6 @@ func acceptanceExec(params string) (interface{}, error) {
 	// Simple test nvme and collect test result, and kernel error
 	// Simple test hdd and collect test result, and kernel error
 
-	// Check GPU
 	// Check Ethernet
 
 	return results, nil
