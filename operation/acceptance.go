@@ -126,10 +126,6 @@ func acceptanceExec(params string) (interface{}, error) {
 		results.Results = append(results.Results, newAcceptanceResult("CPU Count", p.Cpus, cpus, err))
 
 		cpuList := runtime.GetCpuList()
-		if err != nil {
-			results.Results = append(results.Results, newAcceptanceResult("CPU Desc", p.CpuBrand, "", err))
-		}
-
 		for i, cpu := range cpuList {
 			results.Results = append(results.Results, newAcceptanceResult(fmt.Sprintf("CPU %v Desc", i), p.CpuBrand, cpu.Model, err))
 		}
@@ -145,18 +141,15 @@ func acceptanceExec(params string) (interface{}, error) {
 		results.Results = append(results.Results, newAcceptanceResult("NVME Count", p.Nvmes, nvmes, err))
 
 		nvmeList := runtime.GetNvmeList()
-		if err != nil {
-			results.Results = append(results.Results, newAcceptanceResult("NVME Desc", p.Nvmes, 0, err))
-		}
 
 		nvmeUnitBytes, err := units.RAMInBytes(p.NvmeUnitSize)
 		if err != nil {
 			results.Results = append(results.Results, newAcceptanceResult("NVME Unit Bytes", p.NvmeUnitSize, "0", err))
 		} else {
-			nvmeUnitBytes = nvmeUnitBytes / 1024 / 1024 / 1024
+			nvmeUnitBytes = nvmeUnitBytes / 1024 / 1024 / 1024 / 1024
 
 			for i, nvme := range nvmeList {
-				sizeBytes := uint64(nvme.SizeBytes) / 1024 / 1024 / 1024
+				sizeBytes := uint64(nvme.SizeBytes) / 1024 / 1024 / 1024 / 1024
 				results.Results = append(results.Results, newAcceptanceResult(fmt.Sprintf("NVME %v Desc %v", i, p.NvmeUnitSize), nvmeUnitBytes, sizeBytes, err))
 			}
 		}
@@ -167,30 +160,33 @@ func acceptanceExec(params string) (interface{}, error) {
 		results.Results = append(results.Results, newAcceptanceResult("HDD Count", p.Hdds, hdds, err))
 
 		hddList := runtime.GetHddList()
-		if err != nil {
-			results.Results = append(results.Results, newAcceptanceResult("HDD Desc", p.Hdds, 0, err))
-		}
 
 		hddUnitBytes, err := units.RAMInBytes(p.HddUnitSize)
 		if err != nil {
 			results.Results = append(results.Results, newAcceptanceResult("HDD Unit Bytes", p.HddUnitSize, "0", err))
 		} else {
-			hddUnitBytes1 := uint64(hddUnitBytes) / 1024 / 1024 / 1024
+			hddUnitBytes1 := uint64(hddUnitBytes) / 1024 / 1024 / 1024 / 1024
 
 			for i, hdd := range hddList {
-				sizeBytes := uint64(hdd.SizeBytes) / 1024 / 1024 / 1024
+				sizeBytes := uint64(hdd.SizeBytes) / 1024 / 1024 / 1024 / 1024
 				results.Results = append(results.Results, newAcceptanceResult(fmt.Sprintf("HDD %v Desc %v", i, p.HddUnitSize), hddUnitBytes1, sizeBytes, err))
 			}
 		}
 	}
 
+	if 0 < p.Gpus {
+		gpus, err := runtime.GetGpuCount()
+		results.Results = append(results.Results, newAcceptanceResult("GPU Count", p.Gpus, gpus, err))
+
+		gpuList := runtime.GetGpuList()
+		for i, gpu := range gpuList {
+			results.Results = append(results.Results, newAcceptanceResult(fmt.Sprintf("GPU %v Desc", i), p.GpuBrand, gpu.DeviceInfo.Product.Name, err))
+		}
+	}
+
 	// If no memory error, do simple NVME | HDD test to check IO error
 	// If nvme or hdd is mounted, notify to deployer to check, or pass force to umount and test them
-	// Get nvme count
-	// Get nvme parameter
 	// Simple test nvme and collect test result, and kernel error
-	// Get hdd count
-	// Get hdd parameter
 	// Simple test hdd and collect test result, and kernel error
 
 	// Check GPU
