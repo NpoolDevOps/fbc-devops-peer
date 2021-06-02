@@ -84,7 +84,9 @@ func GetDeviceFileOpened(pid string) (int64, error) {
 		linestr := strings.TrimSpace(string(line))
 		str += linestr
 	}
-	file_num := strings.Count(str, pid)
+	search_pid := "  " + pid
+	file_num := strings.Count(str, search_pid)
+	log.Infof(log.Fields{}, "file_num is: %v", file_num)
 	return int64(file_num), nil
 }
 
