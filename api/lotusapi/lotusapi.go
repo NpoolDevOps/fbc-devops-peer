@@ -4,17 +4,19 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"strconv"
+	"strings"
+	"time"
+
 	log "github.com/EntropyPool/entropy-logger"
 	"github.com/NpoolDevOps/fbc-devops-peer/api/lotusbase"
+	"github.com/NpoolDevOps/fbc-devops-peer/api/minerapi"
 	"github.com/NpoolDevOps/fbc-devops-peer/version"
 	"github.com/filecoin-project/go-state-types/dline"
 	"github.com/filecoin-project/lotus/api"
 	"github.com/filecoin-project/lotus/chain/types"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"golang.org/x/xerrors"
-	"strconv"
-	"strings"
-	"time"
 )
 
 type SyncState struct {
@@ -22,6 +24,21 @@ type SyncState struct {
 	BlockElapsed time.Duration
 	SyncError    bool
 	NetPeers     int
+}
+
+func fileWorkerOpened() int64 {
+	lotus_pid, err := minerapi.GetDevicePid("lotus")
+	if err != nil {
+		log.Errorf(log.Fields{}, "fail to get lotus pid", err)
+		return 0
+	}
+	lotus_file_num, err := minerapi.GetDeviceFileOpened(lotus_pid)
+	if err != nil {
+		log.Errorf(log.Fields{}, "fail to get lotus file opened number", err)
+		return 0
+	}
+	num, _ := strconv.ParseInt(lotus_file_num, 10, 64)
+	return num
 }
 
 func lotusRpcUrl(host string) string {

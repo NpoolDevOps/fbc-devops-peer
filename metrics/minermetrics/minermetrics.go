@@ -581,6 +581,7 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 		ch <- prometheus.MustNewConstMetric(m.MinerWorkerGPUs, prometheus.CounterValue, float64(info.GPUs), worker)
 		ch <- prometheus.MustNewConstMetric(m.MinerWorkerMaintaining, prometheus.CounterValue, float64(info.Maintaining), worker)
 		ch <- prometheus.MustNewConstMetric(m.MinerWorkerRejectTask, prometheus.CounterValue, float64(info.RejectTask), worker)
+		ch <- prometheus.MustNewConstMetric(m.MinerWorkerFileOpen, prometheus.CounterValue, float64(info.MinerWorkerFileOpen), worker)
 		gpus += info.GPUs
 	}
 	ch <- prometheus.MustNewConstMetric(m.MinerGPUs, prometheus.CounterValue, float64(gpus))

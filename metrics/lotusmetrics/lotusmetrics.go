@@ -1,7 +1,7 @@
 package lotusmetrics
 
 import (
-	api "github.com/NpoolDevOps/fbc-devops-peer/api/lotusapi"
+	"github.com/NpoolDevOps/fbc-devops-peer/api/lotusapi"
 	lotuslog "github.com/NpoolDevOps/fbc-devops-peer/loganalysis/lotuslog"
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -97,12 +97,12 @@ func (m *LotusMetrics) Collect(ch chan<- prometheus.Metric) {
 		return
 	}
 
-	state, err := api.ChainSyncState(m.host)
+	state, err := lotusapi.ChainSyncState(m.host)
 	if err != nil {
 		m.errors += 1
 	}
 
-	netPeers, err := api.ClientNetPeers(m.host)
+	netPeers, err := lotusapi.ClientNetPeers(m.host)
 	if err != nil {
 		m.errors += 1
 	}
@@ -115,6 +115,9 @@ func (m *LotusMetrics) Collect(ch chan<- prometheus.Metric) {
 	refuseds := m.ll.GetRefuseds()
 	timeouts := m.ll.GetTimeouts()
 	filesize := m.ll.LogFileSize()
+
+	fileNum := lotusapi.fileWorkerOpened()
+	ch <- prometheus.MustNewConstMetric(m.LotusFileOpen, prometheus.CounterValue, float64(fileNum))
 
 	ch <- prometheus.MustNewConstMetric(m.LotusError, prometheus.CounterValue, float64(m.errors))
 	if state != nil {

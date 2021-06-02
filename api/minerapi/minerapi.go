@@ -3,12 +3,12 @@ package minerapi
 import (
 	"bufio"
 	"bytes"
+	"fmt"
 	"os"
 	"os/exec"
 	"strconv"
 	"strings"
 	"time"
-	"fmt"
 
 	log "github.com/EntropyPool/entropy-logger"
 )
@@ -31,7 +31,7 @@ type MinerInfo struct {
 	WorkerBalance  float64
 	ControlBalance float64
 
-	MinerFileOpen float64
+	MinerFileOpen int64
 
 	State map[string]uint64
 }
@@ -53,26 +53,26 @@ func runCommand(cmd *exec.Cmd) ([]byte, error) {
 	return out, nil
 }
 
-func GetDevicePid(name string) string, err {
+func GetDevicePid(name string) (string, error) {
 	out_pid, err := runCommand(exec.Command("pgrep", "-f", name))
 	if err != nil {
 		log.Errorf(log.Fields{}, fmt.Sprintf("fail to get %v pid", name), err)
-		return
+		return "", err
 	}
 	br_pid := bufio.NewReader(bytes.NewReader(out_pid))
 	line, _, err := br_pid.ReadLine()
 	if err != nil {
-		return
+		return "", err
 	}
 	linestr := strings.TrimSpace(string(line))
-	return linestr
+	return linestr, nil
 }
 
-func GetDeviceFileOpened(pid string) string {
+func GetDeviceFileOpened(pid string) (string, error) {
 	out_num, err := runCommand(exec.Command("lsof", "-p", pid, "-n"))
 	if err != nil {
 		log.Errorf(log.Fields{}, fmt.Sprintf("fail to get %v file open number", pid), err)
-		return
+		return "", err
 	}
 	br_num := bufio.NewReader(bytes.NewReader(out_num))
 	var str string
@@ -85,8 +85,8 @@ func GetDeviceFileOpened(pid string) string {
 		str += linestr
 	}
 	arr := strings.SplitN(str, "lotus-min", 2)
-	arr1 := strings.Split(arr[1],"root")
-	return strings.TrimSpace(arr1[0])
+	arr1 := strings.Split(arr[1], "root")
+	return strings.TrimSpace(arr1[0]), nil
 }
 
 func GetMinerInfo(ch chan MinerInfo, sectors bool) {
@@ -100,9 +100,16 @@ func GetMinerInfo(ch chan MinerInfo, sectors bool) {
 		info := MinerInfo{
 			State: map[string]uint64{},
 		}
-		
-		miner_pid := GetDevicePid("lotus-miner")
-		info.MinerFileOpen, _ = strconv.ParseFloat(GetDeviceFileOpened(miner_pid), 64)
+
+		miner_pid, err := GetDevicePid("lotus-miner")
+		if err != nil {
+			log.Errorf(log.Fields{}, "fail, error is: %v", err)
+		}
+		fileOpened, err := GetDeviceFileOpened(miner_pid)
+		if err != nil {
+			log.Errorf(log.Fields{}, "fail, error is: %v", err)
+		}
+		info.MinerFileOpen, _ = strconv.ParseInt(fileOpened, 10, 64)
 
 		out, err := runCommand(exec.Command("/usr/local/bin/lotus-miner", "--miner-repo=/opt/data/lotusstorage/", "info", hideSector))
 		if err != nil {
@@ -254,9 +261,10 @@ func GetSealingJobs(ch chan SealingJobs) {
 }
 
 type WorkerInfo struct {
-	GPUs        int
-	Maintaining int
-	RejectTask  int
+	GPUs                int
+	Maintaining         int
+	RejectTask          int
+	MinerWorkerFileOpen int64
 }
 
 type WorkerInfos struct {
@@ -268,6 +276,16 @@ func GetWorkerInfos(ch chan WorkerInfos) {
 		info := WorkerInfos{
 			Infos: map[string]WorkerInfo{},
 		}
+
+		worker_pid, err := GetDeviceFileOpened("lotus-worker")
+		if err != nil {
+			log.Errorf(log.Fields{}, "fail, error is: %v", err)
+		}
+		fileOpened, err := GetDeviceFileOpened(worker_pid)
+		if err != nil {
+			log.Errorf(log.Fields{}, "fail, error is: %v", err)
+		}
+		MinerWorkerFileOpen, _ := strconv.ParseInt(fileOpened, 10, 64)
 
 		out, err := runCommand(exec.Command("/usr/local/bin/lotus-miner", "--miner-repo=/opt/data/lotusstorage/", "sealing", "workers"))
 		if err != nil {
@@ -311,8 +329,9 @@ func GetWorkerInfos(ch chan WorkerInfos) {
 					rejectTask = 1
 				}
 				info.Infos[curWorker] = WorkerInfo{
-					Maintaining: maintaining,
-					RejectTask:  rejectTask,
+					Maintaining:         maintaining,
+					RejectTask:          rejectTask,
+					MinerWorkerFileOpen: MinerWorkerFileOpen,
 				}
 			}
 
