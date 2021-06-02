@@ -49,8 +49,8 @@ type MinerMetrics struct {
 	//根分区读写
 	//worker打开文件数
 	//miner打开文件数
-	MinerFileOpen       *prometheus.Desc
-	MinerWorkerFileOpen *prometheus.Desc
+	MinerFileOpen *prometheus.Desc
+	// MinerWorkerFileOpen *prometheus.Desc
 
 	SectorTaskRunning        *prometheus.Desc
 	SectorTaskWaiting        *prometheus.Desc
@@ -348,11 +348,11 @@ func NewMinerMetrics(logfile string) *MinerMetrics {
 			"Show Files Number Miner Opened",
 			nil, nil,
 		),
-		MinerWorkerFileOpen: prometheus.NewDesc(
-			"miner_worker_file_opened",
-			"Show Files Number Worker Opened",
-			nil, nil,
-		),
+		// MinerWorkerFileOpen: prometheus.NewDesc(
+		// 	"miner_worker_file_opened",
+		// 	"Show Files Number Worker Opened",
+		// 	nil, nil,
+		// ),
 	}
 
 	go func() {
@@ -459,7 +459,7 @@ func (m *MinerMetrics) Describe(ch chan<- *prometheus.Desc) {
 	ch <- m.ChainNotSuitable
 	ch <- m.ChainHeadListen
 	ch <- m.MinerFileOpen
-	ch <- m.MinerWorkerFileOpen
+	// ch <- m.MinerWorkerFileOpen
 }
 
 func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
@@ -581,7 +581,7 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 		ch <- prometheus.MustNewConstMetric(m.MinerWorkerGPUs, prometheus.CounterValue, float64(info.GPUs), worker)
 		ch <- prometheus.MustNewConstMetric(m.MinerWorkerMaintaining, prometheus.CounterValue, float64(info.Maintaining), worker)
 		ch <- prometheus.MustNewConstMetric(m.MinerWorkerRejectTask, prometheus.CounterValue, float64(info.RejectTask), worker)
-		ch <- prometheus.MustNewConstMetric(m.MinerWorkerFileOpen, prometheus.CounterValue, float64(info.MinerWorkerFileOpen), worker)
+		// ch <- prometheus.MustNewConstMetric(m.MinerWorkerFileOpen, prometheus.CounterValue, float64(info.MinerWorkerFileOpen), worker)
 		gpus += info.GPUs
 	}
 	ch <- prometheus.MustNewConstMetric(m.MinerGPUs, prometheus.CounterValue, float64(gpus))

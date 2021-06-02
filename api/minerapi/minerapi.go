@@ -260,10 +260,10 @@ func GetSealingJobs(ch chan SealingJobs) {
 }
 
 type WorkerInfo struct {
-	GPUs                int
-	Maintaining         int
-	RejectTask          int
-	MinerWorkerFileOpen int64
+	GPUs        int
+	Maintaining int
+	RejectTask  int
+	// MinerWorkerFileOpen int64
 }
 
 type WorkerInfos struct {
@@ -276,15 +276,15 @@ func GetWorkerInfos(ch chan WorkerInfos) {
 			Infos: map[string]WorkerInfo{},
 		}
 
-		worker_pid, err := GetDevicePid("lotus-worker")
-		if err != nil {
-			log.Errorf(log.Fields{}, "fail, error is: %v", err)
-		}
-		fileOpened, err := GetDeviceFileOpened(worker_pid)
-		if err != nil {
-			log.Errorf(log.Fields{}, "fail, error is: %v", err)
-		}
-		MinerWorkerFileOpen := fileOpened
+		// worker_pid, err := GetDevicePid("lotus-worker")
+		// if err != nil {
+		// 	log.Errorf(log.Fields{}, "fail, error is: %v", err)
+		// }
+		// fileOpened, err := GetDeviceFileOpened(worker_pid)
+		// if err != nil {
+		// 	log.Errorf(log.Fields{}, "fail, error is: %v", err)
+		// }
+		// MinerWorkerFileOpen := fileOpened
 
 		out, err := runCommand(exec.Command("/usr/local/bin/lotus-miner", "--miner-repo=/opt/data/lotusstorage/", "sealing", "workers"))
 		if err != nil {
@@ -328,9 +328,9 @@ func GetWorkerInfos(ch chan WorkerInfos) {
 					rejectTask = 1
 				}
 				info.Infos[curWorker] = WorkerInfo{
-					Maintaining:         maintaining,
-					RejectTask:          rejectTask,
-					MinerWorkerFileOpen: MinerWorkerFileOpen,
+					Maintaining: maintaining,
+					RejectTask:  rejectTask,
+					// MinerWorkerFileOpen: MinerWorkerFileOpen,
 				}
 			}
 
