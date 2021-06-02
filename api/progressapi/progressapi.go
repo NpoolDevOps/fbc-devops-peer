@@ -56,10 +56,9 @@ func GetProgressTcpConnects(device string) int64 {
 	for {
 		line, _, err := brTcp.ReadLine()
 		if err != nil {
-			log.Errorf(log.Fields{}, fmt.Sprintf("fail to get %v TCP connect number", device), err)
 			break
 		}
-		if strings.Contains(string(line), "tcp ") {
+		if strings.Contains(string(line), "tcp ") && strings.Contains(string(line), device) {
 			lines += 1
 		}
 	}
