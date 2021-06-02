@@ -105,7 +105,6 @@ func GetMinerInfo(ch chan MinerInfo, sectors bool) {
 			}
 
 			lineStr := strings.TrimSpace(string(line))
-			info.MinerFileOpen = 10
 
 			if strings.Contains(lineStr, "Miner: ") {
 				info.MinerId = strings.Split(lineStr, " ")[1]
