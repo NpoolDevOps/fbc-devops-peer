@@ -52,20 +52,34 @@ func runCommand(cmd *exec.Cmd) ([]byte, error) {
 	return out, nil
 }
 
-func GetDevicePid(name string) string {
-	out_pid, _ := runCommand(exec.Command("pgrep", "-f", "lotus-miner"))
+func GetDevicePid(name string) string, err {
+	out_pid, err := runCommand(exec.Command("pgrep", "-f", name))
+	if err != nil {
+		log.Errorf(log.Fields{}, fmt.Sprintf("fail to get %v pid", name), err)
+		return
+	}
 	br_pid := bufio.NewReader(bytes.NewReader(out_pid))
-	line, _, _ := br_pid.ReadLine()
+	line, _, err := br_pid.ReadLine()
+	if err != nil {
+		return
+	}
 	linestr := strings.TrimSpace(string(line))
 	return linestr
 }
 
 func GetDeviceFileOpened(pid string) string {
-	out_num, _ := runCommand(exec.Command("lsof", "-p", pid, "-n"))
-	br_pid := bufio.NewReader(bytes.NewReader(out_num))
+	out_num, err := runCommand(exec.Command("lsof", "-p", pid, "-n"))
+	if err != nil {
+		log.Errorf(log.Fields{}, fmt.Sprintf("fail to get %v file open number", pid), err)
+		return
+	}
+	br_num := bufio.NewReader(bytes.NewReader(out_num))
 	var str string
 	for i := 0; i < 100; i++ {
-		line, _, _ := br_pid.ReadLine()
+		line, _, err := br_num.ReadLine()
+		if err != nil {
+			break
+		}
 		linestr := strings.TrimSpace(string(line))
 		str += linestr
 	}
