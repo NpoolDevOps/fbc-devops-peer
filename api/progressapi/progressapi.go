@@ -41,7 +41,8 @@ func getProgressFileOpened(pid string) (int64, error) {
 		}
 		lines += 1
 	}
-	return lines - 1, nil
+	lines = lines -1
+	return lines, nil
 }
 
 func GetProgressInfo(device string) int64 {

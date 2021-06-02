@@ -556,7 +556,7 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 	ch <- prometheus.MustNewConstMetric(m.Available, prometheus.CounterValue, float64(info.Available))
 	ch <- prometheus.MustNewConstMetric(m.WorkerBalance, prometheus.CounterValue, float64(info.WorkerBalance))
 	ch <- prometheus.MustNewConstMetric(m.ControlBalance, prometheus.CounterValue, float64(info.ControlBalance))
-	ch <- prometheus.MustNewConstMetric(m.MinerFileOpen, prometheus.CounterValue, float64(info.MinerFileOpen))
+
 	for state, count := range info.State {
 		ch <- prometheus.MustNewConstMetric(m.MinerTaskState, prometheus.CounterValue, float64(count), state)
 	}
