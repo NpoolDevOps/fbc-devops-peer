@@ -52,6 +52,28 @@ func runCommand(cmd *exec.Cmd) ([]byte, error) {
 	return out, nil
 }
 
+func GetDevicePid(name string) string {
+	out_pid, _ := runCommand(exec.Command("pgrep", "-f", "lotus-miner"))
+	br_pid := bufio.NewReader(bytes.NewReader(out_pid))
+	line, _, _ := br_pid.ReadLine()
+	linestr := strings.TrimSpace(string(line))
+	return linestr
+}
+
+func GetDeviceFileOpened(pid string) string {
+	out_num, _ := runCommand(exec.Command("lsof", "-p", pid, "-n"))
+	br_pid := bufio.NewReader(bytes.NewReader(out_num))
+	var str string
+	for i := 0; i < 100; i++ {
+		line, _, _ := br_pid.ReadLine()
+		linestr := strings.TrimSpace(string(line))
+		str += linestr
+	}
+	arr := strings.SplitN(str, "lotus-min", 2)
+	arr1 := strings.Split(arr[1],"root")
+	return strings.TrimSpace(arr1[0])
+}
+
 func GetMinerInfo(ch chan MinerInfo, sectors bool) {
 	go func() {
 		inSectorState := false
@@ -63,6 +85,9 @@ func GetMinerInfo(ch chan MinerInfo, sectors bool) {
 		info := MinerInfo{
 			State: map[string]uint64{},
 		}
+		
+		miner_pid := GetDevicePid("lotus-miner")
+		info.MinerFileOpen, _ = strconv.ParseFloat(GetDeviceFileOpened(miner_pid), 64)
 
 		out, err := runCommand(exec.Command("/usr/local/bin/lotus-miner", "--miner-repo=/opt/data/lotusstorage/", "info", hideSector))
 		if err != nil {
