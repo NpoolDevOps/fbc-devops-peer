@@ -68,7 +68,7 @@ func NewLotusMetrics(logfile string) *LotusMetrics {
 			nil, nil,
 		),
 		LotusFileOpen: prometheus.NewDesc(
-			"Lotus_File_Opened",
+			"lotus_file_opened",
 			"Show Numbers File Lotus Opened",
 			nil, nil,
 		),

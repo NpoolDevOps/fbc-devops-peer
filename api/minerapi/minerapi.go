@@ -54,13 +54,13 @@ func runCommand(cmd *exec.Cmd) ([]byte, error) {
 }
 
 func GetDevicePid(name string) (string, error) {
-	out_pid, err := runCommand(exec.Command("pidof", name))
+	outPid, err := runCommand(exec.Command("pidof", name))
 	if err != nil {
 		log.Errorf(log.Fields{}, fmt.Sprintf("fail to get %v pid", name), err)
 		return "", err
 	}
-	br_pid := bufio.NewReader(bytes.NewReader(out_pid))
-	line, _, err := br_pid.ReadLine()
+	brPid := bufio.NewReader(bytes.NewReader(outPid))
+	line, _, err := brPid.ReadLine()
 	if err != nil {
 		return "", err
 	}
@@ -69,25 +69,22 @@ func GetDevicePid(name string) (string, error) {
 }
 
 func GetDeviceFileOpened(pid string) (int64, error) {
-	out_num, err := runCommand(exec.Command("lsof", "-p", pid, "-n"))
+	outNum, err := runCommand(exec.Command("lsof", "-p", pid, "-n"))
 	if err != nil {
 		log.Errorf(log.Fields{}, fmt.Sprintf("fail to get %v file open number", pid), err)
 		return 0, err
 	}
-	br_num := bufio.NewReader(bytes.NewReader(out_num))
-	var str string
+	brNum := bufio.NewReader(bytes.NewReader(outNum))
+	var lines int64 = 0
 	for {
-		line, _, err := br_num.ReadLine()
+		_, _, err := brNum.ReadLine()
 		if err != nil {
 			break
 		}
-		linestr := strings.TrimSpace(string(line))
-		str += linestr
+		lines += 1
 	}
-	search_pid := "  " + pid
-	file_num := strings.Count(str, search_pid)
-	log.Infof(log.Fields{}, "file_num is: %v", file_num)
-	return int64(file_num), nil
+	log.Infof(log.Fields{}, "fileNum is: %v", lines)
+	return lines - 1, nil
 }
 
 func GetMinerInfo(ch chan MinerInfo, sectors bool) {
@@ -102,11 +99,11 @@ func GetMinerInfo(ch chan MinerInfo, sectors bool) {
 			State: map[string]uint64{},
 		}
 
-		miner_pid, err := GetDevicePid("lotus-miner")
+		minerPid, err := GetDevicePid("lotus-miner")
 		if err != nil {
 			log.Errorf(log.Fields{}, "fail, error is: %v", err)
 		}
-		fileOpened, err := GetDeviceFileOpened(miner_pid)
+		fileOpened, err := GetDeviceFileOpened(minerPid)
 		if err != nil {
 			log.Errorf(log.Fields{}, "fail, error is: %v", err)
 		}
