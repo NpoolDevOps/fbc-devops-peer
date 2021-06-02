@@ -41,19 +41,41 @@ func getProgressFileOpened(pid string) (int64, error) {
 		}
 		lines += 1
 	}
-	lines = lines -1
+	lines = lines - 1
 	return lines, nil
+}
+
+func GetProgressTcpConnects(device string) int64 {
+	outTcp, err := api.RunCommand(exec.Command("netstat", "-tunlp"))
+	if err != nil {
+		log.Errorf(log.Fields{}, fmt.Sprintf("fail to get %v TCP connect number", device), err)
+		return 0
+	}
+	brTcp := bufio.NewReader(bytes.NewReader(outTcp))
+	var lines int64 = 0
+	for {
+		line, _, err := brTcp.ReadLine()
+		if err != nil {
+			log.Errorf(log.Fields{}, fmt.Sprintf("fail to get %v TCP connect number", device), err)
+			break
+		}
+		if strings.Contains(string(line), "tcp ") {
+			lines += 1
+		}
+	}
+	return lines
 }
 
 func GetProgressInfo(device string) int64 {
 	pid, err := getProgressPid(device)
 	if err != nil {
 		log.Errorf(log.Fields{}, "fail, error is: %v", err)
+		return 0
 	}
 	fileOpened, err := getProgressFileOpened(pid)
 	if err != nil {
 		log.Errorf(log.Fields{}, "fail, error is: %v", err)
+		return 0
 	}
-	log.Infof(log.Fields{}, "%v file open number is: %v", device, fileOpened)
 	return fileOpened
 }

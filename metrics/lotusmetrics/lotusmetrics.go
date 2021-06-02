@@ -19,6 +19,7 @@ type LotusMetrics struct {
 	ConnectionTimeouts *prometheus.Desc
 	LogFileSize        *prometheus.Desc
 	LotusFileOpen      *prometheus.Desc
+	LotusTcpConnect    *prometheus.Desc
 
 	host    string
 	hasHost bool
@@ -73,6 +74,11 @@ func NewLotusMetrics(logfile string) *LotusMetrics {
 			"Show Numbers File Lotus Opened",
 			nil, nil,
 		),
+		LotusTcpConnect: prometheus.NewDesc(
+			"lotus_tcp_connect",
+			"Show Number Lotus Connect TCP",
+			nil, nil,
+		),
 	}
 }
 
@@ -91,6 +97,7 @@ func (m *LotusMetrics) Describe(ch chan<- *prometheus.Desc) {
 	ch <- m.ConnectionTimeouts
 	ch <- m.LogFileSize
 	ch <- m.LotusFileOpen
+	ch <- m.LotusTcpConnect
 }
 
 func (m *LotusMetrics) Collect(ch chan<- prometheus.Metric) {
@@ -119,6 +126,9 @@ func (m *LotusMetrics) Collect(ch chan<- prometheus.Metric) {
 
 	lotusOpenFileNum := progressapi.GetProgressInfo("lotus")
 	ch <- prometheus.MustNewConstMetric(m.LotusFileOpen, prometheus.CounterValue, float64(lotusOpenFileNum))
+
+	lotusTcpConnect := progressapi.GetProgressTcpConnects("lotus")
+	ch <- prometheus.MustNewConstMetric(m.LotusTcpConnect, prometheus.CounterValue, float64(lotusTcpConnect))
 
 	ch <- prometheus.MustNewConstMetric(m.LotusError, prometheus.CounterValue, float64(m.errors))
 	if state != nil {

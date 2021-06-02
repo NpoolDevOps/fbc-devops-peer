@@ -49,7 +49,9 @@ type MinerMetrics struct {
 	//storage 读写
 	//根分区读写
 	//miner打开文件数
-	MinerFileOpen *prometheus.Desc
+
+	MinerFileOpen   *prometheus.Desc
+	MinerTcpConnect *prometheus.Desc
 
 	SectorTaskRunning        *prometheus.Desc
 	SectorTaskWaiting        *prometheus.Desc
@@ -347,6 +349,11 @@ func NewMinerMetrics(logfile string) *MinerMetrics {
 			"Show Files Number Miner Opened",
 			nil, nil,
 		),
+		MinerTcpConnect: prometheus.NewDesc(
+			"miner_tcp_connect",
+			"Show Numbers Miner Connect TCP",
+			nil, nil,
+		),
 	}
 
 	go func() {
@@ -453,6 +460,7 @@ func (m *MinerMetrics) Describe(ch chan<- *prometheus.Desc) {
 	ch <- m.ChainNotSuitable
 	ch <- m.ChainHeadListen
 	ch <- m.MinerFileOpen
+	ch <- m.MinerTcpConnect
 }
 
 func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
@@ -566,6 +574,9 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 
 	minerOpenFileNum := progressapi.GetProgressInfo("lotus-miner")
 	ch <- prometheus.MustNewConstMetric(m.MinerFileOpen, prometheus.CounterValue, float64(minerOpenFileNum))
+
+	minerTcpConnect := progressapi.GetProgressTcpConnects("lotus-miner")
+	ch <- prometheus.MustNewConstMetric(m.MinerTcpConnect, prometheus.CounterValue, float64(minerTcpConnect))
 
 	m.mutex.Lock()
 	workerInfos := m.workerInfos
