@@ -54,7 +54,7 @@ func runCommand(cmd *exec.Cmd) ([]byte, error) {
 }
 
 func GetDevicePid(name string) (string, error) {
-	out_pid, err := runCommand(exec.Command("pgrep", "-f", name))
+	out_pid, err := runCommand(exec.Command("pidof", name))
 	if err != nil {
 		log.Errorf(log.Fields{}, fmt.Sprintf("fail to get %v pid", name), err)
 		return "", err
@@ -68,15 +68,15 @@ func GetDevicePid(name string) (string, error) {
 	return linestr, nil
 }
 
-func GetDeviceFileOpened(pid string) (string, error) {
+func GetDeviceFileOpened(pid string) (int64, error) {
 	out_num, err := runCommand(exec.Command("lsof", "-p", pid, "-n"))
 	if err != nil {
 		log.Errorf(log.Fields{}, fmt.Sprintf("fail to get %v file open number", pid), err)
-		return "", err
+		return 0, err
 	}
 	br_num := bufio.NewReader(bytes.NewReader(out_num))
 	var str string
-	for i := 0; i < 100; i++ {
+	for {
 		line, _, err := br_num.ReadLine()
 		if err != nil {
 			break
@@ -84,9 +84,8 @@ func GetDeviceFileOpened(pid string) (string, error) {
 		linestr := strings.TrimSpace(string(line))
 		str += linestr
 	}
-	arr := strings.SplitN(str, "lotus-min", 2)
-	arr1 := strings.Split(arr[1], "root")
-	return strings.TrimSpace(arr1[0]), nil
+	file_num := strings.Count(str, pid)
+	return int64(file_num), nil
 }
 
 func GetMinerInfo(ch chan MinerInfo, sectors bool) {
@@ -109,7 +108,7 @@ func GetMinerInfo(ch chan MinerInfo, sectors bool) {
 		if err != nil {
 			log.Errorf(log.Fields{}, "fail, error is: %v", err)
 		}
-		info.MinerFileOpen, _ = strconv.ParseInt(fileOpened, 10, 64)
+		info.MinerFileOpen = fileOpened
 
 		out, err := runCommand(exec.Command("/usr/local/bin/lotus-miner", "--miner-repo=/opt/data/lotusstorage/", "info", hideSector))
 		if err != nil {
@@ -277,7 +276,7 @@ func GetWorkerInfos(ch chan WorkerInfos) {
 			Infos: map[string]WorkerInfo{},
 		}
 
-		worker_pid, err := GetDeviceFileOpened("lotus-worker")
+		worker_pid, err := GetDevicePid("lotus-worker")
 		if err != nil {
 			log.Errorf(log.Fields{}, "fail, error is: %v", err)
 		}
@@ -285,7 +284,7 @@ func GetWorkerInfos(ch chan WorkerInfos) {
 		if err != nil {
 			log.Errorf(log.Fields{}, "fail, error is: %v", err)
 		}
-		MinerWorkerFileOpen, _ := strconv.ParseInt(fileOpened, 10, 64)
+		MinerWorkerFileOpen := fileOpened
 
 		out, err := runCommand(exec.Command("/usr/local/bin/lotus-miner", "--miner-repo=/opt/data/lotusstorage/", "sealing", "workers"))
 		if err != nil {

@@ -26,7 +26,7 @@ type SyncState struct {
 	NetPeers     int
 }
 
-func fileWorkerOpened() int64 {
+func FileWorkerOpened() int64 {
 	lotus_pid, err := minerapi.GetDevicePid("lotus")
 	if err != nil {
 		log.Errorf(log.Fields{}, "fail to get lotus pid", err)
@@ -37,7 +37,7 @@ func fileWorkerOpened() int64 {
 		log.Errorf(log.Fields{}, "fail to get lotus file opened number", err)
 		return 0
 	}
-	num, _ := strconv.ParseInt(lotus_file_num, 10, 64)
+	num := lotus_file_num
 	return num
 }
 

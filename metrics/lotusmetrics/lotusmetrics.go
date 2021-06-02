@@ -116,7 +116,7 @@ func (m *LotusMetrics) Collect(ch chan<- prometheus.Metric) {
 	timeouts := m.ll.GetTimeouts()
 	filesize := m.ll.LogFileSize()
 
-	fileNum := lotusapi.fileWorkerOpened()
+	fileNum := lotusapi.FileWorkerOpened()
 	ch <- prometheus.MustNewConstMetric(m.LotusFileOpen, prometheus.CounterValue, float64(fileNum))
 
 	ch <- prometheus.MustNewConstMetric(m.LotusError, prometheus.CounterValue, float64(m.errors))
