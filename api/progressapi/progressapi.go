@@ -41,7 +41,6 @@ func getProgressFileOpened(pid string) (int64, error) {
 		}
 		lines += 1
 	}
-	log.Infof(log.Fields{}, "fileNum is: %v", lines)
 	return lines - 1, nil
 }
 
@@ -54,5 +53,6 @@ func GetProgressInfo(device string) int64 {
 	if err != nil {
 		log.Errorf(log.Fields{}, "fail, error is: %v", err)
 	}
+	log.Infof(log.Fields{}, "%v file open number is: %v", device, fileOpened)
 	return fileOpened
 }
