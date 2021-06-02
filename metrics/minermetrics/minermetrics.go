@@ -83,8 +83,6 @@ type MinerMetrics struct {
 	workerInfos minerapi.WorkerInfos
 	mutex       sync.Mutex
 
-	progressInfo progressapi.ProgressInfo
-
 	errors       int
 	host         string
 	hasHost      bool
@@ -356,7 +354,6 @@ func NewMinerMetrics(logfile string) *MinerMetrics {
 		infoCh := make(chan minerapi.MinerInfo)
 		jobsCh := make(chan minerapi.SealingJobs)
 		workersCh := make(chan minerapi.WorkerInfos)
-		progressCh := make(chan progressapi.ProgressInfo)
 		count := 0
 		for {
 			showSectors := false
@@ -371,13 +368,6 @@ func NewMinerMetrics(logfile string) *MinerMetrics {
 
 			mm.mutex.Lock()
 			mm.minerInfo = info
-			mm.mutex.Unlock()
-
-			progressapi.GetProgressInfo(progressCh)
-			progress := <-progressCh
-
-			mm.mutex.Lock()
-			mm.progressInfo = progress
 			mm.mutex.Unlock()
 
 			minerapi.GetSealingJobs(jobsCh)
@@ -574,9 +564,7 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 	basefee, _ := lotusapi.ChainBaseFee(m.fullnodeHost)
 	ch <- prometheus.MustNewConstMetric(m.MinerBaseFee, prometheus.CounterValue, basefee)
 
-	m.mutex.Lock()
-	minerOpenFileNum := m.progressInfo.MinerFileOpen
-	m.mutex.Unlock()
+	minerOpenFileNum := progressapi.GetProgressInfo("lotus-miner")
 	ch <- prometheus.MustNewConstMetric(m.MinerFileOpen, prometheus.CounterValue, float64(minerOpenFileNum))
 
 	m.mutex.Lock()

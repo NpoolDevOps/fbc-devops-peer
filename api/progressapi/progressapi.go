@@ -11,12 +11,6 @@ import (
 	api "github.com/NpoolDevOps/fbc-devops-peer/api/minerapi"
 )
 
-type ProgressInfo struct {
-	MinerFileOpen  int64
-	LotusFileOpen  int64
-	WorkerFileOpen int64
-}
-
 func getProgressPid(name string) (string, error) {
 	outPid, err := api.RunCommand(exec.Command("pidof", name))
 	if err != nil {
@@ -51,34 +45,14 @@ func getProgressFileOpened(pid string) (int64, error) {
 	return lines - 1, nil
 }
 
-var DeviceList = []string{"lotus-miner", "lotus", "lotus-worker"}
-
-func GetProgressInfo(ch chan ProgressInfo) {
-	go func() {
-		info := ProgressInfo{}
-		for _, device := range DeviceList {
-			pid, err := getProgressPid(device)
-			if err != nil {
-				log.Errorf(log.Fields{}, "fail, error is: %v", err)
-				break
-			}
-			fileOpened, err := getProgressFileOpened(pid)
-			if err != nil {
-				log.Errorf(log.Fields{}, "fail, error is: %v", err)
-				break
-			}
-			if device == "lotus-miner" {
-				info.MinerFileOpen = fileOpened
-			}
-			if device == "lotus" {
-				info.LotusFileOpen = fileOpened
-			}
-			if device == "lotus-worker" {
-				info.WorkerFileOpen = fileOpened
-			}
-		}
-
-		ch <- info
-	}()
-
+func GetProgressInfo(device string) int64 {
+	pid, err := getProgressPid(device)
+	if err != nil {
+		log.Errorf(log.Fields{}, "fail, error is: %v", err)
+	}
+	fileOpened, err := getProgressFileOpened(pid)
+	if err != nil {
+		log.Errorf(log.Fields{}, "fail, error is: %v", err)
+	}
+	return fileOpened
 }

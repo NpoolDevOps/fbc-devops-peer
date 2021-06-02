@@ -1,8 +1,6 @@
 package lotusmetrics
 
 import (
-	"sync"
-
 	"github.com/NpoolDevOps/fbc-devops-peer/api/lotusapi"
 	"github.com/NpoolDevOps/fbc-devops-peer/api/progressapi"
 	lotuslog "github.com/NpoolDevOps/fbc-devops-peer/loganalysis/lotuslog"
@@ -22,17 +20,13 @@ type LotusMetrics struct {
 	LogFileSize        *prometheus.Desc
 	LotusFileOpen      *prometheus.Desc
 
-	progressInfo progressapi.ProgressInfo
-
-	mutex sync.Mutex
-
 	host    string
 	hasHost bool
 	errors  int
 }
 
 func NewLotusMetrics(logfile string) *LotusMetrics {
-	mm := &LotusMetrics{
+	return &LotusMetrics{
 		ll: lotuslog.NewLotusLog(logfile),
 		HeightDiff: prometheus.NewDesc(
 			"lotus_chain_height_diff",
@@ -80,18 +74,6 @@ func NewLotusMetrics(logfile string) *LotusMetrics {
 			nil, nil,
 		),
 	}
-
-	go func() {
-		progressCh := make(chan progressapi.ProgressInfo)
-
-		progressapi.GetProgressInfo(progressCh)
-		progress := <-progressCh
-
-		mm.mutex.Lock()
-		mm.progressInfo = progress
-		mm.mutex.Unlock()
-	}()
-	return mm
 }
 
 func (m *LotusMetrics) SetHost(host string) {
@@ -135,9 +117,7 @@ func (m *LotusMetrics) Collect(ch chan<- prometheus.Metric) {
 	timeouts := m.ll.GetTimeouts()
 	filesize := m.ll.LogFileSize()
 
-	m.mutex.Lock()
-	lotusOpenFileNum := m.progressInfo.LotusFileOpen
-	m.mutex.Unlock()
+	lotusOpenFileNum := progressapi.GetProgressInfo("lotus")
 	ch <- prometheus.MustNewConstMetric(m.LotusFileOpen, prometheus.CounterValue, float64(lotusOpenFileNum))
 
 	ch <- prometheus.MustNewConstMetric(m.LotusError, prometheus.CounterValue, float64(m.errors))
