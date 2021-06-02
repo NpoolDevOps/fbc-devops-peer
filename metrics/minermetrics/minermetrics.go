@@ -8,6 +8,7 @@ import (
 	log "github.com/EntropyPool/entropy-logger"
 	"github.com/NpoolDevOps/fbc-devops-peer/api/lotusapi"
 	"github.com/NpoolDevOps/fbc-devops-peer/api/minerapi"
+	"github.com/NpoolDevOps/fbc-devops-peer/api/progressapi"
 	"github.com/NpoolDevOps/fbc-devops-peer/loganalysis/minerlog"
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -47,10 +48,8 @@ type MinerMetrics struct {
 	//nvme 温度
 	//storage 读写
 	//根分区读写
-	//worker打开文件数
 	//miner打开文件数
 	MinerFileOpen *prometheus.Desc
-	// MinerWorkerFileOpen *prometheus.Desc
 
 	SectorTaskRunning        *prometheus.Desc
 	SectorTaskWaiting        *prometheus.Desc
@@ -83,6 +82,8 @@ type MinerMetrics struct {
 	sealingJobs minerapi.SealingJobs
 	workerInfos minerapi.WorkerInfos
 	mutex       sync.Mutex
+
+	progressInfo progressapi.ProgressInfo
 
 	errors       int
 	host         string
@@ -348,11 +349,6 @@ func NewMinerMetrics(logfile string) *MinerMetrics {
 			"Show Files Number Miner Opened",
 			nil, nil,
 		),
-		// MinerWorkerFileOpen: prometheus.NewDesc(
-		// 	"miner_worker_file_opened",
-		// 	"Show Files Number Worker Opened",
-		// 	nil, nil,
-		// ),
 	}
 
 	go func() {
@@ -360,6 +356,7 @@ func NewMinerMetrics(logfile string) *MinerMetrics {
 		infoCh := make(chan minerapi.MinerInfo)
 		jobsCh := make(chan minerapi.SealingJobs)
 		workersCh := make(chan minerapi.WorkerInfos)
+		progressCh := make(chan progressapi.ProgressInfo)
 		count := 0
 		for {
 			showSectors := false
@@ -374,6 +371,13 @@ func NewMinerMetrics(logfile string) *MinerMetrics {
 
 			mm.mutex.Lock()
 			mm.minerInfo = info
+			mm.mutex.Unlock()
+
+			progressapi.GetProgressInfo(progressCh)
+			progress := <-progressCh
+
+			mm.mutex.Lock()
+			mm.progressInfo = progress
 			mm.mutex.Unlock()
 
 			minerapi.GetSealingJobs(jobsCh)
@@ -459,7 +463,6 @@ func (m *MinerMetrics) Describe(ch chan<- *prometheus.Desc) {
 	ch <- m.ChainNotSuitable
 	ch <- m.ChainHeadListen
 	ch <- m.MinerFileOpen
-	// ch <- m.MinerWorkerFileOpen
 }
 
 func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
@@ -572,6 +575,11 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 	ch <- prometheus.MustNewConstMetric(m.MinerBaseFee, prometheus.CounterValue, basefee)
 
 	m.mutex.Lock()
+	minerOpenFileNum := m.progressInfo.MinerFileOpen
+	m.mutex.Unlock()
+	ch <- prometheus.MustNewConstMetric(m.MinerFileOpen, prometheus.CounterValue, float64(minerOpenFileNum))
+
+	m.mutex.Lock()
 	workerInfos := m.workerInfos
 	m.mutex.Unlock()
 
@@ -581,7 +589,6 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 		ch <- prometheus.MustNewConstMetric(m.MinerWorkerGPUs, prometheus.CounterValue, float64(info.GPUs), worker)
 		ch <- prometheus.MustNewConstMetric(m.MinerWorkerMaintaining, prometheus.CounterValue, float64(info.Maintaining), worker)
 		ch <- prometheus.MustNewConstMetric(m.MinerWorkerRejectTask, prometheus.CounterValue, float64(info.RejectTask), worker)
-		// ch <- prometheus.MustNewConstMetric(m.MinerWorkerFileOpen, prometheus.CounterValue, float64(info.MinerWorkerFileOpen), worker)
 		gpus += info.GPUs
 	}
 	ch <- prometheus.MustNewConstMetric(m.MinerGPUs, prometheus.CounterValue, float64(gpus))

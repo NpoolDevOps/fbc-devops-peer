@@ -10,7 +10,6 @@ import (
 
 	log "github.com/EntropyPool/entropy-logger"
 	"github.com/NpoolDevOps/fbc-devops-peer/api/lotusbase"
-	"github.com/NpoolDevOps/fbc-devops-peer/api/minerapi"
 	"github.com/NpoolDevOps/fbc-devops-peer/version"
 	"github.com/filecoin-project/go-state-types/dline"
 	"github.com/filecoin-project/lotus/api"
@@ -24,21 +23,6 @@ type SyncState struct {
 	BlockElapsed time.Duration
 	SyncError    bool
 	NetPeers     int
-}
-
-func FileWorkerOpened() int64 {
-	lotus_pid, err := minerapi.GetDevicePid("lotus")
-	if err != nil {
-		log.Errorf(log.Fields{}, "fail to get lotus pid", err)
-		return 0
-	}
-	lotus_file_num, err := minerapi.GetDeviceFileOpened(lotus_pid)
-	if err != nil {
-		log.Errorf(log.Fields{}, "fail to get lotus file opened number", err)
-		return 0
-	}
-	num := lotus_file_num
-	return num
 }
 
 func lotusRpcUrl(host string) string {
