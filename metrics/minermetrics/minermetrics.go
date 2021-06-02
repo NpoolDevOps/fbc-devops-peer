@@ -44,8 +44,13 @@ type MinerMetrics struct {
 	WorkerBalance    *prometheus.Desc
 	ControlBalance   *prometheus.Desc
 	MinerTaskState   *prometheus.Desc
-	//winning
-	Winning *prometheus.Desc
+	//nvme 温度
+	//storage 读写
+	//根分区读写
+	//worker打开文件数
+	//miner打开文件数
+	MinerFileOpen       *prometheus.Desc
+	MinerWorkerFileOpen *prometheus.Desc
 
 	SectorTaskRunning        *prometheus.Desc
 	SectorTaskWaiting        *prometheus.Desc
@@ -338,9 +343,14 @@ func NewMinerMetrics(logfile string) *MinerMetrics {
 			"Miner chain head epoch",
 			[]string{"fullnode"}, nil,
 		),
-		Winning: prometheus.NewDesc(
-			"miner_winning",
-			"Miner winning",
+		MinerFileOpen: prometheus.NewDesc(
+			"miner_file_opened",
+			"Show Files Number Miner Opened",
+			nil, nil,
+		),
+		MinerWorkerFileOpen: prometheus.NewDesc(
+			"miner_worker_file_opened",
+			"Show Files Number Worker Opened",
 			nil, nil,
 		),
 	}
@@ -448,7 +458,8 @@ func (m *MinerMetrics) Describe(ch chan<- *prometheus.Desc) {
 	ch <- m.ChainSyncNotCompleted
 	ch <- m.ChainNotSuitable
 	ch <- m.ChainHeadListen
-	ch <- m.Winning
+	ch <- m.MinerFileOpen
+	ch <- m.MinerWorkerFileOpen
 }
 
 func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
@@ -552,8 +563,7 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 	ch <- prometheus.MustNewConstMetric(m.Available, prometheus.CounterValue, float64(info.Available))
 	ch <- prometheus.MustNewConstMetric(m.WorkerBalance, prometheus.CounterValue, float64(info.WorkerBalance))
 	ch <- prometheus.MustNewConstMetric(m.ControlBalance, prometheus.CounterValue, float64(info.ControlBalance))
-	//winning
-	ch <- prometheus.MustNewConstMetric(m.Winning, prometheus.CounterValue, float64(info.Winning))
+	ch <- prometheus.MustNewConstMetric(m.MinerFileOpen, prometheus.CounterValue, float64(info.MinerFileOpen))
 	for state, count := range info.State {
 		ch <- prometheus.MustNewConstMetric(m.MinerTaskState, prometheus.CounterValue, float64(count), state)
 	}

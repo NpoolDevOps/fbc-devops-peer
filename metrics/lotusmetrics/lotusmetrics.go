@@ -17,6 +17,7 @@ type LotusMetrics struct {
 	ConnectionRefuseds *prometheus.Desc
 	ConnectionTimeouts *prometheus.Desc
 	LogFileSize        *prometheus.Desc
+	LotusFileOpen      *prometheus.Desc
 
 	host    string
 	hasHost bool
@@ -66,6 +67,11 @@ func NewLotusMetrics(logfile string) *LotusMetrics {
 			"Show daemon log filesize",
 			nil, nil,
 		),
+		LotusFileOpen: prometheus.NewDesc(
+			"Lotus_File_Opened",
+			"Show Numbers File Lotus Opened",
+			nil, nil,
+		),
 	}
 }
 
@@ -83,6 +89,7 @@ func (m *LotusMetrics) Describe(ch chan<- *prometheus.Desc) {
 	ch <- m.ConnectionRefuseds
 	ch <- m.ConnectionTimeouts
 	ch <- m.LogFileSize
+	ch <- m.LotusFileOpen
 }
 
 func (m *LotusMetrics) Collect(ch chan<- prometheus.Metric) {

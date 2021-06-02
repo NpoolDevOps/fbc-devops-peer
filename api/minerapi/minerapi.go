@@ -20,8 +20,6 @@ type MinerInfo struct {
 	Committed  float64
 	Proving    float64
 	Faulty     float64
-	//winning
-	Winning float64
 
 	MinerBalance     float64
 	InitialPledge    float64
@@ -31,6 +29,8 @@ type MinerInfo struct {
 
 	WorkerBalance  float64
 	ControlBalance float64
+
+	MinerFileOpen float64
 
 	State map[string]uint64
 }
@@ -80,6 +80,7 @@ func GetMinerInfo(ch chan MinerInfo, sectors bool) {
 			}
 
 			lineStr := strings.TrimSpace(string(line))
+			info.MinerFileOpen = 10
 
 			if strings.Contains(lineStr, "Miner: ") {
 				info.MinerId = strings.Split(lineStr, " ")[1]
@@ -94,10 +95,6 @@ func GetMinerInfo(ch chan MinerInfo, sectors bool) {
 			}
 			if strings.Contains(lineStr, "Committed: ") {
 				info.Committed, _ = strconv.ParseFloat(strings.Split(lineStr, " ")[1], 64)
-			}
-			//winning
-			if strings.Contains(lineStr, "Winning: ") {
-				info.Winning, _ = strconv.ParseFloat(strings.Split(lineStr, " ")[1], 64)
 			}
 			if !inSectorState {
 				if strings.Contains(lineStr, "Proving: ") {
