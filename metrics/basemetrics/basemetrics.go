@@ -142,8 +142,9 @@ func (m *BaseMetrics) Collect(ch chan<- prometheus.Metric) {
 	}
 	ch <- prometheus.MustNewConstMetric(m.RootIsWriteRead, prometheus.CounterValue, is)
 
-	storageAddressList, _ := getStorageWriteRead("/home/test/zpl/")
-	for address, isBool := range storageAddressList {
+	storageAddressList, _ := getStorageAddress("/home/test/zpl/")
+	for _, address := range storageAddressList {
+		isBool, _ := getFileIfWriteRead(address)
 		if isBool {
 			is = 1
 		} else {
@@ -285,48 +286,62 @@ func getNvmeTempList() (map[string]map[string]string, error) {
 	return nvmeTempList, nil
 }
 
+//(bool, error)
 func getFileIfWriteRead(file string) (bool, error) {
-	out, err := api.RunCommand(exec.Command("getfacl", file))
+	// out, err := api.RunCommand(exec.Command("getfacl", file))
+	// if err != nil {
+	// 	log.Errorf(log.Fields{}, fmt.Sprintf("fail to get root zone"), err)
+	// 	return false, err
+	// }
+	// br := bufio.NewReader(bytes.NewReader(out))
+	// for {
+	// 	line, _, err := br.ReadLine()
+	// 	if err != nil {
+	// 		break
+	// 	}
+
+	// 	if strings.Contains(string(line), "user") && strings.Contains(string(line), "rw") {
+	// 		return true, nil
+	// 	}
+	// }
+	// return false, nil
+	fi, err := os.Lstat(file)
 	if err != nil {
-		log.Errorf(log.Fields{}, fmt.Sprintf("fail to get root zone"), err)
+		log.Errorf(log.Fields{}, "err is:", err)
 		return false, err
 	}
-	br := bufio.NewReader(bytes.NewReader(out))
-	for {
-		line, _, err := br.ReadLine()
-		if err != nil {
-			break
-		}
-		if strings.Contains(string(line), "user") && strings.Contains(string(line), "rw") {
-			return true, nil
-		}
+	if (fi.Mode().Perm() | 0755) > 0 {
+		return true, nil
+	} else {
+		return false, nil
 	}
-	return false, nil
 }
 
-func getStorageWriteRead(address string) (map[string]bool, error) {
-	storageMap := make(map[string]bool)
-	out, err := api.RunCommand(exec.Command("ls", "-l", address))
-	if err != nil {
-		log.Errorf(log.Fields{}, fmt.Sprintf("fail to get storage zone"), err)
-		return nil, err
-	}
-	br := bufio.NewReader(bytes.NewReader(out))
-	for {
-		line, _, err := br.ReadLine()
-		if err != nil {
-			break
-		}
-		lineArr := strings.Split(string(line), " ")
-		_, err = strconv.ParseInt(lineArr[len(lineArr)-1], 10, 64)
-		if strings.Contains(lineArr[0], "rw") && err == nil {
-			storageMap[address+lineArr[len(lineArr)-1]] = true
-		} else if err == nil && !strings.Contains(lineArr[0], "rw") {
-			storageMap[address+lineArr[len(lineArr)-1]] = false
-		}
-	}
-	return storageMap, nil
-}
+// func getStorageWriteRead(address string) (map[string]bool, error) {
+// 	storageMap := make(map[string]bool)
+// 	out, err := api.RunCommand(exec.Command("ls", "-l", address))
+// 	if err != nil {
+// 		log.Errorf(log.Fields{}, fmt.Sprintf("fail to get storage zone"), err)
+// 		return nil, err
+// 	}
+// 	br := bufio.NewReader(bytes.NewReader(out))
+// 	for {
+// 		line, _, err := br.ReadLine()
+// 		if err != nil {
+// 			break
+// 		}
+// 		lineArr := strings.Split(string(line), " ")
+// 		_, err = strconv.ParseInt(lineArr[len(lineArr)-1], 10, 64)
+// 		if !strings.Contains(lineArr[0], "total") {
+// 			if strings.Contains(lineArr[0], "rw") && err == nil {
+// 				storageMap[address+lineArr[len(lineArr)-1]] = true
+// 			} else if err == nil && !strings.Contains(lineArr[0], "rw") {
+// 				storageMap[address+lineArr[len(lineArr)-1]] = false
+// 			}
+// 		}
+// 	}
+// 	return storageMap, nil
+// }
 
 func getStorageAddress(address string) ([]string, error) {
 	storageAddressList := []string{}
