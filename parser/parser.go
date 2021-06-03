@@ -4,16 +4,17 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
-	log "github.com/EntropyPool/entropy-logger"
-	types "github.com/NpoolDevOps/fbc-devops-peer/types"
-	httpdaemon "github.com/NpoolRD/http-daemon"
-	"github.com/google/uuid"
-	"golang.org/x/xerrors"
 	"io/ioutil"
 	"net"
 	"os"
 	"path/filepath"
 	"strings"
+
+	log "github.com/EntropyPool/entropy-logger"
+	types "github.com/NpoolDevOps/fbc-devops-peer/types"
+	httpdaemon "github.com/NpoolRD/http-daemon"
+	"github.com/google/uuid"
+	"golang.org/x/xerrors"
 )
 
 const (
@@ -22,6 +23,8 @@ const (
 	FullnodeServiceFile = "/etc/systemd/system/lotus-daemon.service"
 	MinerAPIFile        = "/etc/profile.d/miner-api-info.sh"
 	MinerEnvKey         = "MINER_API_INFO"
+	WorkerAPIFile       = "/etc/profile.d/worker-api-info.sh"
+	WorkerEnvKey        = "WORKER_API_INFO"
 	MinerServiceFile    = "/etc/systemd/system/lotus-miner.service"
 	WorkerServiceFile   = "/etc/systemd/system/lotus-worker.service"
 	CommonSetupFile     = "/etc/profile.d/lotus-setup.sh"
@@ -363,6 +366,7 @@ func (p *Parser) parseLogFiles() {
 func (p *Parser) parse() error {
 	p.readEnvFromAPIFile(FullnodeAPIFile)
 	p.readEnvFromAPIFile(MinerAPIFile)
+	p.readEnvFromAPIFile(WorkerAPIFile)
 	p.parseEnvs()
 	p.getStoragePath()
 	p.parseStoragePaths()

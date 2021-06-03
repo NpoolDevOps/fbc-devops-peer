@@ -14,8 +14,6 @@ import (
 
 	log "github.com/EntropyPool/entropy-logger"
 	api "github.com/NpoolDevOps/fbc-devops-peer/api/minerapi"
-
-	// "github.com/filecoin-project/go-address"
 	"github.com/go-ping/ping"
 	"github.com/prometheus/client_golang/prometheus"
 	"golang.org/x/xerrors"
@@ -144,10 +142,9 @@ func (m *BaseMetrics) Collect(ch chan<- prometheus.Metric) {
 	}
 	ch <- prometheus.MustNewConstMetric(m.RootIsWriteRead, prometheus.CounterValue, is)
 
-	storageAddressList, _ := getStorageAddress("/home/test/zpl/")
-	for _, address := range storageAddressList {
-		storageWR, _ := getFileIfWriteRead(address)
-		if storageWR {
+	storageAddressList, _ := getStorageWriteRead("/home/test/zpl/")
+	for address, isBool := range storageAddressList {
+		if isBool {
 			is = 1
 		} else {
 			is = 0
@@ -305,6 +302,30 @@ func getFileIfWriteRead(file string) (bool, error) {
 		}
 	}
 	return false, nil
+}
+
+func getStorageWriteRead(address string) (map[string]bool, error) {
+	storageMap := make(map[string]bool)
+	out, err := api.RunCommand(exec.Command("ls", "-l", address))
+	if err != nil {
+		log.Errorf(log.Fields{}, fmt.Sprintf("fail to get storage zone"), err)
+		return nil, err
+	}
+	br := bufio.NewReader(bytes.NewReader(out))
+	for {
+		line, _, err := br.ReadLine()
+		if err != nil {
+			break
+		}
+		lineArr := strings.Split(string(line), " ")
+		_, err = strconv.ParseInt(lineArr[len(lineArr)-1], 10, 64)
+		if strings.Contains(lineArr[0], "rw") && err == nil {
+			storageMap[address+lineArr[len(lineArr)-1]] = true
+		} else if err == nil && !strings.Contains(lineArr[0], "rw") {
+			storageMap[address+lineArr[len(lineArr)-1]] = false
+		}
+	}
+	return storageMap, nil
 }
 
 func getStorageAddress(address string) ([]string, error) {
