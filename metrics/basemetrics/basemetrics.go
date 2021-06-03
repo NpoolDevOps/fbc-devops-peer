@@ -2,16 +2,21 @@ package basemetrics
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/binary"
-	log "github.com/EntropyPool/entropy-logger"
-	"github.com/go-ping/ping"
-	"github.com/prometheus/client_golang/prometheus"
-	"golang.org/x/xerrors"
+	"fmt"
 	"net"
 	"os"
+	"os/exec"
 	"strconv"
 	"strings"
 	"time"
+
+	log "github.com/EntropyPool/entropy-logger"
+	api "github.com/NpoolDevOps/fbc-devops-peer/api/minerapi"
+	"github.com/go-ping/ping"
+	"github.com/prometheus/client_golang/prometheus"
+	"golang.org/x/xerrors"
 )
 
 type BaseMetrics struct {
@@ -20,6 +25,8 @@ type BaseMetrics struct {
 	PingGatewayLost  *prometheus.Desc
 	PingBaiduDelay   *prometheus.Desc
 	PingBaiduLost    *prometheus.Desc
+
+	NvmesTemprature *prometheus.Desc
 
 	pingGatewayDelayMs int64
 	pingBaiduDelayMs   int64
@@ -54,6 +61,11 @@ func NewBaseMetrics() *BaseMetrics {
 			"base_ntp_time_diff",
 			"Show base ntp time diff",
 			nil, nil,
+		),
+		NvmesTemprature: prometheus.NewDesc(
+			"nvmes_temprature",
+			"show every Nvme's temprature",
+			[]string{"nvme", "tempname"}, nil,
 		),
 	}
 
@@ -90,6 +102,7 @@ func (m *BaseMetrics) Describe(ch chan<- *prometheus.Desc) {
 	ch <- m.PingGatewayLost
 	ch <- m.PingBaiduDelay
 	ch <- m.PingBaiduLost
+	ch <- m.NvmesTemprature
 }
 
 func (m *BaseMetrics) Collect(ch chan<- prometheus.Metric) {
@@ -98,6 +111,13 @@ func (m *BaseMetrics) Collect(ch chan<- prometheus.Metric) {
 	ch <- prometheus.MustNewConstMetric(m.PingGatewayLost, prometheus.CounterValue, m.pingGatewayLost)
 	ch <- prometheus.MustNewConstMetric(m.PingBaiduDelay, prometheus.CounterValue, float64(m.pingBaiduDelayMs))
 	ch <- prometheus.MustNewConstMetric(m.PingBaiduLost, prometheus.CounterValue, m.pingBaiduLost)
+	nvmeTempList, _ := getNvmeTempList()
+	for nvme, tempList := range nvmeTempList {
+		for tempname, temp := range tempList {
+			tempFloat, _ := strconv.ParseFloat(temp, 64)
+			ch <- prometheus.MustNewConstMetric(m.NvmesTemprature, prometheus.CounterValue, tempFloat, nvme, tempname)
+		}
+	}
 }
 
 func pingStatistic(host string) (ms int64, rate float64) {
@@ -163,4 +183,70 @@ func getDefaultGateway() (string, error) {
 	}
 
 	return "", xerrors.Errorf("fail to read gateway")
+}
+
+func getNvmeList() ([]string, error) {
+	out, err := api.RunCommand(exec.Command("nvme", "list"))
+	if err != nil {
+		log.Errorf(log.Fields{}, fmt.Sprintf("fail to run nvme list"), err)
+		return nil, err
+	}
+	br := bufio.NewReader(bytes.NewReader(out))
+	lines := 1
+	nvmeList := []string{}
+	for {
+		line, _, err := br.ReadLine()
+		if err != nil {
+			break
+		}
+		if lines > 2 {
+			nvmeList = append(nvmeList, strings.TrimSpace(strings.Split(string(line), "  ")[0]))
+		}
+		lines += 1
+	}
+	if lines == 1 {
+		log.Errorf(log.Fields{}, "fail to get nvme list")
+		return nil, err
+	}
+	return nvmeList, nil
+}
+
+func getTemp(nvme string) (map[string]string, error) {
+	tempList := make(map[string]string)
+	out, err := api.RunCommand(exec.Command("nvme", "smart-log", nvme))
+	if err != nil {
+		log.Errorf(log.Fields{}, fmt.Sprintf("fail to run nvme info"), err)
+		return nil, err
+	}
+	br := bufio.NewReader(bytes.NewReader(out))
+	for {
+		line, _, err := br.ReadLine()
+		if err != nil {
+			break
+		}
+		if strings.Contains(string(line), "temperature") || strings.Contains(string(line), "Temperature ") && strings.Contains(string(line), " Temperature ") {
+			name := strings.TrimSpace(strings.Split(string(line), ":")[0])
+			temp := strings.TrimSpace(strings.Split(string(line), ":")[1])
+			trueTemp := strings.TrimSpace(strings.Split(temp, " ")[0])
+			tempList[name] = trueTemp
+		}
+	}
+	return tempList, err
+}
+
+func getNvmeTempList() (map[string]map[string]string, error) {
+	nvmeTempList := make(map[string]map[string]string)
+	nvmeList, err := getNvmeList()
+	tempList := make(map[string]string)
+	if err != nil {
+		return nil, err
+	}
+	for _, nvme := range nvmeList {
+		tempList, err = getTemp(nvme)
+		if err != nil {
+			return nil, err
+		}
+		nvmeTempList[nvme] = tempList
+	}
+	return nvmeTempList, nil
 }

@@ -3,6 +3,12 @@ package basenode
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"net"
+	"net/http"
+	"os/exec"
+	"time"
+
 	log "github.com/EntropyPool/entropy-logger"
 	machspec "github.com/EntropyPool/machine-spec"
 	devops "github.com/NpoolDevOps/fbc-devops-peer/devops"
@@ -17,11 +23,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/prometheus/client_golang/prometheus"
 	"golang.org/x/xerrors"
-	"io/ioutil"
-	"net"
-	"net/http"
-	"os/exec"
-	"time"
 )
 
 type Basenode struct {
@@ -53,7 +54,7 @@ type NodeHardware struct {
 	CpuCount      int      `json:"cpu_count"`
 	CpuDesc       []string `json:"cpu_desc"`
 	HddCount      int      `json:"hdd_count"`
-	HddDesc       []string `json:"hdd_count"`
+	HddDesc       []string `json:"hdd_desc"`
 	EthernetCount int      `json:"ethernet_count"`
 	EthernetDesc  []string `json:"ethernet_desc"`
 }
