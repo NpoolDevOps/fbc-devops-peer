@@ -144,7 +144,7 @@ func (m *BaseMetrics) Collect(ch chan<- prometheus.Metric) {
 	}
 	ch <- prometheus.MustNewConstMetric(m.RootIsWriteRead, prometheus.CounterValue, is)
 
-	storageAddressList, _ := getStorageAddress("/opt/sharestorage/")
+	storageAddressList, _ := getStorageAddress("/home/test/zpl/")
 	for _, address := range storageAddressList {
 		storageWR, _ := getFileIfWriteRead(address)
 		if storageWR {
