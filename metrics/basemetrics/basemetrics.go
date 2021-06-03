@@ -14,6 +14,8 @@ import (
 
 	log "github.com/EntropyPool/entropy-logger"
 	api "github.com/NpoolDevOps/fbc-devops-peer/api/minerapi"
+
+	// "github.com/filecoin-project/go-address"
 	"github.com/go-ping/ping"
 	"github.com/prometheus/client_golang/prometheus"
 	"golang.org/x/xerrors"
@@ -26,7 +28,9 @@ type BaseMetrics struct {
 	PingBaiduDelay   *prometheus.Desc
 	PingBaiduLost    *prometheus.Desc
 
-	NvmesTemprature *prometheus.Desc
+	NvmesTemprature    *prometheus.Desc
+	RootIsWriteRead    *prometheus.Desc
+	StorageIsWriteRead *prometheus.Desc
 
 	pingGatewayDelayMs int64
 	pingBaiduDelayMs   int64
@@ -67,6 +71,16 @@ func NewBaseMetrics() *BaseMetrics {
 			"show every Nvme's temprature",
 			[]string{"nvme", "tempname"}, nil,
 		),
+		RootIsWriteRead: prometheus.NewDesc(
+			"root_is_write_read",
+			"show whether root is write and read or not",
+			nil, nil,
+		),
+		StorageIsWriteRead: prometheus.NewDesc(
+			"storage_is_write_read",
+			"show whether storage is write and read or not",
+			[]string{"storage"}, nil,
+		),
 	}
 
 	go metrics.updater()
@@ -103,6 +117,8 @@ func (m *BaseMetrics) Describe(ch chan<- *prometheus.Desc) {
 	ch <- m.PingBaiduDelay
 	ch <- m.PingBaiduLost
 	ch <- m.NvmesTemprature
+	ch <- m.RootIsWriteRead
+	ch <- m.StorageIsWriteRead
 }
 
 func (m *BaseMetrics) Collect(ch chan<- prometheus.Metric) {
@@ -117,6 +133,26 @@ func (m *BaseMetrics) Collect(ch chan<- prometheus.Metric) {
 			tempFloat, _ := strconv.ParseFloat(temp, 64)
 			ch <- prometheus.MustNewConstMetric(m.NvmesTemprature, prometheus.CounterValue, tempFloat, nvme, tempname)
 		}
+	}
+
+	rootWR, _ := getFileIfWriteRead("/")
+	var is float64
+	if rootWR {
+		is = 1
+	} else {
+		is = 0
+	}
+	ch <- prometheus.MustNewConstMetric(m.RootIsWriteRead, prometheus.CounterValue, is)
+
+	storageAddressList, _ := getStorageAddress("/opt/sharestorage/")
+	for _, address := range storageAddressList {
+		storageWR, _ := getFileIfWriteRead(address)
+		if storageWR {
+			is = 1
+		} else {
+			is = 0
+		}
+		ch <- prometheus.MustNewConstMetric(m.StorageIsWriteRead, prometheus.CounterValue, is, address)
 	}
 }
 
@@ -231,7 +267,8 @@ func getTemp(nvme string) (map[string]string, error) {
 			tempList[name] = trueTemp
 		}
 	}
-	return tempList, err
+	log.Infof(log.Fields{}, "temp list is: %v", tempList)
+	return tempList, nil
 }
 
 func getNvmeTempList() (map[string]map[string]string, error) {
@@ -249,4 +286,47 @@ func getNvmeTempList() (map[string]map[string]string, error) {
 		nvmeTempList[nvme] = tempList
 	}
 	return nvmeTempList, nil
+}
+
+func getFileIfWriteRead(file string) (bool, error) {
+	out, err := api.RunCommand(exec.Command("getfacl", file))
+	if err != nil {
+		log.Errorf(log.Fields{}, fmt.Sprintf("fail to get root zone"), err)
+		return false, err
+	}
+	br := bufio.NewReader(bytes.NewReader(out))
+	for {
+		line, _, err := br.ReadLine()
+		if err != nil {
+			break
+		}
+		if strings.Contains(string(line), "user") && strings.Contains(string(line), "rw") {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+func getStorageAddress(address string) ([]string, error) {
+	storageAddressList := []string{}
+	out, err := api.RunCommand(exec.Command("ls", address))
+	if err != nil {
+		log.Errorf(log.Fields{}, fmt.Sprintf("fail to get storage address"), err)
+		return nil, err
+	}
+	br := bufio.NewReader(bytes.NewReader(out))
+	for {
+		line, _, err := br.ReadLine()
+		if err != nil {
+			break
+		}
+		lineArr := strings.Split(string(line), " ")
+		for _, l := range lineArr {
+			_, err = strconv.ParseInt(strings.TrimSpace(string(l)), 10, 64)
+			if err == nil {
+				storageAddressList = append(storageAddressList, address+strings.TrimSpace(string(l)))
+			}
+		}
+	}
+	return storageAddressList, nil
 }
