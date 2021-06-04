@@ -240,11 +240,13 @@ func getTemp(nvme string) (map[string]string, error) {
 		if err != nil {
 			break
 		}
-		if strings.Contains(string(line), "temperature") || strings.Contains(string(line), "Temperature ") && strings.Contains(string(line), " Temperature ") {
-			name := strings.TrimSpace(strings.Split(string(line), ":")[0])
-			temp := strings.TrimSpace(strings.Split(string(line), ":")[1])
-			trueTemp := strings.TrimSpace(strings.Split(temp, " ")[0])
-			tempList[name] = trueTemp
+		if !strings.Contains(string(line), " Temperature ") {
+			if strings.Contains(string(line), "temperature") || strings.Contains(string(line), "Temperature Sensor") {
+				name := strings.TrimSpace(strings.Split(string(line), ":")[0])
+				temp := strings.TrimSpace(strings.Split(string(line), ":")[1])
+				trueTemp := strings.TrimSpace(strings.Split(temp, " ")[0])
+				tempList[name] = trueTemp
+			}
 		}
 	}
 	log.Infof(log.Fields{}, "temp list is: %v", tempList)
