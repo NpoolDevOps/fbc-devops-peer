@@ -24,7 +24,6 @@ const (
 	MinerAPIFile        = "/etc/profile.d/miner-api-info.sh"
 	MinerEnvKey         = "MINER_API_INFO"
 	WorkerAPIFile       = "/etc/profile.d/worker-api-info.sh"
-	WorkerEnvKey        = "WORKER_API_INFO"
 	MinerServiceFile    = "/etc/systemd/system/lotus-miner.service"
 	WorkerServiceFile   = "/etc/systemd/system/lotus-worker.service"
 	CommonSetupFile     = "/etc/profile.d/lotus-setup.sh"
@@ -366,7 +365,6 @@ func (p *Parser) parseLogFiles() {
 func (p *Parser) parse() error {
 	p.readEnvFromAPIFile(FullnodeAPIFile)
 	p.readEnvFromAPIFile(MinerAPIFile)
-	p.readEnvFromAPIFile(WorkerAPIFile)
 	p.parseEnvs()
 	p.getStoragePath()
 	p.parseStoragePaths()

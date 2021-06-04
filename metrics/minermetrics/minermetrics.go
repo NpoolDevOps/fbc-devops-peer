@@ -2,6 +2,7 @@ package minermetrics
 
 import (
 	"fmt"
+	"strconv"
 	"sync"
 	"time"
 
@@ -14,14 +15,16 @@ import (
 )
 
 type MinerMetrics struct {
-	ml             *minerlog.MinerLog
-	ForkBlocks     *prometheus.Desc
-	PastBlocks     *prometheus.Desc
-	FailedBlocks   *prometheus.Desc
-	BlockTookAvgMs *prometheus.Desc
-	BlockTookMaxMs *prometheus.Desc
-	BlockTookMinMs *prometheus.Desc
-	Blocks         *prometheus.Desc
+	ml                 *minerlog.MinerLog
+	ForkBlocks         *prometheus.Desc
+	PastBlocks         *prometheus.Desc
+	FailedBlocks       *prometheus.Desc
+	BlockTookAvgMs     *prometheus.Desc
+	BlockTookMaxMs     *prometheus.Desc
+	BlockTookMinMs     *prometheus.Desc
+	Blocks             *prometheus.Desc
+	FeeadjustGasFeecap *prometheus.Desc
+	FeeadjustBaseFee   *prometheus.Desc
 
 	SectorTaskElapsed    *prometheus.Desc
 	SectorTaskDuration   *prometheus.Desc
@@ -352,6 +355,16 @@ func NewMinerMetrics(logfile string) *MinerMetrics {
 			"Show Numbers Miner Connect TCP",
 			nil, nil,
 		),
+		FeeadjustGasFeecap: prometheus.NewDesc(
+			"fee_adjust_gas_feecap",
+			"show fee adjuster gas feecap",
+			nil, nil,
+		),
+		FeeadjustBaseFee: prometheus.NewDesc(
+			"fee_adjust_base_fee",
+			"show fee adjuster base fee",
+			nil, nil,
+		),
 	}
 
 	go func() {
@@ -466,6 +479,8 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 	forkBlocks := m.ml.GetForkBlocks()
 	pastBlocks := m.ml.GetPastBlocks()
 	failedBlocks := m.ml.GetFailedBlocks()
+	gasFeecap := m.ml.GetMinerGasFeecap()
+	minerBaseFee := m.ml.GetMinerFeeBaseFee()
 
 	avgMs := uint64(0)
 	maxMs := uint64(0)
@@ -484,6 +499,9 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 		avgMs = avgMs / uint64(len(tooks))
 	}
 
+	strGasfeecap, _ := strconv.ParseFloat(gasFeecap, 64)
+	strBasefee, _ := strconv.ParseFloat(minerBaseFee, 64)
+
 	ch <- prometheus.MustNewConstMetric(m.ForkBlocks, prometheus.CounterValue, float64(forkBlocks))
 	ch <- prometheus.MustNewConstMetric(m.PastBlocks, prometheus.CounterValue, float64(pastBlocks))
 	ch <- prometheus.MustNewConstMetric(m.FailedBlocks, prometheus.CounterValue, float64(failedBlocks))
@@ -491,6 +509,8 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 	ch <- prometheus.MustNewConstMetric(m.BlockTookMaxMs, prometheus.CounterValue, float64(maxMs))
 	ch <- prometheus.MustNewConstMetric(m.BlockTookMinMs, prometheus.CounterValue, float64(minMs))
 	ch <- prometheus.MustNewConstMetric(m.Blocks, prometheus.CounterValue, float64(len(tooks)))
+	ch <- prometheus.MustNewConstMetric(m.FeeadjustGasFeecap, prometheus.CounterValue, strGasfeecap)
+	ch <- prometheus.MustNewConstMetric(m.FeeadjustBaseFee, prometheus.CounterValue, strBasefee)
 
 	sectorTasks := m.ml.GetSectorTasks()
 	for taskType, typedTasks := range sectorTasks {

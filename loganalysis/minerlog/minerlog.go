@@ -2,14 +2,15 @@ package minerlog
 
 import (
 	"encoding/json"
-	log "github.com/EntropyPool/entropy-logger"
-	lotusapi "github.com/NpoolDevOps/fbc-devops-peer/api/lotusapi"
-	"github.com/NpoolDevOps/fbc-devops-peer/loganalysis/logbase"
 	"math/rand"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
+
+	log "github.com/EntropyPool/entropy-logger"
+	lotusapi "github.com/NpoolDevOps/fbc-devops-peer/api/lotusapi"
+	"github.com/NpoolDevOps/fbc-devops-peer/loganalysis/logbase"
 )
 
 const (
@@ -22,6 +23,7 @@ const (
 	RegChainSyncNotCompleted = "chain sync state is not completed of "
 	RegChainNotSuitable      = "cannot find suitable fullnode"
 	RegChainHeadListen       = "success to listen chain head from "
+	RegGetFeeMiner           = "adjust fee for nonce"
 )
 
 const (
@@ -34,6 +36,7 @@ const (
 	KeyChainSyncNotCompleted = RegChainSyncNotCompleted
 	KeyChainNotSuitable      = RegChainNotSuitable
 	KeyChainHeadListen       = RegChainHeadListen
+	keyGetFeeMiner           = RegGetFeeMiner
 )
 
 type LogRegKey struct {
@@ -73,6 +76,10 @@ var logRegKeys = []LogRegKey{
 	LogRegKey{
 		RegName:  RegChainNotSuitable,
 		ItemName: KeyChainNotSuitable,
+	},
+	LogRegKey{
+		RegName:  RegChainHeadListen,
+		ItemName: KeyChainHeadListen,
 	},
 	LogRegKey{
 		RegName:  RegChainHeadListen,
@@ -122,7 +129,10 @@ type MinerLog struct {
 	chainSyncNotCompletedHosts map[string]struct{}
 	chainNotSuitable           uint64
 	chainHeadListenHosts       map[string]uint64
-	mutex                      sync.Mutex
+	minerGasFeeCap             string
+	minerFeeBaseFee            string
+
+	mutex sync.Mutex
 }
 
 func NewMinerLog(logfile string) *MinerLog {
@@ -142,6 +152,13 @@ func NewMinerLog(logfile string) *MinerLog {
 	go ml.watch()
 
 	return ml
+}
+
+func (ml *MinerLog) setFeeMiner(line logbase.LogLine) {
+	ll := line.Msg
+	llarr := strings.Split(ll, "feecap ->")
+	ml.minerGasFeeCap = strings.TrimSpace(strings.Split(llarr[1], "|")[0])
+	ml.minerFeeBaseFee = strings.TrimSpace(strings.Split(llarr[1], "|")[1])
 }
 
 func (ml *MinerLog) SetFullnodeHost(host string) {
@@ -303,6 +320,8 @@ func (ml *MinerLog) processLine(line logbase.LogLine) {
 			ml.mutex.Unlock()
 		case RegChainHeadListen:
 			ml.processChainHeadListen(line)
+		case RegGetFeeMiner:
+			ml.setFeeMiner(line)
 		}
 
 		break
@@ -364,7 +383,6 @@ func (ml *MinerLog) watch() {
 func (ml *MinerLog) GetBlockTooks() []uint64 {
 	ml.mutex.Lock()
 	items := ml.items[KeyMinedNewBlock]
-	ml.items[KeyMinedNewBlock] = []uint64{}
 	ml.mutex.Unlock()
 	return items
 }
@@ -372,7 +390,6 @@ func (ml *MinerLog) GetBlockTooks() []uint64 {
 func (ml *MinerLog) GetForkBlocks() uint64 {
 	ml.mutex.Lock()
 	forkBlocks := ml.forkBlocks
-	ml.forkBlocks = 0
 	ml.mutex.Unlock()
 	return forkBlocks
 }
@@ -380,7 +397,6 @@ func (ml *MinerLog) GetForkBlocks() uint64 {
 func (ml *MinerLog) GetPastBlocks() uint64 {
 	ml.mutex.Lock()
 	pastBlocks := ml.pastBlocks
-	ml.pastBlocks = 0
 	ml.mutex.Unlock()
 	return pastBlocks
 }
@@ -388,7 +404,6 @@ func (ml *MinerLog) GetPastBlocks() uint64 {
 func (ml *MinerLog) GetFailedBlocks() uint64 {
 	ml.mutex.Lock()
 	failedBlocks := ml.failedBlocks
-	ml.failedBlocks = 0
 	ml.mutex.Unlock()
 	return failedBlocks
 }
@@ -396,7 +411,6 @@ func (ml *MinerLog) GetFailedBlocks() uint64 {
 func (ml *MinerLog) GetChainSyncNotCompletedHosts() map[string]struct{} {
 	ml.mutex.Lock()
 	hosts := ml.chainSyncNotCompletedHosts
-	ml.chainSyncNotCompletedHosts = map[string]struct{}{}
 	ml.mutex.Unlock()
 	return hosts
 }
@@ -404,7 +418,6 @@ func (ml *MinerLog) GetChainSyncNotCompletedHosts() map[string]struct{} {
 func (ml *MinerLog) GetChainNotSuitable() uint64 {
 	ml.mutex.Lock()
 	chainNotSuitable := ml.chainNotSuitable
-	ml.chainNotSuitable = 0
 	ml.mutex.Unlock()
 	return chainNotSuitable
 }
@@ -412,7 +425,6 @@ func (ml *MinerLog) GetChainNotSuitable() uint64 {
 func (ml *MinerLog) GetChainHeadListenSuccessHosts() map[string]uint64 {
 	ml.mutex.Lock()
 	hosts := ml.chainHeadListenHosts
-	ml.chainHeadListenHosts = map[string]uint64{}
 	ml.mutex.Unlock()
 	return hosts
 }
@@ -475,4 +487,18 @@ func (ml *MinerLog) GetCheckSectors() map[int]CheckSectors {
 
 func (ml *MinerLog) LogFileSize() uint64 {
 	return ml.logbase.LogFileSize()
+}
+
+func (ml *MinerLog) GetMinerGasFeecap() string {
+	ml.mutex.Lock()
+	minerGasFeecap := ml.minerGasFeeCap
+	ml.mutex.Unlock()
+	return minerGasFeecap
+}
+
+func (ml *MinerLog) GetMinerFeeBaseFee() string {
+	ml.mutex.Lock()
+	minerFeeBaseFee := ml.minerFeeBaseFee
+	ml.mutex.Unlock()
+	return minerFeeBaseFee
 }
