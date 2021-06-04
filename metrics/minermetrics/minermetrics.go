@@ -11,6 +11,7 @@ import (
 	"github.com/NpoolDevOps/fbc-devops-peer/api/minerapi"
 	"github.com/NpoolDevOps/fbc-devops-peer/api/progressapi"
 	"github.com/NpoolDevOps/fbc-devops-peer/loganalysis/minerlog"
+	"github.com/NpoolDevOps/fbc-devops-peer/metrics/basemetrics"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -80,6 +81,8 @@ type MinerMetrics struct {
 	ChainSyncNotCompleted *prometheus.Desc
 	ChainNotSuitable      *prometheus.Desc
 	ChainHeadListen       *prometheus.Desc
+
+	StorageIsWriteRead *prometheus.Desc
 
 	minerInfo   minerapi.MinerInfo
 	sealingJobs minerapi.SealingJobs
@@ -365,6 +368,11 @@ func NewMinerMetrics(logfile string) *MinerMetrics {
 			"show fee adjuster base fee",
 			nil, nil,
 		),
+		StorageIsWriteRead: prometheus.NewDesc(
+			"storage_is_write_read",
+			"show whether storage is write and read or not",
+			[]string{"storage"}, nil,
+		),
 	}
 
 	go func() {
@@ -472,6 +480,7 @@ func (m *MinerMetrics) Describe(ch chan<- *prometheus.Desc) {
 	ch <- m.ChainHeadListen
 	ch <- m.MinerFileOpen
 	ch <- m.MinerTcpConnect
+	ch <- m.StorageIsWriteRead
 }
 
 func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
@@ -511,6 +520,18 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 	ch <- prometheus.MustNewConstMetric(m.Blocks, prometheus.CounterValue, float64(len(tooks)))
 	ch <- prometheus.MustNewConstMetric(m.FeeadjustGasFeecap, prometheus.CounterValue, strGasfeecap)
 	ch <- prometheus.MustNewConstMetric(m.FeeadjustBaseFee, prometheus.CounterValue, strBasefee)
+
+	storageAddressList, _ := basemetrics.GetStorageAddress("/opt/sharestorage/")
+	is := float64(0)
+	for _, address := range storageAddressList {
+		isBool, _ := basemetrics.GetFileIfWriteRead(address)
+		if isBool {
+			is = 1
+		} else {
+			is = 0
+		}
+		ch <- prometheus.MustNewConstMetric(m.StorageIsWriteRead, prometheus.CounterValue, is, address)
+	}
 
 	sectorTasks := m.ml.GetSectorTasks()
 	for taskType, typedTasks := range sectorTasks {

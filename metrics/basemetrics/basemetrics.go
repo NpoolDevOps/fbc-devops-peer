@@ -26,9 +26,8 @@ type BaseMetrics struct {
 	PingBaiduDelay   *prometheus.Desc
 	PingBaiduLost    *prometheus.Desc
 
-	NvmesTemperature   *prometheus.Desc
-	RootIsWriteRead    *prometheus.Desc
-	StorageIsWriteRead *prometheus.Desc
+	NvmesTemperature *prometheus.Desc
+	RootIsWriteRead  *prometheus.Desc
 
 	pingGatewayDelayMs int64
 	pingBaiduDelayMs   int64
@@ -74,11 +73,6 @@ func NewBaseMetrics() *BaseMetrics {
 			"show whether root is write and read or not",
 			nil, nil,
 		),
-		StorageIsWriteRead: prometheus.NewDesc(
-			"storage_is_write_read",
-			"show whether storage is write and read or not",
-			[]string{"storage"}, nil,
-		),
 	}
 
 	go metrics.updater()
@@ -116,7 +110,6 @@ func (m *BaseMetrics) Describe(ch chan<- *prometheus.Desc) {
 	ch <- m.PingBaiduLost
 	ch <- m.NvmesTemperature
 	ch <- m.RootIsWriteRead
-	ch <- m.StorageIsWriteRead
 }
 
 func (m *BaseMetrics) Collect(ch chan<- prometheus.Metric) {
@@ -133,7 +126,7 @@ func (m *BaseMetrics) Collect(ch chan<- prometheus.Metric) {
 		}
 	}
 
-	rootWR, _ := getFileIfWriteRead("/")
+	rootWR, _ := GetFileIfWriteRead("/")
 	var is float64
 	if rootWR {
 		is = 1
@@ -141,17 +134,6 @@ func (m *BaseMetrics) Collect(ch chan<- prometheus.Metric) {
 		is = 0
 	}
 	ch <- prometheus.MustNewConstMetric(m.RootIsWriteRead, prometheus.CounterValue, is)
-
-	storageAddressList, _ := getStorageAddress("/opt/sharestorage/")
-	for _, address := range storageAddressList {
-		isBool, _ := getFileIfWriteRead(address)
-		if isBool {
-			is = 1
-		} else {
-			is = 0
-		}
-		ch <- prometheus.MustNewConstMetric(m.StorageIsWriteRead, prometheus.CounterValue, is, address)
-	}
 }
 
 func pingStatistic(host string) (ms int64, rate float64) {
@@ -286,7 +268,7 @@ func getNvmeTempList() (map[string]map[string]string, error) {
 	return nvmeTempList, nil
 }
 
-func getFileIfWriteRead(file string) (bool, error) {
+func GetFileIfWriteRead(file string) (bool, error) {
 	fi, err := os.Lstat(file)
 	if err != nil {
 		log.Errorf(log.Fields{}, "err is:", err)
@@ -299,7 +281,7 @@ func getFileIfWriteRead(file string) (bool, error) {
 	}
 }
 
-func getStorageAddress(address string) ([]string, error) {
+func GetStorageAddress(address string) ([]string, error) {
 	storageAddressList := []string{}
 	out, err := api.RunCommand(exec.Command("ls", address))
 	if err != nil {
