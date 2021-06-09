@@ -7,8 +7,9 @@ require (
 	github.com/EntropyPool/machine-spec v0.0.0-20210408033101-2db09d058812
 	github.com/NpoolDevOps/fbc-devops-service v0.0.0-20210413053955-6d57518351f4
 	github.com/NpoolDevOps/fbc-license v0.0.0-20210408084724-dec53ab9682d
-	github.com/NpoolDevOps/fbc-license-service v0.0.0-20210328062839-d1527bc31f7e
 	github.com/NpoolRD/http-daemon v0.0.0-20210324100344-82fee56de8ac
+	github.com/amoghe/go-crypt v0.0.0-20191109212615-b2ff80594b7f
+	github.com/bgentry/speakeasy v0.1.0
 	github.com/docker/go-units v0.4.0
 	github.com/euank/go-kmsg-parser v2.0.0+incompatible
 	github.com/facebookgo/stack v0.0.0-20160209184415-751773369052 // indirect
@@ -18,17 +19,17 @@ require (
 	github.com/google/uuid v1.2.0
 	github.com/gosnmp/gosnmp v1.30.0
 	github.com/hpcloud/tail v1.0.0
-	github.com/ipfs/go-cid v0.0.7
 	github.com/jaypipes/ghw v0.7.0
 	github.com/libp2p/go-libp2p-core v0.7.0
 	github.com/mailru/easyjson v0.7.7 // indirect
+	github.com/msteinert/pam v0.0.0-20201130170657-e61372126161
 	github.com/prometheus/client_golang v1.6.0
 	github.com/rai-project/config v0.0.0-20190926180509-3bd01e698aad // indirect
 	github.com/rai-project/logger v0.0.0-20190701163301-49978a80bf96 // indirect
 	github.com/rai-project/nvidia-smi v0.0.0-20190730061239-864eb441c9ae
 	github.com/rai-project/tegra v0.0.0-20181119122707-1d9901ca382b // indirect
 	github.com/urfave/cli/v2 v2.3.0
-	github.com/xjh22222228/ip v1.0.1
+	golang.org/x/tools v0.0.0-20210106214847-113979e3529a
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1
 	gopkg.in/yaml.v2 v2.3.0
 )
