@@ -49,8 +49,6 @@ type MinerMetrics struct {
 	WorkerBalance    *prometheus.Desc
 	ControlBalance   *prometheus.Desc
 	MinerTaskState   *prometheus.Desc
-	//storage 读写
-	//根分区读写,与storage一样，监控根分区或者挂载点目录的读写情况，如果不是可读可写就报错返回0，反之返回1，基础放base
 
 	MinerFileOpen   *prometheus.Desc
 	MinerTcpConnect *prometheus.Desc
