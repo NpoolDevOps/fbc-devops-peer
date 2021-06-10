@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	log "github.com/EntropyPool/entropy-logger"
+	"github.com/NpoolDevOps/fbc-devops-peer/api/chiaapi"
 )
 
 func TestGetPlotterProcessNum(t *testing.T) {
@@ -23,13 +24,13 @@ func TestGetPlotterTime(t *testing.T) {
 }
 
 func TestGetStatus(t *testing.T) {
-	status1, err := GetStatus("ProofOfSpace create")
+	status1, err := chiaapi.GetStatus("ProofOfSpace create")
 	if err != nil {
 		log.Infof(log.Fields{}, "err is: %v", err)
 	}
 	log.Infof(log.Fields{}, "plotter status is:%v", status1)
 
-	status2, err := GetStatus("chia-storage-proxy")
+	status2, err := chiaapi.GetStatus("chia-storage-proxy")
 	if err != nil {
 		log.Infof(log.Fields{}, "err is: %v", err)
 	}

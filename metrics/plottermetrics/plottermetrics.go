@@ -1,6 +1,7 @@
 package plottermetrics
 
 import (
+	"github.com/NpoolDevOps/fbc-devops-peer/api/chiaapi"
 	api "github.com/NpoolDevOps/fbc-devops-peer/api/plotterapi"
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -70,9 +71,9 @@ func (p *PlotterMetrics) Describe(ch chan<- *prometheus.Desc) {
 func (p *PlotterMetrics) Collect(ch chan<- prometheus.Metric) {
 	plotterProcessNum, _ := api.GetPlotterProcessNum()
 	plotterTime, plotterTimeCount, _ := api.GetPlotterTime()
-	plotterStatus, _ := api.GetStatus("ProofOfSpace create")
-	storageProxyStatus, _ := api.GetStatus("chia-storage-proxy")
-	storageServerStatus, _ := api.GetStatus("chia-storage-server")
+	plotterStatus, _ := chiaapi.GetStatus("ProofOfSpace create")
+	storageProxyStatus, _ := chiaapi.GetStatus("chia-storage-proxy")
+	storageServerStatus, _ := chiaapi.GetStatus("chia-storage-server")
 	ps := 0
 	sps := 0
 	sss := 0
