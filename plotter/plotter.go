@@ -31,7 +31,6 @@ func NewPlotterNode(config *basenode.BasenodeConfig, devopsClient *devops.Devops
 
 func (p *PlotterNode) addressNotifier(local, public string) {
 	p.plotterMetrics.SetHost(local)
-	p.plotterMetrics.SetFullnodeHost(local)
 }
 
 func (p *PlotterNode) Describe(ch chan<- *prometheus.Desc) {
