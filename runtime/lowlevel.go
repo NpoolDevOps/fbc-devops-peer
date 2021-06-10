@@ -60,6 +60,7 @@ type Ethernet struct {
 
 type EthernetInfo struct {
 	Count        int        `json:"count"`
+	Speed        string     `json:"speed"`
 	EthernetDesc []Ethernet `json:"ethernet_desc"`
 }
 
@@ -279,6 +280,10 @@ func GetEthernet() (EthernetInfo, error) {
 		}
 		if strings.Contains(string(line), "configuration:") {
 			eth.Configuration = strings.Split(string(line), ": ")[1]
+			if strings.Contains(eth.Configuration, "speed") {
+				ethArr := strings.Split(eth.Configuration, "speed=")
+				ethernets.Speed = strings.TrimSpace(ethArr[1])
+			}
 
 			ips := strings.Split(eth.Configuration, "ip=")
 			if 1 < len(ips) {

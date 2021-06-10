@@ -79,3 +79,8 @@ func TestGetEthernetDesc(t *testing.T) {
 	desc, err := GetEthernetDesc()
 	log.Infof(log.Fields{}, "ethernet desc: %v | %v", desc, err)
 }
+
+func TestGetEthernetSpeed(t *testing.T) {
+	speed, err := GetEthernetSpeed()
+	log.Infof(log.Fields{}, "ethernet speed: %v | %v", speed, err)
+}

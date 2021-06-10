@@ -134,10 +134,10 @@ processDmesgLoop:
 	}
 	// If no memory error, do simple NVME | HDD test to check IO error
 	// If nvme or hdd is mounted, notify to deployer to check, or pass force to umount and test them
-
+	// Simple test nvme and collect test result, and kernel error
 	if 0 < p.Nvmes {
 		// Get nvme count
-		nvmes, _ := runtime.GetNvmeCount()
+		nvmes, err := runtime.GetNvmeCount()
 		results.Results = append(results.Results, newAcceptanceResult("Nvme Count", p.Nvmes, nvmes, err))
 		// Get nvme parameter
 		nvmeDesc, err := runtime.GetNvmeDesc()
@@ -154,12 +154,11 @@ processDmesgLoop:
 		}
 	}
 
-	// Simple test nvme and collect test result, and kernel error
-
+	// Simple test hdd and collect test result, and kernel error
 	if 0 < p.Hdds {
 		// Get hdd count
-		hdds, _ := runtime.GetHddCount()
-		results.Results = append(results.Results, newAcceptanceResult("Nvme Count", p.Hdds, hdds, err))
+		hdds, err := runtime.GetHddCount()
+		results.Results = append(results.Results, newAcceptanceResult("Hdd Count", p.Hdds, hdds, err))
 		// Get hdd parameter
 		hddDesc, err := runtime.GetHddDesc()
 		if err != nil {
@@ -174,9 +173,42 @@ processDmesgLoop:
 			results.Results = append(results.Results, newAcceptanceResult(fmt.Sprintf("Hdd %v Size", info.Name), p.HddUnitSize, info.Size, nil))
 		}
 	}
-	// Simple test hdd and collect test result, and kernel error
+
 	// Check GPU
+	if 0 < p.Gpus {
+		//Get Gpu count
+		gpus, err := runtime.GetGpuCount()
+		results.Results = append(results.Results, newAcceptanceResult("Gpu Count", p.Gpus, gpus, err))
+
+		//Get gpu Desc
+		gpuDesc, err := runtime.GetGpuDesc()
+		if err != nil {
+			results.Results = append(results.Results, newAcceptanceResult("Gpu Desc", p.GpuBrand, "", err))
+		}
+		for i, desc := range gpuDesc {
+			results.Results = append(results.Results, newAcceptanceResult(fmt.Sprintf("Gpu %v Desc", i), p.GpuBrand, desc, err))
+		}
+	}
+
 	// Check Ethernet
+	if 0 < p.Ethernets {
+		//Get Ethernet count
+		ethernet, err := runtime.GetEthernetCount()
+		results.Results = append(results.Results, newAcceptanceResult("Ethernet Count", p.Ethernets, ethernet, err))
+
+		//Get ethernet speed
+		ethernetSpeed, err := runtime.GetEthernetSpeed()
+		results.Results = append(results.Results, newAcceptanceResult("Ethernet Speed", p.EthernetSpeed, ethernetSpeed, err))
+
+		//Get ethernet desc
+		ethernetDesc, err := runtime.GetEthernetDesc()
+		if err != nil {
+			results.Results = append(results.Results, newAcceptanceResult("Ethernet Desc", p.EthernetBondConfig.Bond, "", err))
+		}
+		for i, desc := range ethernetDesc {
+			results.Results = append(results.Results, newAcceptanceResult(fmt.Sprintf("Ethernet %v Desc", i), p.EthernetBondConfig.Bond, desc, err))
+		}
+	}
 
 	return results, nil
 }

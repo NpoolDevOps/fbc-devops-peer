@@ -151,3 +151,8 @@ func GetEthernetDesc() ([]string, error) {
 	}
 	return eths, nil
 }
+
+func GetEthernetSpeed() (string, error) {
+	ethernet, _ := GetEthernet()
+	return ethernet.Speed, nil
+}
