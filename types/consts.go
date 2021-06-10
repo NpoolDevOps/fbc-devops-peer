@@ -14,6 +14,7 @@ const (
 	StorageNode   = "storage"
 	GatewayNode   = "gateway"
 	ChiaMinerNode = "chiaminer"
+	PlotterNode   = "plotter"
 )
 
 const (

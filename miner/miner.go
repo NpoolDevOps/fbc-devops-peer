@@ -6,15 +6,10 @@ import (
 	"github.com/NpoolDevOps/fbc-devops-peer/basenode"
 	devops "github.com/NpoolDevOps/fbc-devops-peer/devops"
 	exporter "github.com/NpoolDevOps/fbc-devops-peer/exporter"
-
-	//"github.com/NpoolDevOps/fbc-devops-peer/fullminer"
 	minermetrics "github.com/NpoolDevOps/fbc-devops-peer/metrics/minermetrics"
 	"github.com/NpoolDevOps/fbc-devops-peer/types"
 	"github.com/NpoolDevOps/fbc-devops-peer/version"
-
-	//"github.com/libp2p/go-libp2p-core/host"
 	"github.com/prometheus/client_golang/prometheus"
-	//"golang.org/x/tools/go/analysis/passes/nilfunc"
 )
 
 type MinerNode struct {
