@@ -31,7 +31,6 @@ func NewChiaMinerNode(config *basenode.BasenodeConfig, devopsClient *devops.Devo
 
 func (c *ChiaMinerNode) addressNotifier(local, public string) {
 	c.chiaMinerMetrics.SetHost(local)
-	c.chiaMinerMetrics.SetFullnodeHost(local)
 }
 
 func (c *ChiaMinerNode) Describe(ch chan<- *prometheus.Desc) {

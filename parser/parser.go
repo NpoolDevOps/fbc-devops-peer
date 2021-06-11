@@ -14,6 +14,8 @@ import (
 	types "github.com/NpoolDevOps/fbc-devops-peer/types"
 	httpdaemon "github.com/NpoolRD/http-daemon"
 	"github.com/google/uuid"
+
+	// "golang.org/x/text/cases"
 	"golang.org/x/xerrors"
 )
 
@@ -54,6 +56,7 @@ type Parser struct {
 	storageChilds      []string
 	minerLogFile       string
 	fullnodeLogFile    string
+	chiaMinerLogFile   string
 }
 
 type OSSInfo struct {
@@ -360,6 +363,7 @@ func (p *Parser) parseLogFileFromService(file string) string {
 func (p *Parser) parseLogFiles() {
 	p.fullnodeLogFile = p.parseLogFileFromService(FullnodeServiceFile)
 	p.minerLogFile = p.parseLogFileFromService(MinerServiceFile)
+	p.chiaMinerLogFile = "/var/log/chia/miner.log"
 }
 
 func (p *Parser) parse() error {
@@ -464,6 +468,8 @@ func (p *Parser) GetLogFile(myRole string) (string, error) {
 		return p.minerLogFile, nil
 	case types.FullNode:
 		return p.fullnodeLogFile, nil
+	case types.ChiaMinerNode:
+		return p.chiaMinerLogFile, nil
 	default:
 		return "", xerrors.Errorf("no log file for role: %v", myRole)
 	}
