@@ -3,12 +3,13 @@ package minerapi
 import (
 	"bufio"
 	"bytes"
-	log "github.com/EntropyPool/entropy-logger"
-	"os"
 	"os/exec"
 	"strconv"
 	"strings"
 	"time"
+
+	log "github.com/EntropyPool/entropy-logger"
+	"github.com/NpoolDevOps/fbc-devops-peer/api/systemapi"
 )
 
 type MinerInfo struct {
@@ -40,15 +41,6 @@ func parseBalance(line string) float64 {
 	return b
 }
 
-func runCommand(cmd *exec.Cmd) ([]byte, error) {
-	cmd.Stderr = os.Stderr
-	out, err := cmd.Output()
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func GetMinerInfo(ch chan MinerInfo, sectors bool) {
 	go func() {
 		inSectorState := false
@@ -61,7 +53,7 @@ func GetMinerInfo(ch chan MinerInfo, sectors bool) {
 			State: map[string]uint64{},
 		}
 
-		out, err := runCommand(exec.Command("/usr/local/bin/lotus-miner", "info", hideSector))
+		out, err := systemapi.RunCommand(exec.Command("/usr/local/bin/lotus-miner", "info", hideSector))
 		if err != nil {
 			log.Errorf(log.Fields{}, "fail to run lotus-miner info: %v", err)
 			ch <- info
@@ -153,7 +145,7 @@ func GetSealingJobs(ch chan SealingJobs) {
 			Jobs: map[string]map[string]SealingJob{},
 		}
 
-		out, err := runCommand(exec.Command("/usr/local/bin/lotus-miner", "sealing", "jobs"))
+		out, err := systemapi.RunCommand(exec.Command("/usr/local/bin/lotus-miner", "sealing", "jobs"))
 		if err != nil {
 			log.Errorf(log.Fields{}, "fail to run lotus-miner sealing jobs: %v", err)
 			ch <- info
@@ -226,7 +218,7 @@ func GetWorkerInfos(ch chan WorkerInfos) {
 			Infos: map[string]WorkerInfo{},
 		}
 
-		out, err := runCommand(exec.Command("/usr/local/bin/lotus-miner", "sealing", "workers"))
+		out, err := systemapi.RunCommand(exec.Command("/usr/local/bin/lotus-miner", "sealing", "workers"))
 		if err != nil {
 			log.Errorf(log.Fields{}, "fail to run lotus-miner sealing workers: %v", err)
 			ch <- info
