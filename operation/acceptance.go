@@ -184,6 +184,11 @@ func acceptanceExec(params string) (interface{}, error) {
 		}
 	}
 
+	if 0 < p.Ethernets {
+		eths, err := runtime.GetEthernetCount()
+		results.Results = append(results.Results, newAcceptanceResult("Ethernet Count", p.Ethernets, eths, err))
+	}
+
 	// If no memory error, do simple NVME | HDD test to check IO error
 	// If nvme or hdd is mounted, notify to deployer to check, or pass force to umount and test them
 	// Simple test nvme and collect test result, and kernel error
