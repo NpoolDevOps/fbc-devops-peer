@@ -349,12 +349,12 @@ func NewMinerMetrics(cfg MinerMetricsConfig) *MinerMetrics {
 			"Miner chain head epoch",
 			[]string{"fullnode"}, nil,
 		),
-		StorageModePerm: prometheus.NewDesc(
+		StorageMountpointPermission: prometheus.NewDesc(
 			"miner_storage_",
 			"show miner storage's file mode perm",
 			[]string{"filedir"}, nil,
 		),
-		StorageMountIsOK: prometheus.NewDesc(
+		StorageMountError: prometheus.NewDesc(
 			"miner_storage_mount_is_ok",
 			"show storage mount status",
 			[]string{"filedir"}, nil,
@@ -469,8 +469,8 @@ func (m *MinerMetrics) Describe(ch chan<- *prometheus.Desc) {
 	ch <- m.ChainSyncNotCompleted
 	ch <- m.ChainNotSuitable
 	ch <- m.ChainHeadListen
-	ch <- m.StorageModePerm
-	ch <- m.StorageMountIsOK
+	ch <- m.StorageMountpointPermission
+	ch <- m.StorageMountError
 }
 
 func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
@@ -639,12 +639,12 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 	}
 
 	for k, v := range m.storageStat {
-		if v == nil {
-			ch <- prometheus.MustNewConstMetric(m.StorageMountIsOK, prometheus.CounterValue, 1, k)
+		if v != nil {
+			ch <- prometheus.MustNewConstMetric(m.StorageMountError, prometheus.CounterValue, 1, k)
 		} else {
-			ch <- prometheus.MustNewConstMetric(m.StorageMountIsOK, prometheus.CounterValue, 0, k)
+			ch <- prometheus.MustNewConstMetric(m.StorageMountError, prometheus.CounterValue, 0, k)
 		}
 		filePerm, _ := systemapi.FilePerm2Int(k)
-		ch <- prometheus.MustNewConstMetric(m.StorageModePerm, prometheus.CounterValue, float64(filePerm), k)
+		ch <- prometheus.MustNewConstMetric(m.StorageMountpointPermission, prometheus.CounterValue, float64(filePerm), k)
 	}
 }

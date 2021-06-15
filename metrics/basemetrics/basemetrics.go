@@ -59,12 +59,12 @@ func NewBaseMetrics() *BaseMetrics {
 			"Show base ntp time diff",
 			nil, nil,
 		),
-		RootUsageAccess: prometheus.NewDesc(
+		RootPermission: prometheus.NewDesc(
 			"base_root_usage_access",
 			"show whether the root is able to write and read",
 			nil, nil,
 		),
-		RootMountAccess: prometheus.NewDesc(
+		RootMountRW: prometheus.NewDesc(
 			"base_root_mount_access",
 			"show whether root mount access is rw",
 			nil, nil,
@@ -104,8 +104,8 @@ func (m *BaseMetrics) Describe(ch chan<- *prometheus.Desc) {
 	ch <- m.PingGatewayLost
 	ch <- m.PingBaiduDelay
 	ch <- m.PingBaiduLost
-	ch <- m.RootUsageAccess
-	ch <- m.RootMountAccess
+	ch <- m.RootPermission
+	ch <- m.RootMountRW
 }
 
 func (m *BaseMetrics) Collect(ch chan<- prometheus.Metric) {
@@ -115,13 +115,13 @@ func (m *BaseMetrics) Collect(ch chan<- prometheus.Metric) {
 	ch <- prometheus.MustNewConstMetric(m.PingBaiduDelay, prometheus.CounterValue, float64(m.pingBaiduDelayMs))
 	ch <- prometheus.MustNewConstMetric(m.PingBaiduLost, prometheus.CounterValue, m.pingBaiduLost)
 	rootPerm, _ := systemapi.FilePerm2Int("/")
-	ch <- prometheus.MustNewConstMetric(m.RootUsageAccess, prometheus.CounterValue, float64(rootPerm))
+	ch <- prometheus.MustNewConstMetric(m.RootPermission, prometheus.CounterValue, float64(rootPerm))
 
 	mountpointWrittable, _ := systemapi.MountpointWrittable("/")
 	if mountpointWrittable {
-		ch <- prometheus.MustNewConstMetric(m.RootMountAccess, prometheus.CounterValue, 1)
+		ch <- prometheus.MustNewConstMetric(m.RootMountRW, prometheus.CounterValue, 1)
 	} else {
-		ch <- prometheus.MustNewConstMetric(m.RootMountAccess, prometheus.CounterValue, 0)
+		ch <- prometheus.MustNewConstMetric(m.RootMountRW, prometheus.CounterValue, 0)
 	}
 }
 
