@@ -22,34 +22,39 @@ func RunCommand(cmd *exec.Cmd) ([]byte, error) {
 	return out, nil
 }
 
-func GetFileUsageAccess(file string) float64 {
+func FilePerm2Int(file string) (int, error) {
 	fi, err := os.Stat(file)
 	if err != nil {
-		log.Errorf(log.Fields{}, "err is:", err)
-		return 0
+		return 0, err
 	}
 	strMode := fmt.Sprintf("%o", fi.Mode().Perm())
-	floatMode, _ := strconv.ParseFloat(strMode, 64)
-	return floatMode
+	mode, _ := strconv.ParseInt(strMode, 64)
+	return mode, nil
 }
 
-func GetFileMountAccess(file string) bool {
-	info, _ := mountinfo.GetMounts(func(*mountinfo.Info) (skip, stop bool) {
+func MountpointWrittable(mountpoint string) (bool, error) {
+	var info *mountinfo.Info = nil
+
+	_, err := mountinfo.GetMounts(func(i *mountinfo.Info) (skip, stop bool) {
+		if info.Mountpoint == mountpoint {
+			info = i
+			return false, true
+		}
 		return false, false
 	})
-	var access bool
-	for _, i := range info {
-		if i.Mountpoint == file {
-			if strings.TrimSpace(strings.Split(i.Options, ",")[0]) == "rw" {
-				access = true
-				break
-			} else {
-				access = false
-				break
-			}
-		}
+
+	if err != nil {
+		return false, err
 	}
-	return access
+
+	if info != nil {
+		if strings.TrimSpace(strings.Split(info.Options, ",")[0]) == "rw" {
+			return true, nil
+		}
+		return false, nil
+	}
+
+	return false, xerrors.Errorf("mountpoint %v not found", mountpoint)
 }
 
 func StatSubDirs(dir string, sublevel int) map[string]error {
