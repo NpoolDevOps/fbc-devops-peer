@@ -114,9 +114,11 @@ func (m *BaseMetrics) Collect(ch chan<- prometheus.Metric) {
 	ch <- prometheus.MustNewConstMetric(m.PingGatewayLost, prometheus.CounterValue, m.pingGatewayLost)
 	ch <- prometheus.MustNewConstMetric(m.PingBaiduDelay, prometheus.CounterValue, float64(m.pingBaiduDelayMs))
 	ch <- prometheus.MustNewConstMetric(m.PingBaiduLost, prometheus.CounterValue, m.pingBaiduLost)
-	ch <- prometheus.MustNewConstMetric(m.RootUsageAccess, prometheus.CounterValue, systemapi.GetFileUsageAccess("/"))
+	rootPerm, _ := systemapi.FilePerm2Int("/")
+	ch <- prometheus.MustNewConstMetric(m.RootUsageAccess, prometheus.CounterValue, float64(rootPerm))
 
-	if systemapi.GetFileMountAccess("/") {
+	mountpointWrittable, _ := systemapi.MountpointWrittable("/")
+	if mountpointWrittable {
 		ch <- prometheus.MustNewConstMetric(m.RootMountAccess, prometheus.CounterValue, 1)
 	} else {
 		ch <- prometheus.MustNewConstMetric(m.RootMountAccess, prometheus.CounterValue, 0)

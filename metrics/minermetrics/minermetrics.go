@@ -78,8 +78,8 @@ type MinerMetrics struct {
 	ChainNotSuitable      *prometheus.Desc
 	ChainHeadListen       *prometheus.Desc
 
-	StorageUsageAccess *prometheus.Desc
-	StorageMountStatus *prometheus.Desc
+	StorageModePerm  *prometheus.Desc
+	StorageMountIsOK *prometheus.Desc
 
 	minerInfo   minerapi.MinerInfo
 	sealingJobs minerapi.SealingJobs
@@ -349,13 +349,13 @@ func NewMinerMetrics(cfg MinerMetricsConfig) *MinerMetrics {
 			"Miner chain head epoch",
 			[]string{"fullnode"}, nil,
 		),
-		StorageUsageAccess: prometheus.NewDesc(
-			"miner_storage_usage_access",
-			"show miner storage's access",
+		StorageModePerm: prometheus.NewDesc(
+			"miner_storage_mode_perm",
+			"show miner storage's file mode perm",
 			[]string{"filedir"}, nil,
 		),
-		StorageMountStatus: prometheus.NewDesc(
-			"miner_storage_mount_status",
+		StorageMountIsOK: prometheus.NewDesc(
+			"miner_storage_mount_is_ok",
 			"show storage mount status",
 			[]string{"filedir"}, nil,
 		),
@@ -469,8 +469,8 @@ func (m *MinerMetrics) Describe(ch chan<- *prometheus.Desc) {
 	ch <- m.ChainSyncNotCompleted
 	ch <- m.ChainNotSuitable
 	ch <- m.ChainHeadListen
-	ch <- m.StorageUsageAccess
-	ch <- m.StorageMountStatus
+	ch <- m.StorageModePerm
+	ch <- m.StorageMountIsOK
 }
 
 func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
@@ -640,11 +640,11 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 
 	for k, v := range m.storageStat {
 		if v == nil {
-			ch <- prometheus.MustNewConstMetric(m.StorageMountStatus, prometheus.CounterValue, 1, k)
+			ch <- prometheus.MustNewConstMetric(m.StorageMountIsOK, prometheus.CounterValue, 1, k)
 		} else {
-			ch <- prometheus.MustNewConstMetric(m.StorageMountStatus, prometheus.CounterValue, 0, k)
+			ch <- prometheus.MustNewConstMetric(m.StorageMountIsOK, prometheus.CounterValue, 0, k)
 		}
-
-		ch <- prometheus.MustNewConstMetric(m.StorageUsageAccess, prometheus.CounterValue, systemapi.GetFileUsageAccess(k), k)
+		filePerm, _ := systemapi.FilePerm2Int(k)
+		ch <- prometheus.MustNewConstMetric(m.StorageModePerm, prometheus.CounterValue, float64(filePerm), k)
 	}
 }

@@ -9,8 +9,8 @@ import (
 	"strconv"
 	"strings"
 
-	log "github.com/EntropyPool/entropy-logger"
 	"github.com/moby/sys/mountinfo"
+	"golang.org/x/xerrors"
 )
 
 func RunCommand(cmd *exec.Cmd) ([]byte, error) {
@@ -22,13 +22,13 @@ func RunCommand(cmd *exec.Cmd) ([]byte, error) {
 	return out, nil
 }
 
-func FilePerm2Int(file string) (int, error) {
+func FilePerm2Int(file string) (int64, error) {
 	fi, err := os.Stat(file)
 	if err != nil {
 		return 0, err
 	}
 	strMode := fmt.Sprintf("%o", fi.Mode().Perm())
-	mode, _ := strconv.ParseInt(strMode, 64)
+	mode, _ := strconv.ParseInt(strMode, 10, 64)
 	return mode, nil
 }
 
