@@ -25,7 +25,11 @@ func NewMinerNode(config *basenode.BasenodeConfig, devopsClient *devops.DevopsCl
 	}
 
 	logfile, _ := miner.GetLogFileByRole(types.MinerNode)
-	miner.minerMetrics = minermetrics.NewMinerMetrics(logfile)
+	shareStorageRoot, _ := miner.GetShareStorageRootByRole(types.MinerNode)
+	miner.minerMetrics = minermetrics.NewMinerMetrics(minermetrics.MinerMetricsConfig{
+		ShareStorageRoot: shareStorageRoot,
+		Logfile:          logfile,
+	})
 
 	miner.SetAddrNotifier(miner.addressNotifier)
 	miner.WatchVersions(miner.getVersions)

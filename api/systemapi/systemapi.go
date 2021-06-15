@@ -2,8 +2,10 @@ package systemapi
 
 import (
 	"fmt"
+	"io/fs"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -48,4 +50,18 @@ func GetFileMountAccess(file string) bool {
 		}
 	}
 	return access
+}
+
+func StatSubDirs(dir string, sublevel int) map[string]error {
+	stat := map[string]error{}
+	mySlashes := strings.Count(dir, "/")
+
+	_ = filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
+		if strings.Count(path, "/") == sublevel+mySlashes {
+			stat[path] = err
+		}
+		return nil
+	})
+
+	return stat
 }

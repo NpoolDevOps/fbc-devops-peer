@@ -10,7 +10,6 @@ import (
 	"github.com/NpoolDevOps/fbc-devops-peer/api/minerapi"
 	"github.com/NpoolDevOps/fbc-devops-peer/api/systemapi"
 	"github.com/NpoolDevOps/fbc-devops-peer/loganalysis/minerlog"
-	par "github.com/NpoolDevOps/fbc-devops-peer/parser"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -85,13 +84,15 @@ type MinerMetrics struct {
 	minerInfo   minerapi.MinerInfo
 	sealingJobs minerapi.SealingJobs
 	workerInfos minerapi.WorkerInfos
-	mutex       sync.Mutex
+
+	mutex sync.Mutex
 
 	errors       int
 	host         string
 	hasHost      bool
 	fullnodeHost string
 	config       MinerMetricsConfig
+	storageStat  map[string]error
 }
 
 func NewMinerMetrics(cfg MinerMetricsConfig) *MinerMetrics {
@@ -395,6 +396,11 @@ func NewMinerMetrics(cfg MinerMetricsConfig) *MinerMetrics {
 			mm.workerInfos = workerInfos
 			mm.mutex.Unlock()
 
+			storageStat := systemapi.StatSubDirs(cfg.ShareStorageRoot, 1)
+			mm.mutex.Lock()
+			mm.storageStat = storageStat
+			mm.mutex.Unlock()
+
 			<-ticker.C
 		}
 	}()
@@ -631,9 +637,9 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 	for host, epoch := range chainHeadListenSuccessHosts {
 		ch <- prometheus.MustNewConstMetric(m.ChainHeadListen, prometheus.CounterValue, float64(epoch), host)
 	}
-	dirMountStatus := minerapi.GetDirMountStatus(dir, 3)
-	for k, v := range dirMountStatus {
-		if v {
+
+	for k, v := range m.storageStat {
+		if v == nil {
 			ch <- prometheus.MustNewConstMetric(m.StorageMountStatus, prometheus.CounterValue, 1, k)
 		} else {
 			ch <- prometheus.MustNewConstMetric(m.StorageMountStatus, prometheus.CounterValue, 0, k)

@@ -3,9 +3,7 @@ package minerapi
 import (
 	"bufio"
 	"bytes"
-	"io/fs"
 	"os/exec"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -278,19 +276,4 @@ func GetWorkerInfos(ch chan WorkerInfos) {
 
 		ch <- info
 	}()
-}
-
-func StatSubDirs(dir string, sublevel int) map[string]error {
-	stat := map[string]error{}
-	mySlashes := strings.Count(dir, "/")
-
-	_ = filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
-		if strings.Count(path, "/") != sublevel+mySlashes {
-			continue
-		}
-		stat[path] = err
-		return nil
-	})
-
-	return stat
 }
