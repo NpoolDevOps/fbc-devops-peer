@@ -4,16 +4,17 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
-	log "github.com/EntropyPool/entropy-logger"
-	types "github.com/NpoolDevOps/fbc-devops-peer/types"
-	httpdaemon "github.com/NpoolRD/http-daemon"
-	"github.com/google/uuid"
-	"golang.org/x/xerrors"
 	"io/ioutil"
 	"net"
 	"os"
 	"path/filepath"
 	"strings"
+
+	log "github.com/EntropyPool/entropy-logger"
+	types "github.com/NpoolDevOps/fbc-devops-peer/types"
+	httpdaemon "github.com/NpoolRD/http-daemon"
+	"github.com/google/uuid"
+	"golang.org/x/xerrors"
 )
 
 const (
@@ -38,20 +39,21 @@ type nodeDesc struct {
 }
 
 type Parser struct {
-	fileAPIInfo        map[string]nodeDesc
-	minerStorageChilds []string
-	storagePath        string
-	validStoragePath   bool
-	storageConfig      StorageConfig
-	validStorageConfig bool
-	storageMetas       []LocalStorageMeta
-	cephEntries        map[string]struct{}
-	localAddr          string
-	cephStoragePeers   map[string]string
-	storageSubRole     string
-	storageChilds      []string
-	minerLogFile       string
-	fullnodeLogFile    string
+	fileAPIInfo           map[string]nodeDesc
+	minerStorageChilds    []string
+	storagePath           string
+	validStoragePath      bool
+	storageConfig         StorageConfig
+	validStorageConfig    bool
+	storageMetas          []LocalStorageMeta
+	cephEntries           map[string]struct{}
+	localAddr             string
+	cephStoragePeers      map[string]string
+	storageSubRole        string
+	storageChilds         []string
+	minerLogFile          string
+	fullnodeLogFile       string
+	minerShareStorageRoot string
 }
 
 type OSSInfo struct {
@@ -84,9 +86,10 @@ type LocalPath struct {
 
 func NewParser() *Parser {
 	parser := &Parser{
-		fileAPIInfo:      map[string]nodeDesc{},
-		cephEntries:      map[string]struct{}{},
-		cephStoragePeers: map[string]string{},
+		fileAPIInfo:           map[string]nodeDesc{},
+		cephEntries:           map[string]struct{}{},
+		cephStoragePeers:      map[string]string{},
+		minerShareStorageRoot: "/opt/sharestorage",
 	}
 	err := parser.parse()
 	if err != nil {
@@ -464,5 +467,16 @@ func (p *Parser) GetLogFile(myRole string) (string, error) {
 		return p.fullnodeLogFile, nil
 	default:
 		return "", xerrors.Errorf("no log file for role: %v", myRole)
+	}
+}
+
+func (p *Parser) GetShareStorageRoot(myRole string) (string, error) {
+	switch myRole {
+	case types.MinerNode:
+		fallthrough
+	case types.FullMinerNode:
+		return p.minerShareStorageRoot, nil
+	default:
+		return "", xerrors.Errorf("no share storage for role: %v", myRole)
 	}
 }

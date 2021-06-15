@@ -1,9 +1,10 @@
 package lotuslog
 
 import (
-	"github.com/NpoolDevOps/fbc-devops-peer/loganalysis/logbase"
 	"strings"
 	"sync"
+
+	"github.com/NpoolDevOps/fbc-devops-peer/loganalysis/logbase"
 )
 
 type LotusLog struct {
@@ -92,7 +93,6 @@ func (ll *LotusLog) watch() {
 func (ll *LotusLog) GetRefuseds() uint64 {
 	ll.mutex.Lock()
 	refuseds := ll.refuseds
-	ll.refuseds = 0
 	ll.mutex.Unlock()
 	return refuseds
 }
@@ -100,7 +100,6 @@ func (ll *LotusLog) GetRefuseds() uint64 {
 func (ll *LotusLog) GetTimeouts() uint64 {
 	ll.mutex.Lock()
 	timeouts := ll.timeouts
-	ll.timeouts = 0
 	ll.mutex.Unlock()
 	return timeouts
 }

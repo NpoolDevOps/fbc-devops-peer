@@ -3,6 +3,12 @@ package basenode
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"net"
+	"net/http"
+	"os/exec"
+	"time"
+
 	log "github.com/EntropyPool/entropy-logger"
 	machspec "github.com/EntropyPool/machine-spec"
 	devops "github.com/NpoolDevOps/fbc-devops-peer/devops"
@@ -17,11 +23,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/prometheus/client_golang/prometheus"
 	"golang.org/x/xerrors"
-	"io/ioutil"
-	"net"
-	"net/http"
-	"os/exec"
-	"time"
 )
 
 type Basenode struct {
@@ -431,6 +432,13 @@ func (n *Basenode) GetChildsIPs() ([]string, error) {
 
 func (n *Basenode) GetLogFileByRole(role string) (string, error) {
 	return n.parser.GetLogFile(role)
+}
+
+func (n *Basenode) GetShareStorageRoot() (string, error) {
+	return n.parser.GetShareStorageRoot(n.GetMainRole())
+}
+func (n *Basenode) GetShareStorageRootByRole(role string) (string, error) {
+	return n.parser.GetShareStorageRoot(role)
 }
 
 func (n *Basenode) GetLogFile() (string, error) {

@@ -2,14 +2,15 @@ package minerlog
 
 import (
 	"encoding/json"
-	log "github.com/EntropyPool/entropy-logger"
-	lotusapi "github.com/NpoolDevOps/fbc-devops-peer/api/lotusapi"
-	"github.com/NpoolDevOps/fbc-devops-peer/loganalysis/logbase"
 	"math/rand"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
+
+	log "github.com/EntropyPool/entropy-logger"
+	lotusapi "github.com/NpoolDevOps/fbc-devops-peer/api/lotusapi"
+	"github.com/NpoolDevOps/fbc-devops-peer/loganalysis/logbase"
 )
 
 const (
@@ -364,7 +365,6 @@ func (ml *MinerLog) watch() {
 func (ml *MinerLog) GetBlockTooks() []uint64 {
 	ml.mutex.Lock()
 	items := ml.items[KeyMinedNewBlock]
-	ml.items[KeyMinedNewBlock] = []uint64{}
 	ml.mutex.Unlock()
 	return items
 }
@@ -372,7 +372,6 @@ func (ml *MinerLog) GetBlockTooks() []uint64 {
 func (ml *MinerLog) GetForkBlocks() uint64 {
 	ml.mutex.Lock()
 	forkBlocks := ml.forkBlocks
-	ml.forkBlocks = 0
 	ml.mutex.Unlock()
 	return forkBlocks
 }
@@ -380,7 +379,6 @@ func (ml *MinerLog) GetForkBlocks() uint64 {
 func (ml *MinerLog) GetPastBlocks() uint64 {
 	ml.mutex.Lock()
 	pastBlocks := ml.pastBlocks
-	ml.pastBlocks = 0
 	ml.mutex.Unlock()
 	return pastBlocks
 }
@@ -388,7 +386,6 @@ func (ml *MinerLog) GetPastBlocks() uint64 {
 func (ml *MinerLog) GetFailedBlocks() uint64 {
 	ml.mutex.Lock()
 	failedBlocks := ml.failedBlocks
-	ml.failedBlocks = 0
 	ml.mutex.Unlock()
 	return failedBlocks
 }
@@ -396,7 +393,6 @@ func (ml *MinerLog) GetFailedBlocks() uint64 {
 func (ml *MinerLog) GetChainSyncNotCompletedHosts() map[string]struct{} {
 	ml.mutex.Lock()
 	hosts := ml.chainSyncNotCompletedHosts
-	ml.chainSyncNotCompletedHosts = map[string]struct{}{}
 	ml.mutex.Unlock()
 	return hosts
 }
@@ -404,7 +400,6 @@ func (ml *MinerLog) GetChainSyncNotCompletedHosts() map[string]struct{} {
 func (ml *MinerLog) GetChainNotSuitable() uint64 {
 	ml.mutex.Lock()
 	chainNotSuitable := ml.chainNotSuitable
-	ml.chainNotSuitable = 0
 	ml.mutex.Unlock()
 	return chainNotSuitable
 }
@@ -412,7 +407,6 @@ func (ml *MinerLog) GetChainNotSuitable() uint64 {
 func (ml *MinerLog) GetChainHeadListenSuccessHosts() map[string]uint64 {
 	ml.mutex.Lock()
 	hosts := ml.chainHeadListenHosts
-	ml.chainHeadListenHosts = map[string]uint64{}
 	ml.mutex.Unlock()
 	return hosts
 }
@@ -468,7 +462,6 @@ func (ml *MinerLog) GetSectorTasks() map[string]map[string][]SectorTaskStat {
 func (ml *MinerLog) GetCheckSectors() map[int]CheckSectors {
 	ml.mutex.Lock()
 	sectors := ml.checkSectors
-	ml.checkSectors = map[int]CheckSectors{}
 	ml.mutex.Unlock()
 	return sectors
 }

@@ -3,15 +3,17 @@ package basemetrics
 import (
 	"bufio"
 	"encoding/binary"
-	log "github.com/EntropyPool/entropy-logger"
-	"github.com/go-ping/ping"
-	"github.com/prometheus/client_golang/prometheus"
-	"golang.org/x/xerrors"
 	"net"
 	"os"
 	"strconv"
 	"strings"
 	"time"
+
+	log "github.com/EntropyPool/entropy-logger"
+	"github.com/NpoolDevOps/fbc-devops-peer/api/systemapi"
+	"github.com/go-ping/ping"
+	"github.com/prometheus/client_golang/prometheus"
+	"golang.org/x/xerrors"
 )
 
 type BaseMetrics struct {
@@ -20,6 +22,8 @@ type BaseMetrics struct {
 	PingGatewayLost  *prometheus.Desc
 	PingBaiduDelay   *prometheus.Desc
 	PingBaiduLost    *prometheus.Desc
+	RootPermission   *prometheus.Desc
+	RootMountRW      *prometheus.Desc
 
 	pingGatewayDelayMs int64
 	pingBaiduDelayMs   int64
@@ -53,6 +57,16 @@ func NewBaseMetrics() *BaseMetrics {
 		TimeDiff: prometheus.NewDesc(
 			"base_ntp_time_diff",
 			"Show base ntp time diff",
+			nil, nil,
+		),
+		RootPermission: prometheus.NewDesc(
+			"base_root_permission",
+			"show whether the root is able to write and read",
+			nil, nil,
+		),
+		RootMountRW: prometheus.NewDesc(
+			"base_root_mount_rw",
+			"show whether root mount access is rw",
 			nil, nil,
 		),
 	}
@@ -90,6 +104,8 @@ func (m *BaseMetrics) Describe(ch chan<- *prometheus.Desc) {
 	ch <- m.PingGatewayLost
 	ch <- m.PingBaiduDelay
 	ch <- m.PingBaiduLost
+	ch <- m.RootPermission
+	ch <- m.RootMountRW
 }
 
 func (m *BaseMetrics) Collect(ch chan<- prometheus.Metric) {
@@ -98,6 +114,15 @@ func (m *BaseMetrics) Collect(ch chan<- prometheus.Metric) {
 	ch <- prometheus.MustNewConstMetric(m.PingGatewayLost, prometheus.CounterValue, m.pingGatewayLost)
 	ch <- prometheus.MustNewConstMetric(m.PingBaiduDelay, prometheus.CounterValue, float64(m.pingBaiduDelayMs))
 	ch <- prometheus.MustNewConstMetric(m.PingBaiduLost, prometheus.CounterValue, m.pingBaiduLost)
+	rootPerm, _ := systemapi.FilePerm2Int("/")
+	ch <- prometheus.MustNewConstMetric(m.RootPermission, prometheus.CounterValue, float64(rootPerm))
+
+	mountpointWrittable, _ := systemapi.MountpointWrittable("/")
+	if mountpointWrittable {
+		ch <- prometheus.MustNewConstMetric(m.RootMountRW, prometheus.CounterValue, 1)
+	} else {
+		ch <- prometheus.MustNewConstMetric(m.RootMountRW, prometheus.CounterValue, 0)
+	}
 }
 
 func pingStatistic(host string) (ms int64, rate float64) {

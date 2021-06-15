@@ -2,14 +2,21 @@ package minermetrics
 
 import (
 	"fmt"
+	"sync"
+	"time"
+
 	log "github.com/EntropyPool/entropy-logger"
 	"github.com/NpoolDevOps/fbc-devops-peer/api/lotusapi"
 	"github.com/NpoolDevOps/fbc-devops-peer/api/minerapi"
+	"github.com/NpoolDevOps/fbc-devops-peer/api/systemapi"
 	"github.com/NpoolDevOps/fbc-devops-peer/loganalysis/minerlog"
 	"github.com/prometheus/client_golang/prometheus"
-	"sync"
-	"time"
 )
+
+type MinerMetricsConfig struct {
+	ShareStorageRoot string
+	Logfile          string
+}
 
 type MinerMetrics struct {
 	ml             *minerlog.MinerLog
@@ -71,20 +78,27 @@ type MinerMetrics struct {
 	ChainNotSuitable      *prometheus.Desc
 	ChainHeadListen       *prometheus.Desc
 
+	StorageMountpointPermission *prometheus.Desc
+	StorageMountError           *prometheus.Desc
+
 	minerInfo   minerapi.MinerInfo
 	sealingJobs minerapi.SealingJobs
 	workerInfos minerapi.WorkerInfos
-	mutex       sync.Mutex
+
+	mutex sync.Mutex
 
 	errors       int
 	host         string
 	hasHost      bool
 	fullnodeHost string
+	config       MinerMetricsConfig
+	storageStat  map[string]error
 }
 
-func NewMinerMetrics(logfile string) *MinerMetrics {
+func NewMinerMetrics(cfg MinerMetricsConfig) *MinerMetrics {
 	mm := &MinerMetrics{
-		ml: minerlog.NewMinerLog(logfile),
+		ml:     minerlog.NewMinerLog(cfg.Logfile),
+		config: cfg,
 		ForkBlocks: prometheus.NewDesc(
 			"miner_fork_blocks",
 			"Show miner fork blocks",
@@ -335,6 +349,16 @@ func NewMinerMetrics(logfile string) *MinerMetrics {
 			"Miner chain head epoch",
 			[]string{"fullnode"}, nil,
 		),
+		StorageMountpointPermission: prometheus.NewDesc(
+			"miner_storage_mount_point_permission",
+			"show miner storage's file mount point permission",
+			[]string{"filedir"}, nil,
+		),
+		StorageMountError: prometheus.NewDesc(
+			"miner_storage_mount_error",
+			"show storage mount error",
+			[]string{"filedir"}, nil,
+		),
 	}
 
 	go func() {
@@ -370,6 +394,11 @@ func NewMinerMetrics(logfile string) *MinerMetrics {
 
 			mm.mutex.Lock()
 			mm.workerInfos = workerInfos
+			mm.mutex.Unlock()
+
+			storageStat := systemapi.StatSubDirs(cfg.ShareStorageRoot, 1)
+			mm.mutex.Lock()
+			mm.storageStat = storageStat
 			mm.mutex.Unlock()
 
 			<-ticker.C
@@ -440,6 +469,8 @@ func (m *MinerMetrics) Describe(ch chan<- *prometheus.Desc) {
 	ch <- m.ChainSyncNotCompleted
 	ch <- m.ChainNotSuitable
 	ch <- m.ChainHeadListen
+	ch <- m.StorageMountpointPermission
+	ch <- m.StorageMountError
 }
 
 func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
@@ -605,5 +636,15 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 	chainHeadListenSuccessHosts := m.ml.GetChainHeadListenSuccessHosts()
 	for host, epoch := range chainHeadListenSuccessHosts {
 		ch <- prometheus.MustNewConstMetric(m.ChainHeadListen, prometheus.CounterValue, float64(epoch), host)
+	}
+
+	for k, v := range m.storageStat {
+		if v != nil {
+			ch <- prometheus.MustNewConstMetric(m.StorageMountError, prometheus.CounterValue, 1, k)
+		} else {
+			ch <- prometheus.MustNewConstMetric(m.StorageMountError, prometheus.CounterValue, 0, k)
+		}
+		filePerm, _ := systemapi.FilePerm2Int(k)
+		ch <- prometheus.MustNewConstMetric(m.StorageMountpointPermission, prometheus.CounterValue, float64(filePerm), k)
 	}
 }
