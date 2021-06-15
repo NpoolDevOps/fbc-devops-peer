@@ -22,8 +22,8 @@ type BaseMetrics struct {
 	PingGatewayLost  *prometheus.Desc
 	PingBaiduDelay   *prometheus.Desc
 	PingBaiduLost    *prometheus.Desc
-	RootUsageAccess  *prometheus.Desc
-	RootMountAccess  *prometheus.Desc
+	RootPermission   *prometheus.Desc
+	RootMountRW      *prometheus.Desc
 
 	pingGatewayDelayMs int64
 	pingBaiduDelayMs   int64

@@ -78,8 +78,8 @@ type MinerMetrics struct {
 	ChainNotSuitable      *prometheus.Desc
 	ChainHeadListen       *prometheus.Desc
 
-	StorageModePerm  *prometheus.Desc
-	StorageMountIsOK *prometheus.Desc
+	StorageMountpointPermission *prometheus.Desc
+	StorageMountError           *prometheus.Desc
 
 	minerInfo   minerapi.MinerInfo
 	sealingJobs minerapi.SealingJobs
@@ -350,7 +350,7 @@ func NewMinerMetrics(cfg MinerMetricsConfig) *MinerMetrics {
 			[]string{"fullnode"}, nil,
 		),
 		StorageModePerm: prometheus.NewDesc(
-			"miner_storage_mode_perm",
+			"miner_storage_",
 			"show miner storage's file mode perm",
 			[]string{"filedir"}, nil,
 		),
