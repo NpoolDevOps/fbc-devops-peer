@@ -2,13 +2,14 @@ package minermetrics
 
 import (
 	"fmt"
+	"sync"
+	"time"
+
 	log "github.com/EntropyPool/entropy-logger"
 	"github.com/NpoolDevOps/fbc-devops-peer/api/lotusapi"
 	"github.com/NpoolDevOps/fbc-devops-peer/api/minerapi"
 	"github.com/NpoolDevOps/fbc-devops-peer/loganalysis/minerlog"
 	"github.com/prometheus/client_golang/prometheus"
-	"sync"
-	"time"
 )
 
 type MinerMetrics struct {
@@ -70,6 +71,9 @@ type MinerMetrics struct {
 	ChainSyncNotCompleted *prometheus.Desc
 	ChainNotSuitable      *prometheus.Desc
 	ChainHeadListen       *prometheus.Desc
+
+	StorageIsReadWrite *prometheus.Desc
+	StorageStatus      *prometheus.Desc
 
 	minerInfo   minerapi.MinerInfo
 	sealingJobs minerapi.SealingJobs
@@ -335,6 +339,16 @@ func NewMinerMetrics(logfile string) *MinerMetrics {
 			"Miner chain head epoch",
 			[]string{"fullnode"}, nil,
 		),
+		StorageIsReadWrite: prometheus.NewDesc(
+			"miner_storage_is_read_write",
+			"show storage is able to read and write",
+			[]string{"filedir"}, nil,
+		),
+		StorageStatus: prometheus.NewDesc(
+			"miner_storage_status",
+			"show storage status",
+			[]string{"filedir"}, nil,
+		),
 	}
 
 	go func() {
@@ -440,6 +454,8 @@ func (m *MinerMetrics) Describe(ch chan<- *prometheus.Desc) {
 	ch <- m.ChainSyncNotCompleted
 	ch <- m.ChainNotSuitable
 	ch <- m.ChainHeadListen
+	ch <- m.StorageIsReadWrite
+	ch <- m.StorageStatus
 }
 
 func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
@@ -605,5 +621,14 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 	chainHeadListenSuccessHosts := m.ml.GetChainHeadListenSuccessHosts()
 	for host, epoch := range chainHeadListenSuccessHosts {
 		ch <- prometheus.MustNewConstMetric(m.ChainHeadListen, prometheus.CounterValue, float64(epoch), host)
+	}
+
+	storageDirStatus, storageDirMode, _ := minerapi.GetStorageDirsStatus()
+	for k, v := range storageDirStatus {
+		ch <- prometheus.MustNewConstMetric(m.StorageStatus, prometheus.CounterValue, v, k)
+	}
+
+	for k, v := range storageDirMode {
+		ch <- prometheus.MustNewConstMetric(m.StorageIsReadWrite, prometheus.CounterValue, v, k)
 	}
 }
