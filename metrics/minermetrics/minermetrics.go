@@ -350,13 +350,13 @@ func NewMinerMetrics(cfg MinerMetricsConfig) *MinerMetrics {
 			[]string{"fullnode"}, nil,
 		),
 		StorageMountpointPermission: prometheus.NewDesc(
-			"miner_storage_",
-			"show miner storage's file mode perm",
+			"miner_storage_mount_point_permission",
+			"show miner storage's file mount point permission",
 			[]string{"filedir"}, nil,
 		),
 		StorageMountError: prometheus.NewDesc(
-			"miner_storage_mount_is_ok",
-			"show storage mount status",
+			"miner_storage_mount_error",
+			"show storage mount error",
 			[]string{"filedir"}, nil,
 		),
 	}

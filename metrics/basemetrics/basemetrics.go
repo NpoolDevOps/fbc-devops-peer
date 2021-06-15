@@ -60,12 +60,12 @@ func NewBaseMetrics() *BaseMetrics {
 			nil, nil,
 		),
 		RootPermission: prometheus.NewDesc(
-			"base_root_usage_access",
+			"base_root_permission",
 			"show whether the root is able to write and read",
 			nil, nil,
 		),
 		RootMountRW: prometheus.NewDesc(
-			"base_root_mount_access",
+			"base_root_mount_rw",
 			"show whether root mount access is rw",
 			nil, nil,
 		),
