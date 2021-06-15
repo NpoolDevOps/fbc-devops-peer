@@ -39,21 +39,21 @@ type nodeDesc struct {
 }
 
 type Parser struct {
-	fileAPIInfo        map[string]nodeDesc
-	minerStorageChilds []string
-	storagePath        string
-	validStoragePath   bool
-	storageConfig      StorageConfig
-	validStorageConfig bool
-	storageMetas       []LocalStorageMeta
-	cephEntries        map[string]struct{}
-	localAddr          string
-	cephStoragePeers   map[string]string
-	storageSubRole     string
-	storageChilds      []string
-	minerLogFile       string
-	fullnodeLogFile    string
-	minerStorageFile   string
+	fileAPIInfo           map[string]nodeDesc
+	minerStorageChilds    []string
+	storagePath           string
+	validStoragePath      bool
+	storageConfig         StorageConfig
+	validStorageConfig    bool
+	storageMetas          []LocalStorageMeta
+	cephEntries           map[string]struct{}
+	localAddr             string
+	cephStoragePeers      map[string]string
+	storageSubRole        string
+	storageChilds         []string
+	minerLogFile          string
+	fullnodeLogFile       string
+	minerShareStorageRoot string
 }
 
 type OSSInfo struct {
@@ -86,9 +86,10 @@ type LocalPath struct {
 
 func NewParser() *Parser {
 	parser := &Parser{
-		fileAPIInfo:      map[string]nodeDesc{},
-		cephEntries:      map[string]struct{}{},
-		cephStoragePeers: map[string]string{},
+		fileAPIInfo:           map[string]nodeDesc{},
+		cephEntries:           map[string]struct{}{},
+		cephStoragePeers:      map[string]string{},
+		minerShareStorageRoot: "/opt/sharestorage",
 	}
 	err := parser.parse()
 	if err != nil {
@@ -360,7 +361,6 @@ func (p *Parser) parseLogFileFromService(file string) string {
 func (p *Parser) parseLogFiles() {
 	p.fullnodeLogFile = p.parseLogFileFromService(FullnodeServiceFile)
 	p.minerLogFile = p.parseLogFileFromService(MinerServiceFile)
-	p.minerStorageFile = "/opt/sharestorage"
 }
 
 func (p *Parser) parse() error {
@@ -465,9 +465,18 @@ func (p *Parser) GetLogFile(myRole string) (string, error) {
 		return p.minerLogFile, nil
 	case types.FullNode:
 		return p.fullnodeLogFile, nil
-	case "minerStorage":
-		return p.minerStorageFile, nil
 	default:
 		return "", xerrors.Errorf("no log file for role: %v", myRole)
+	}
+}
+
+func (p *Parser) GetShareStorageRoot(myRole string) (string, error) {
+	switch myRole {
+	case types.MinerNode:
+		fallthrough
+	case types.FullMinerNode:
+		return p.minerShareStorageRoot, nil
+	default:
+		return "", xerrors.Errorf("no share storage for role: %v", myRole)
 	}
 }

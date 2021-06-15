@@ -280,19 +280,17 @@ func GetWorkerInfos(ch chan WorkerInfos) {
 	}()
 }
 
-func GetDirMountStatus(dir string, level int) map[string]bool {
-	mountStatus := map[string]bool{}
+func StatSubDirs(dir string, sublevel int) map[string]error {
+	stat := map[string]error{}
+	mySlashes := strings.Count(dir, "/")
 
 	_ = filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
-		if strings.Count(path, "/") == level {
-			if err != nil {
-				mountStatus[path] = false
-			} else {
-				mountStatus[path] = true
-			}
+		if strings.Count(path, "/") != sublevel+mySlashes {
+			continue
 		}
+		stat[path] = err
 		return nil
 	})
 
-	return mountStatus
+	return stat
 }

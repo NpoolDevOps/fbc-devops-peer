@@ -14,6 +14,11 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
+type MinerMetricsConfig struct {
+	ShareStorageRoot string
+	Logfile          string
+}
+
 type MinerMetrics struct {
 	ml             *minerlog.MinerLog
 	ForkBlocks     *prometheus.Desc
@@ -86,11 +91,13 @@ type MinerMetrics struct {
 	host         string
 	hasHost      bool
 	fullnodeHost string
+	config       MinerMetricsConfig
 }
 
-func NewMinerMetrics(logfile string) *MinerMetrics {
+func NewMinerMetrics(cfg MinerMetricsConfig) *MinerMetrics {
 	mm := &MinerMetrics{
-		ml: minerlog.NewMinerLog(logfile),
+		ml:     minerlog.NewMinerLog(cfg.Logfile),
+		config: cfg,
 		ForkBlocks: prometheus.NewDesc(
 			"miner_fork_blocks",
 			"Show miner fork blocks",
@@ -624,7 +631,6 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 	for host, epoch := range chainHeadListenSuccessHosts {
 		ch <- prometheus.MustNewConstMetric(m.ChainHeadListen, prometheus.CounterValue, float64(epoch), host)
 	}
-	dir, _ := par.NewParser().GetLogFile("minerStorage")
 	dirMountStatus := minerapi.GetDirMountStatus(dir, 3)
 	for k, v := range dirMountStatus {
 		if v {
