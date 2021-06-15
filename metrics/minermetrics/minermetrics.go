@@ -8,7 +8,9 @@ import (
 	log "github.com/EntropyPool/entropy-logger"
 	"github.com/NpoolDevOps/fbc-devops-peer/api/lotusapi"
 	"github.com/NpoolDevOps/fbc-devops-peer/api/minerapi"
+	"github.com/NpoolDevOps/fbc-devops-peer/api/systemapi"
 	"github.com/NpoolDevOps/fbc-devops-peer/loganalysis/minerlog"
+	par "github.com/NpoolDevOps/fbc-devops-peer/parser"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -72,8 +74,8 @@ type MinerMetrics struct {
 	ChainNotSuitable      *prometheus.Desc
 	ChainHeadListen       *prometheus.Desc
 
-	StorageIsReadWrite *prometheus.Desc
-	StorageStatus      *prometheus.Desc
+	StorageUsageAccess *prometheus.Desc
+	StorageMountStatus *prometheus.Desc
 
 	minerInfo   minerapi.MinerInfo
 	sealingJobs minerapi.SealingJobs
@@ -339,14 +341,14 @@ func NewMinerMetrics(logfile string) *MinerMetrics {
 			"Miner chain head epoch",
 			[]string{"fullnode"}, nil,
 		),
-		StorageIsReadWrite: prometheus.NewDesc(
-			"miner_storage_is_read_write",
-			"show storage is able to read and write",
+		StorageUsageAccess: prometheus.NewDesc(
+			"miner_storage_usage_access",
+			"show miner storage's access",
 			[]string{"filedir"}, nil,
 		),
-		StorageStatus: prometheus.NewDesc(
-			"miner_storage_status",
-			"show storage status",
+		StorageMountStatus: prometheus.NewDesc(
+			"miner_storage_mount_status",
+			"show storage mount status",
 			[]string{"filedir"}, nil,
 		),
 	}
@@ -454,8 +456,8 @@ func (m *MinerMetrics) Describe(ch chan<- *prometheus.Desc) {
 	ch <- m.ChainSyncNotCompleted
 	ch <- m.ChainNotSuitable
 	ch <- m.ChainHeadListen
-	ch <- m.StorageIsReadWrite
-	ch <- m.StorageStatus
+	ch <- m.StorageUsageAccess
+	ch <- m.StorageMountStatus
 }
 
 func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
@@ -622,13 +624,15 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 	for host, epoch := range chainHeadListenSuccessHosts {
 		ch <- prometheus.MustNewConstMetric(m.ChainHeadListen, prometheus.CounterValue, float64(epoch), host)
 	}
+	dir, _ := par.NewParser().GetLogFile("minerStorage")
+	dirMountStatus := minerapi.GetDirMountStatus(dir, 3)
+	for k, v := range dirMountStatus {
+		if v {
+			ch <- prometheus.MustNewConstMetric(m.StorageMountStatus, prometheus.CounterValue, 1, k)
+		} else {
+			ch <- prometheus.MustNewConstMetric(m.StorageMountStatus, prometheus.CounterValue, 0, k)
+		}
 
-	storageDirStatus, storageDirMode, _ := minerapi.GetStorageDirsStatus()
-	for k, v := range storageDirStatus {
-		ch <- prometheus.MustNewConstMetric(m.StorageStatus, prometheus.CounterValue, v, k)
-	}
-
-	for k, v := range storageDirMode {
-		ch <- prometheus.MustNewConstMetric(m.StorageIsReadWrite, prometheus.CounterValue, v, k)
+		ch <- prometheus.MustNewConstMetric(m.StorageUsageAccess, prometheus.CounterValue, systemapi.GetFileUsageAccess(k), k)
 	}
 }

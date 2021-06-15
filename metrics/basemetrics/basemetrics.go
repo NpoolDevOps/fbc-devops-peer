@@ -10,7 +10,7 @@ import (
 	"time"
 
 	log "github.com/EntropyPool/entropy-logger"
-	"github.com/NpoolDevOps/fbc-devops-peer/api/baseapi"
+	"github.com/NpoolDevOps/fbc-devops-peer/api/systemapi"
 	"github.com/go-ping/ping"
 	"github.com/prometheus/client_golang/prometheus"
 	"golang.org/x/xerrors"
@@ -22,7 +22,8 @@ type BaseMetrics struct {
 	PingGatewayLost  *prometheus.Desc
 	PingBaiduDelay   *prometheus.Desc
 	PingBaiduLost    *prometheus.Desc
-	RootIsWriteRead  *prometheus.Desc
+	RootUsageAccess  *prometheus.Desc
+	RootMountAccess  *prometheus.Desc
 
 	pingGatewayDelayMs int64
 	pingBaiduDelayMs   int64
@@ -58,9 +59,14 @@ func NewBaseMetrics() *BaseMetrics {
 			"Show base ntp time diff",
 			nil, nil,
 		),
-		RootIsWriteRead: prometheus.NewDesc(
-			"root_is_write_read",
+		RootUsageAccess: prometheus.NewDesc(
+			"base_root_usage_access",
 			"show whether the root is able to write and read",
+			nil, nil,
+		),
+		RootMountAccess: prometheus.NewDesc(
+			"base_root_mount_access",
+			"show whether root mount access is rw",
 			nil, nil,
 		),
 	}
@@ -98,7 +104,8 @@ func (m *BaseMetrics) Describe(ch chan<- *prometheus.Desc) {
 	ch <- m.PingGatewayLost
 	ch <- m.PingBaiduDelay
 	ch <- m.PingBaiduLost
-	ch <- m.RootIsWriteRead
+	ch <- m.RootUsageAccess
+	ch <- m.RootMountAccess
 }
 
 func (m *BaseMetrics) Collect(ch chan<- prometheus.Metric) {
@@ -107,8 +114,13 @@ func (m *BaseMetrics) Collect(ch chan<- prometheus.Metric) {
 	ch <- prometheus.MustNewConstMetric(m.PingGatewayLost, prometheus.CounterValue, m.pingGatewayLost)
 	ch <- prometheus.MustNewConstMetric(m.PingBaiduDelay, prometheus.CounterValue, float64(m.pingBaiduDelayMs))
 	ch <- prometheus.MustNewConstMetric(m.PingBaiduLost, prometheus.CounterValue, m.pingBaiduLost)
-	rootIsWriteRead, _ := baseapi.GetFileIfWriteRead("/")
-	ch <- prometheus.MustNewConstMetric(m.RootIsWriteRead, prometheus.CounterValue, rootIsWriteRead)
+	ch <- prometheus.MustNewConstMetric(m.RootUsageAccess, prometheus.CounterValue, systemapi.GetFileUsageAccess("/"))
+
+	if systemapi.GetFileMountAccess("/") {
+		ch <- prometheus.MustNewConstMetric(m.RootMountAccess, prometheus.CounterValue, 1)
+	} else {
+		ch <- prometheus.MustNewConstMetric(m.RootMountAccess, prometheus.CounterValue, 0)
+	}
 }
 
 func pingStatistic(host string) (ms int64, rate float64) {

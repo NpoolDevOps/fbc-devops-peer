@@ -4,16 +4,17 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
-	log "github.com/EntropyPool/entropy-logger"
-	types "github.com/NpoolDevOps/fbc-devops-peer/types"
-	httpdaemon "github.com/NpoolRD/http-daemon"
-	"github.com/google/uuid"
-	"golang.org/x/xerrors"
 	"io/ioutil"
 	"net"
 	"os"
 	"path/filepath"
 	"strings"
+
+	log "github.com/EntropyPool/entropy-logger"
+	types "github.com/NpoolDevOps/fbc-devops-peer/types"
+	httpdaemon "github.com/NpoolRD/http-daemon"
+	"github.com/google/uuid"
+	"golang.org/x/xerrors"
 )
 
 const (
@@ -52,6 +53,7 @@ type Parser struct {
 	storageChilds      []string
 	minerLogFile       string
 	fullnodeLogFile    string
+	minerStorageFile   string
 }
 
 type OSSInfo struct {
@@ -358,6 +360,7 @@ func (p *Parser) parseLogFileFromService(file string) string {
 func (p *Parser) parseLogFiles() {
 	p.fullnodeLogFile = p.parseLogFileFromService(FullnodeServiceFile)
 	p.minerLogFile = p.parseLogFileFromService(MinerServiceFile)
+	p.minerStorageFile = "/opt/sharestorage"
 }
 
 func (p *Parser) parse() error {
@@ -462,6 +465,8 @@ func (p *Parser) GetLogFile(myRole string) (string, error) {
 		return p.minerLogFile, nil
 	case types.FullNode:
 		return p.fullnodeLogFile, nil
+	case "minerStorage":
+		return p.minerStorageFile, nil
 	default:
 		return "", xerrors.Errorf("no log file for role: %v", myRole)
 	}

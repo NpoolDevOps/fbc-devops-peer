@@ -11,7 +11,6 @@ import (
 	"time"
 
 	log "github.com/EntropyPool/entropy-logger"
-	"github.com/NpoolDevOps/fbc-devops-peer/api/baseapi"
 	"github.com/NpoolDevOps/fbc-devops-peer/api/systemapi"
 )
 
@@ -281,31 +280,19 @@ func GetWorkerInfos(ch chan WorkerInfos) {
 	}()
 }
 
-func GetStorageDirsStatus() (map[string]float64, map[string]float64, error) {
-	storageDirsStatus := map[string]float64{}
-	storageDirsMode := map[string]float64{}
+func GetDirMountStatus(dir string, level int) map[string]bool {
+	mountStatus := map[string]bool{}
 
-	_ = filepath.WalkDir("/opt/sharestorage", func(path string, d fs.DirEntry, err error) error {
-		if strings.Count(path, "/") == 3 {
+	_ = filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
+		if strings.Count(path, "/") == level {
 			if err != nil {
-				storageDirsStatus[path] = 0
+				mountStatus[path] = false
 			} else {
-				storageDirsStatus[path] = 1
+				mountStatus[path] = true
 			}
 		}
 		return nil
 	})
-	for k, v := range storageDirsStatus {
-		if v == 1 {
-			isWriteRead, _ := baseapi.GetFileIfWriteRead(k)
-			if isWriteRead == 1 {
-				storageDirsMode[k] = 1
-			} else {
-				storageDirsMode[k] = 0
-			}
-		} else {
-			storageDirsMode[k] = 0
-		}
-	}
-	return storageDirsStatus, storageDirsMode, nil
+
+	return mountStatus
 }
