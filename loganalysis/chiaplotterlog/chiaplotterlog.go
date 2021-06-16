@@ -59,8 +59,10 @@ func (cpl *ChiaPlotterLog) parseChiaPlotterTime(line logbase.LogLine) {
 	cpl.mutex.Lock()
 	if llsec2Float >= cpl.chiaPlotMaxTime {
 		cpl.chiaPlotMaxTime = llsec2Float
+	} else if cpl.chiaPlotMinTime <= llsec2Float {
+		cpl.chiaPlotMinTime = llsec2Float
 	}
-	if cpl.chiaPlotMinTime >= llsec2Float {
+	if cpl.chiaPlotMinTime > llsec2Float {
 		cpl.chiaPlotMinTime = llsec2Float
 	}
 

@@ -33,8 +33,8 @@ func NewChiaPlotterMetrics(logfile string) *ChiaPlotterMetrics {
 			nil, nil,
 		),
 		PlotterMinTime: prometheus.NewDesc(
-			"plotter_minimum_time",
-			"show the minimum value of plotter time",
+			"plotter_min_time",
+			"show the min value of plotter time",
 			nil, nil,
 		),
 		PlotterPlotCount: prometheus.NewDesc(
