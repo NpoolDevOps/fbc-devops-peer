@@ -23,6 +23,7 @@ const (
 	RegChainSyncNotCompleted = "chain sync state is not completed of "
 	RegChainNotSuitable      = "cannot find suitable fullnode"
 	RegChainHeadListen       = "success to listen chain head from "
+	RegGetFeeMiner           = "adjust fee for nonce"
 )
 
 const (
@@ -35,6 +36,7 @@ const (
 	KeyChainSyncNotCompleted = RegChainSyncNotCompleted
 	KeyChainNotSuitable      = RegChainNotSuitable
 	KeyChainHeadListen       = RegChainHeadListen
+	keyGetFeeMiner           = RegGetFeeMiner
 )
 
 type LogRegKey struct {
@@ -78,6 +80,10 @@ var logRegKeys = []LogRegKey{
 	LogRegKey{
 		RegName:  RegChainHeadListen,
 		ItemName: KeyChainHeadListen,
+	},
+	LogRegKey{
+		RegName:  RegGetFeeMiner,
+		ItemName: keyGetFeeMiner,
 	},
 }
 
@@ -123,7 +129,16 @@ type MinerLog struct {
 	chainSyncNotCompletedHosts map[string]struct{}
 	chainNotSuitable           uint64
 	chainHeadListenHosts       map[string]uint64
+	minerAdjustGasFeecap       string
+	minerAdjustBaseFee         string
 	mutex                      sync.Mutex
+}
+
+func (ml *MinerLog) setMinerFee(line logbase.LogLine) {
+	ll := line.Msg
+	llarr := strings.Split(ll, "feecap ->")
+	ml.minerAdjustGasFeecap = strings.TrimSpace(strings.Split(llarr[1], "|")[0])
+	ml.minerAdjustBaseFee = strings.TrimSpace(strings.Split(llarr[1], "|")[1])
 }
 
 func NewMinerLog(logfile string) *MinerLog {
@@ -304,6 +319,8 @@ func (ml *MinerLog) processLine(line logbase.LogLine) {
 			ml.mutex.Unlock()
 		case RegChainHeadListen:
 			ml.processChainHeadListen(line)
+		case RegGetFeeMiner:
+			ml.setMinerFee(line)
 		}
 
 		break
@@ -468,4 +485,18 @@ func (ml *MinerLog) GetCheckSectors() map[int]CheckSectors {
 
 func (ml *MinerLog) LogFileSize() uint64 {
 	return ml.logbase.LogFileSize()
+}
+
+func (ml *MinerLog) GetMinerFeeAdjustGasFeecap() string {
+	ml.mutex.Lock()
+	minerAdjustGasFeecap := ml.minerAdjustGasFeecap
+	ml.mutex.Unlock()
+	return minerAdjustGasFeecap
+}
+
+func (ml *MinerLog) GetMinerAdjustBaseFee() string {
+	ml.mutex.Lock()
+	minerAdjustBaseFee := ml.minerAdjustBaseFee
+	ml.mutex.Unlock()
+	return minerAdjustBaseFee
 }
