@@ -54,6 +54,8 @@ type Parser struct {
 	minerLogFile          string
 	fullnodeLogFile       string
 	minerShareStorageRoot string
+	chiaMinerNodeLogFile  string
+	chiaPlotterLogFile    string
 }
 
 type OSSInfo struct {
@@ -361,6 +363,8 @@ func (p *Parser) parseLogFileFromService(file string) string {
 func (p *Parser) parseLogFiles() {
 	p.fullnodeLogFile = p.parseLogFileFromService(FullnodeServiceFile)
 	p.minerLogFile = p.parseLogFileFromService(MinerServiceFile)
+	p.chiaMinerNodeLogFile = "/var/log/chia/miner.log"
+	p.chiaPlotterLogFile = "/var/log/chia-plotter.log"
 }
 
 func (p *Parser) parse() error {
@@ -465,6 +469,10 @@ func (p *Parser) GetLogFile(myRole string) (string, error) {
 		return p.minerLogFile, nil
 	case types.FullNode:
 		return p.fullnodeLogFile, nil
+	case types.ChiaMinerNode:
+		return p.chiaMinerNodeLogFile, nil
+	case types.ChiaPlotterNode:
+		return p.chiaPlotterLogFile, nil
 	default:
 		return "", xerrors.Errorf("no log file for role: %v", myRole)
 	}
