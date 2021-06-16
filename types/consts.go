@@ -7,13 +7,14 @@ const (
 )
 
 const (
-	FullNode      = "fullnode"
-	MinerNode     = "miner"
-	FullMinerNode = "fullminer"
-	WorkerNode    = "worker"
-	StorageNode   = "storage"
-	GatewayNode   = "gateway"
-	ChiaMinerNode = "chiaminer"
+	FullNode        = "fullnode"
+	MinerNode       = "miner"
+	FullMinerNode   = "fullminer"
+	WorkerNode      = "worker"
+	StorageNode     = "storage"
+	GatewayNode     = "gateway"
+	ChiaMinerNode   = "chiaminer"
+	ChiaPlotterNode = "chiaplotter"
 )
 
 const (

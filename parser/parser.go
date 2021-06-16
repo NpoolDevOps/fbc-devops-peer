@@ -54,6 +54,8 @@ type Parser struct {
 	minerLogFile          string
 	fullnodeLogFile       string
 	minerShareStorageRoot string
+	chiaMinerNodeLogFile  string
+	chiaPlotterLogFile    string
 }
 
 type OSSInfo struct {
@@ -90,6 +92,8 @@ func NewParser() *Parser {
 		cephEntries:           map[string]struct{}{},
 		cephStoragePeers:      map[string]string{},
 		minerShareStorageRoot: "/opt/sharestorage",
+		chiaMinerNodeLogFile:  "/var/log/chia/miner.log",
+		chiaPlotterLogFile:    "/var/log/chia-plotter.log",
 	}
 	err := parser.parse()
 	if err != nil {
@@ -465,6 +469,10 @@ func (p *Parser) GetLogFile(myRole string) (string, error) {
 		return p.minerLogFile, nil
 	case types.FullNode:
 		return p.fullnodeLogFile, nil
+	case types.ChiaMinerNode:
+		return p.chiaMinerNodeLogFile, nil
+	case types.ChiaPlotterNode:
+		return p.chiaPlotterLogFile, nil
 	default:
 		return "", xerrors.Errorf("no log file for role: %v", myRole)
 	}
