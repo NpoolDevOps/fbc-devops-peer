@@ -116,3 +116,62 @@ func GetNvmeTemperatureList() (map[string]float64, error) {
 	}
 	return nvmeTemperatureList, nil
 }
+
+func GetProcessPid(process string) (string, error) {
+	outPid, err := RunCommand(exec.Command("pidof", process))
+	if err != nil {
+		log.Errorf(log.Fields{}, fmt.Sprintf("fail to get %v pid", process), err)
+		return "", err
+	}
+	brPid := bufio.NewReader(bytes.NewReader(outPid))
+	line, _, err := brPid.ReadLine()
+	if err != nil {
+		return "", err
+	}
+	linestr := strings.TrimSpace(string(line))
+	return linestr, nil
+}
+
+func GetProcessOpenFileNumber(process string) (int64, error) {
+	processPid, _ := GetProcessPid(process)
+	out, err := RunCommand(exec.Command("lsof", "-p", processPid, "-n"))
+	if err != nil {
+		log.Errorf(log.Fields{}, fmt.Sprintf("fail to get %v file open number", processPid), err)
+		return 0, err
+	}
+	br := bufio.NewReader(bytes.NewReader(out))
+	var openFileNumber int64 = 0
+	for {
+		line, _, err := br.ReadLine()
+		if err != nil {
+			break
+		}
+		if !strings.Contains(string(line), "USER") {
+			openFileNumber += 1
+		}
+	}
+	return openFileNumber, nil
+}
+
+func GetProcessTcpConnectNumber(process string) (int64, error) {
+	out, err := RunCommand(exec.Command("netstat", "-tnlp"))
+	if err != nil {
+		log.Errorf(log.Fields{}, fmt.Sprintf("fail to get %v TCP connect number", process), err)
+		return 0, err
+	}
+	br := bufio.NewReader(bytes.NewReader(out))
+	var tcpConnectNumber int64 = 0
+	for {
+		line, _, err := br.ReadLine()
+		if err != nil {
+			break
+		}
+		if strings.Contains(string(line), "tcp6") {
+			continue
+		}
+		if strings.Contains(string(line), process) {
+			tcpConnectNumber += 1
+		}
+	}
+	return tcpConnectNumber, nil
+}
