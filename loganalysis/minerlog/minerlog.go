@@ -487,16 +487,18 @@ func (ml *MinerLog) LogFileSize() uint64 {
 	return ml.logbase.LogFileSize()
 }
 
-func (ml *MinerLog) GetMinerFeeAdjustGasFeecap() string {
+func (ml *MinerLog) GetMinerFeeAdjustGasFeecap() float64 {
 	ml.mutex.Lock()
 	minerAdjustGasFeecap := ml.minerAdjustGasFeecap
 	ml.mutex.Unlock()
-	return minerAdjustGasFeecap
+	minerAdjustGasFeecap2Float, _ := strconv.ParseFloat(minerAdjustGasFeecap, 64)
+	return minerAdjustGasFeecap2Float
 }
 
-func (ml *MinerLog) GetMinerAdjustBaseFee() string {
+func (ml *MinerLog) GetMinerAdjustBaseFee() float64 {
 	ml.mutex.Lock()
 	minerAdjustBaseFee := ml.minerAdjustBaseFee
 	ml.mutex.Unlock()
-	return minerAdjustBaseFee
+	minerAdjustBaseFee2Float, _ := strconv.ParseFloat(minerAdjustBaseFee, 64)
+	return minerAdjustBaseFee2Float
 }

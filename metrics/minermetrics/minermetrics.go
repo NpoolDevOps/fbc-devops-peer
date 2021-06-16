@@ -2,7 +2,6 @@ package minermetrics
 
 import (
 	"fmt"
-	"strconv"
 	"sync"
 	"time"
 
@@ -688,9 +687,6 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 	tcpConnectNumber, _ := systemapi.GetProcessTcpConnectNumber("lotus-miner")
 	ch <- prometheus.MustNewConstMetric(m.MinerProcessTcpConnectNumber, prometheus.CounterValue, float64(tcpConnectNumber))
 
-	minerAdjustBaseFee2Float, _ := strconv.ParseFloat(minerAdjustBaseFee, 64)
-	ch <- prometheus.MustNewConstMetric(m.MinerAdjustBaseFee, prometheus.CounterValue, minerAdjustBaseFee2Float)
-
-	minerAdjustGasFeecap2Float, _ := strconv.ParseFloat(minerAdjustGasFeecap, 64)
-	ch <- prometheus.MustNewConstMetric(m.MinerAdjustGasFeecap, prometheus.CounterValue, minerAdjustGasFeecap2Float)
+	ch <- prometheus.MustNewConstMetric(m.MinerAdjustBaseFee, prometheus.CounterValue, minerAdjustBaseFee)
+	ch <- prometheus.MustNewConstMetric(m.MinerAdjustGasFeecap, prometheus.CounterValue, minerAdjustGasFeecap)
 }
