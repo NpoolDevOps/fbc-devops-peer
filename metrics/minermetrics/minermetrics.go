@@ -81,6 +81,9 @@ type MinerMetrics struct {
 	StorageMountpointPermission *prometheus.Desc
 	StorageMountError           *prometheus.Desc
 
+	MinerOpenFileNumber          *prometheus.Desc
+	MinerProcessTcpConnectNumber *prometheus.Desc
+
 	minerInfo   minerapi.MinerInfo
 	sealingJobs minerapi.SealingJobs
 	workerInfos minerapi.WorkerInfos
@@ -359,6 +362,16 @@ func NewMinerMetrics(cfg MinerMetricsConfig) *MinerMetrics {
 			"show storage mount error",
 			[]string{"filedir"}, nil,
 		),
+		MinerOpenFileNumber: prometheus.NewDesc(
+			"miner_open_file_number",
+			"show how many files miner opened",
+			nil, nil,
+		),
+		MinerProcessTcpConnectNumber: prometheus.NewDesc(
+			"miner_process_tcp_connect_number",
+			"show miner process tcp connect number",
+			nil, nil,
+		),
 	}
 
 	go func() {
@@ -471,6 +484,8 @@ func (m *MinerMetrics) Describe(ch chan<- *prometheus.Desc) {
 	ch <- m.ChainHeadListen
 	ch <- m.StorageMountpointPermission
 	ch <- m.StorageMountError
+	ch <- m.MinerOpenFileNumber
+	ch <- m.MinerProcessTcpConnectNumber
 }
 
 func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
@@ -647,4 +662,10 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 		filePerm, _ := systemapi.FilePerm2Int(k)
 		ch <- prometheus.MustNewConstMetric(m.StorageMountpointPermission, prometheus.CounterValue, float64(filePerm), k)
 	}
+
+	minerFileOpenNumber, _ := systemapi.GetSystemProcessOpenFileNumber("lotus-miner")
+	ch <- prometheus.MustNewConstMetric(m.MinerOpenFileNumber, prometheus.CounterValue, float64(minerFileOpenNumber))
+
+	tcpConnectNumber, _ := systemapi.GetSystemProcessTcpConnectNumber("lotus-miner")
+	ch <- prometheus.MustNewConstMetric(m.MinerProcessTcpConnectNumber, prometheus.CounterValue, float64(tcpConnectNumber))
 }
