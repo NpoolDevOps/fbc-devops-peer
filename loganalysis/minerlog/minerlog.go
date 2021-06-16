@@ -129,16 +129,22 @@ type MinerLog struct {
 	chainSyncNotCompletedHosts map[string]struct{}
 	chainNotSuitable           uint64
 	chainHeadListenHosts       map[string]uint64
-	minerAdjustGasFeecap       string
-	minerAdjustBaseFee         string
+	minerAdjustGasFeecap       float64
+	minerAdjustBaseFee         float64
 	mutex                      sync.Mutex
 }
 
 func (ml *MinerLog) setMinerFee(line logbase.LogLine) {
 	ll := line.Msg
 	llarr := strings.Split(ll, "feecap ->")
-	ml.minerAdjustGasFeecap = strings.TrimSpace(strings.Split(llarr[1], "|")[0])
-	ml.minerAdjustBaseFee = strings.TrimSpace(strings.Split(llarr[1], "|")[1])
+	minerAdjustGasFeecap := strings.TrimSpace(strings.Split(llarr[1], "|")[0])
+	minerAdjustBaseFee := strings.TrimSpace(strings.Split(llarr[1], "|")[1])
+
+	minerAdjustBaseFee2Float, _ := strconv.ParseFloat(minerAdjustBaseFee, 64)
+	minerAdjustGasFeecap2Float, _ := strconv.ParseFloat(minerAdjustGasFeecap, 64)
+
+	ml.minerAdjustGasFeecap = minerAdjustGasFeecap2Float
+	ml.minerAdjustBaseFee = minerAdjustBaseFee2Float
 }
 
 func NewMinerLog(logfile string) *MinerLog {
@@ -491,14 +497,12 @@ func (ml *MinerLog) GetMinerFeeAdjustGasFeecap() float64 {
 	ml.mutex.Lock()
 	minerAdjustGasFeecap := ml.minerAdjustGasFeecap
 	ml.mutex.Unlock()
-	minerAdjustGasFeecap2Float, _ := strconv.ParseFloat(minerAdjustGasFeecap, 64)
-	return minerAdjustGasFeecap2Float
+	return minerAdjustGasFeecap
 }
 
 func (ml *MinerLog) GetMinerAdjustBaseFee() float64 {
 	ml.mutex.Lock()
 	minerAdjustBaseFee := ml.minerAdjustBaseFee
 	ml.mutex.Unlock()
-	minerAdjustBaseFee2Float, _ := strconv.ParseFloat(minerAdjustBaseFee, 64)
-	return minerAdjustBaseFee2Float
+	return minerAdjustBaseFee
 }
