@@ -3,12 +3,13 @@ package devopsruntime
 import (
 	"bufio"
 	"encoding/json"
+	"os/exec"
+	"strings"
+
 	machspec "github.com/EntropyPool/machine-spec"
 	"github.com/jaypipes/ghw"
 	block2 "github.com/jaypipes/ghw/pkg/block"
 	cpu2 "github.com/jaypipes/ghw/pkg/cpu"
-	"os/exec"
-	"strings"
 )
 
 func rootInDisk(disk *ghw.Disk) bool {
@@ -62,6 +63,23 @@ func GetHddList() []*DiskInfo {
 		}
 	}
 
+	return disks
+}
+
+func GetSsdList() []*DiskInfo {
+	block, err := ghw.Block()
+	if err != nil {
+		return nil
+	}
+	disks := []*DiskInfo{}
+	for _, disk := range block.Disks {
+		if rootInDisk(disk) {
+			continue
+		}
+		if disk.DriveType.String() == block2.DRIVE_TYPE_SSD.String() {
+			disks = append(disks, disk)
+		}
+	}
 	return disks
 }
 

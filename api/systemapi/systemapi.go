@@ -1,6 +1,8 @@
 package systemapi
 
 import (
+	"bufio"
+	"bytes"
 	"fmt"
 	"io/fs"
 	"os"
@@ -9,6 +11,8 @@ import (
 	"strconv"
 	"strings"
 
+	log "github.com/EntropyPool/entropy-logger"
+	runtime "github.com/NpoolDevOps/fbc-devops-peer/runtime"
 	"github.com/moby/sys/mountinfo"
 	"golang.org/x/xerrors"
 )
@@ -69,4 +73,46 @@ func StatSubDirs(dir string, sublevel int) map[string]error {
 	})
 
 	return stat
+}
+
+func GetNvmeTemperature(nvme string) (float64, error) {
+	var temperature float64 = 0
+	out, err := RunCommand(exec.Command("nvme", "smart-log", nvme))
+	if err != nil {
+		log.Errorf(log.Fields{}, "fail to run nvme info, %v", err)
+		return 0, err
+	}
+	br := bufio.NewReader(bytes.NewReader(out))
+	for {
+		line, _, err := br.ReadLine()
+		if err != nil {
+			break
+		}
+		if !strings.Contains(string(line), " Temperature ") {
+			if strings.Contains(string(line), "temperature") || strings.Contains(string(line), "Temperature Sensor") {
+				temperatureBefore := strings.TrimSpace(strings.Split(string(line), ":")[1])
+				temperature2String := strings.TrimSpace(strings.Split(temperatureBefore, " ")[0])
+				temperature2Float, _ := strconv.ParseFloat(temperature2String, 64)
+				if temperature < temperature2Float {
+					temperature = temperature2Float
+				}
+			}
+		}
+	}
+	return temperature, nil
+}
+
+func GetNvmeTemperatureList() (map[string]float64, error) {
+	nvmeTemperatureList := make(map[string]float64)
+	nvmeList := runtime.GetNvmeList()
+	for _, nvme := range nvmeList {
+		var temperature float64 = 0
+		var err error
+		temperature, err = GetNvmeTemperature("/dev/" + nvme.Name)
+		if err != nil {
+			return nil, err
+		}
+		nvmeTemperatureList[nvme.Name] = temperature
+	}
+	return nvmeTemperatureList, nil
 }

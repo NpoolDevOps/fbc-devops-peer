@@ -25,6 +25,8 @@ type BaseMetrics struct {
 	RootPermission   *prometheus.Desc
 	RootMountRW      *prometheus.Desc
 
+	NvmeTemperature *prometheus.Desc
+
 	pingGatewayDelayMs int64
 	pingBaiduDelayMs   int64
 	pingGatewayLost    float64
@@ -69,6 +71,11 @@ func NewBaseMetrics() *BaseMetrics {
 			"show whether root mount access is rw",
 			nil, nil,
 		),
+		NvmeTemperature: prometheus.NewDesc(
+			"base_nvme_temperature",
+			"show nvme temperature",
+			[]string{"nvme"}, nil,
+		),
 	}
 
 	go metrics.updater()
@@ -106,6 +113,7 @@ func (m *BaseMetrics) Describe(ch chan<- *prometheus.Desc) {
 	ch <- m.PingBaiduLost
 	ch <- m.RootPermission
 	ch <- m.RootMountRW
+	ch <- m.NvmeTemperature
 }
 
 func (m *BaseMetrics) Collect(ch chan<- prometheus.Metric) {
@@ -122,6 +130,11 @@ func (m *BaseMetrics) Collect(ch chan<- prometheus.Metric) {
 		ch <- prometheus.MustNewConstMetric(m.RootMountRW, prometheus.CounterValue, 1)
 	} else {
 		ch <- prometheus.MustNewConstMetric(m.RootMountRW, prometheus.CounterValue, 0)
+	}
+
+	nvmeTemperatureList, _ := systemapi.GetNvmeTemperatureList()
+	for nvmeName, temperature := range nvmeTemperatureList {
+		ch <- prometheus.MustNewConstMetric(m.NvmeTemperature, prometheus.CounterValue, temperature, nvmeName)
 	}
 }
 
