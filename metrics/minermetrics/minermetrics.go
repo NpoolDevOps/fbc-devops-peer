@@ -84,6 +84,9 @@ type MinerMetrics struct {
 	MinerOpenFileNumber          *prometheus.Desc
 	MinerProcessTcpConnectNumber *prometheus.Desc
 
+	MinerAdjustGasFeecap *prometheus.Desc
+	MinerAdjustBaseFee   *prometheus.Desc
+
 	minerInfo   minerapi.MinerInfo
 	sealingJobs minerapi.SealingJobs
 	workerInfos minerapi.WorkerInfos
@@ -372,6 +375,16 @@ func NewMinerMetrics(cfg MinerMetricsConfig) *MinerMetrics {
 			"show miner process tcp connect number",
 			nil, nil,
 		),
+		MinerAdjustGasFeecap: prometheus.NewDesc(
+			"miner_fee_adjust_gas_feecap",
+			"show miner fee adjust gas feecap",
+			nil, nil,
+		),
+		MinerAdjustBaseFee: prometheus.NewDesc(
+			"miner_fee_adjust_basefee",
+			"show miner fee adjust base fee",
+			nil, nil,
+		),
 	}
 
 	go func() {
@@ -486,6 +499,9 @@ func (m *MinerMetrics) Describe(ch chan<- *prometheus.Desc) {
 	ch <- m.StorageMountError
 	ch <- m.MinerOpenFileNumber
 	ch <- m.MinerProcessTcpConnectNumber
+	ch <- m.MinerAdjustBaseFee
+	ch <- m.MinerAdjustGasFeecap
+
 }
 
 func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
@@ -493,6 +509,8 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 	forkBlocks := m.ml.GetForkBlocks()
 	pastBlocks := m.ml.GetPastBlocks()
 	failedBlocks := m.ml.GetFailedBlocks()
+	minerAdjustGasFeecap := m.ml.GetMinerFeeAdjustGasFeecap()
+	minerAdjustBaseFee := m.ml.GetMinerAdjustBaseFee()
 
 	avgMs := uint64(0)
 	maxMs := uint64(0)
@@ -668,4 +686,7 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 
 	tcpConnectNumber, _ := systemapi.GetProcessTcpConnectNumber("lotus-miner")
 	ch <- prometheus.MustNewConstMetric(m.MinerProcessTcpConnectNumber, prometheus.CounterValue, float64(tcpConnectNumber))
+
+	ch <- prometheus.MustNewConstMetric(m.MinerAdjustBaseFee, prometheus.CounterValue, minerAdjustBaseFee)
+	ch <- prometheus.MustNewConstMetric(m.MinerAdjustGasFeecap, prometheus.CounterValue, minerAdjustGasFeecap)
 }
