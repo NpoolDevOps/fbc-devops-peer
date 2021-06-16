@@ -5,14 +5,14 @@ import (
 	"github.com/NpoolDevOps/fbc-devops-peer/basenode"
 	devops "github.com/NpoolDevOps/fbc-devops-peer/devops"
 	exporter "github.com/NpoolDevOps/fbc-devops-peer/exporter"
-	chiaMinerMetrics "github.com/NpoolDevOps/fbc-devops-peer/metrics/chiaminermetrics"
+	metrics "github.com/NpoolDevOps/fbc-devops-peer/metrics/chiaminermetrics"
 	"github.com/NpoolDevOps/fbc-devops-peer/types"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
 type ChiaMinerNode struct {
 	*basenode.Basenode
-	chiaMinerMetrics *chiaMinerMetrics.ChiaMinerMetrics
+	chiaMinerMetrics *metrics.ChiaMinerMetrics
 }
 
 func NewChiaMinerNode(config *basenode.BasenodeConfig, devopsClient *devops.DevopsClient) *ChiaMinerNode {
@@ -23,7 +23,7 @@ func NewChiaMinerNode(config *basenode.BasenodeConfig, devopsClient *devops.Devo
 	}
 
 	logfile, _ := chiaminer.GetLogFileByRole(types.ChiaMinerNode)
-	chiaminer.chiaMinerMetrics = chiaMinerMetrics.NewChiaMinerMetrics(logfile)
+	chiaminer.chiaMinerMetrics = metrics.NewChiaMinerMetrics(logfile)
 
 	chiaminer.SetAddrNotifier(chiaminer.addressNotifier)
 	return chiaminer

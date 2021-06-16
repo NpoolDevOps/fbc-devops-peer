@@ -176,22 +176,23 @@ func GetProcessTcpConnectNumber(process string) (int64, error) {
 	return tcpConnectNumber, nil
 }
 
-func GetProcessStatusError(process string) (int64, error) {
+func GetProcessCount(process string) (int64, error) {
 	out, err := RunCommand(exec.Command("ps", "-ef"))
 	if err != nil {
 		log.Errorf(log.Fields{}, "fail to get process...%v", err)
-		return 1, err
+		return 0, err
 	}
 
 	br := bufio.NewReader(bytes.NewReader(out))
+	var processCount int64 = 0
 	for {
 		line, _, err := br.ReadLine()
 		if err != nil {
 			break
 		}
 		if strings.Contains(string(line), process) {
-			return 0, nil
+			processCount += 1
 		}
 	}
-	return 1, nil
+	return processCount, nil
 }
