@@ -8,7 +8,10 @@ import (
 
 type ChiaPlotterMetrics struct {
 	cpl                       *chiaplotterlog.ChiaPlotterLog
-	PlotterPlottingTime       *prometheus.Desc
+	PlotterAvgTime            *prometheus.Desc
+	PlotterMaxTime            *prometheus.Desc
+	PlotterMinTime            *prometheus.Desc
+	PlotterPlotCount          *prometheus.Desc
 	PlotterProcessCount       *prometheus.Desc
 	StorageProxyProcessCount  *prometheus.Desc
 	StorageServerProcessCount *prometheus.Desc
@@ -19,13 +22,28 @@ type ChiaPlotterMetrics struct {
 
 func NewChiaPlotterMetrics(logfile string) *ChiaPlotterMetrics {
 	cpm := &ChiaPlotterMetrics{
-		PlotterPlottingTime: prometheus.NewDesc(
-			"plotter_plotting_time",
+		PlotterAvgTime: prometheus.NewDesc(
+			"plotter_average_time",
 			"show plotter average time",
 			nil, nil,
 		),
+		PlotterMaxTime: prometheus.NewDesc(
+			"plotter_max_time",
+			"show the max value of plotter time",
+			nil, nil,
+		),
+		PlotterMinTime: prometheus.NewDesc(
+			"plotter_minimum_time",
+			"show the minimum value of plotter time",
+			nil, nil,
+		),
+		PlotterPlotCount: prometheus.NewDesc(
+			"plotter_plot_count",
+			"show times parse plotter time",
+			nil, nil,
+		),
 		PlotterProcessCount: prometheus.NewDesc(
-			"plotter_Process_count",
+			"plotter_process_count",
 			"show plotter status",
 			nil, nil,
 		),
@@ -49,20 +67,29 @@ func (p *ChiaPlotterMetrics) SetHost(host string) {
 }
 
 func (p *ChiaPlotterMetrics) Describe(ch chan<- *prometheus.Desc) {
-	ch <- p.PlotterPlottingTime
+	ch <- p.PlotterAvgTime
+	ch <- p.PlotterMaxTime
+	ch <- p.PlotterMinTime
+	ch <- p.PlotterPlotCount
 	ch <- p.PlotterProcessCount
 	ch <- p.StorageProxyProcessCount
 	ch <- p.StorageServerProcessCount
 }
 
 func (p *ChiaPlotterMetrics) Collect(ch chan<- prometheus.Metric) {
-	plottingTime := p.cpl.GetChiaPlotterTime()
+	plotterAvgTime := p.cpl.GetChiaPlotterAvgTime()
+	plotterMaxTime := p.cpl.GetChiaPlotterMaxTime()
+	plotterMinTime := p.cpl.GetChiaPlotterMinTime()
+	PlotterPlotCount := p.cpl.GetParseChiaPlotterTimeCount()
 	plotterProcessCount, _ := systemapi.GetProcessCount("/usr/local/bin/chia_plot -2")
 	storageProxyStatus, _ := systemapi.GetProcessCount("chia-storage-proxy")
 	storageServerStatus, _ := systemapi.GetProcessCount("chia-storage-server")
 
 	ch <- prometheus.MustNewConstMetric(p.PlotterProcessCount, prometheus.CounterValue, float64(plotterProcessCount))
 	ch <- prometheus.MustNewConstMetric(p.StorageProxyProcessCount, prometheus.CounterValue, float64(storageProxyStatus))
-	ch <- prometheus.MustNewConstMetric(p.PlotterPlottingTime, prometheus.CounterValue, plottingTime)
 	ch <- prometheus.MustNewConstMetric(p.StorageServerProcessCount, prometheus.CounterValue, float64(storageServerStatus))
+	ch <- prometheus.MustNewConstMetric(p.PlotterAvgTime, prometheus.CounterValue, plotterAvgTime)
+	ch <- prometheus.MustNewConstMetric(p.PlotterMaxTime, prometheus.CounterValue, plotterMaxTime)
+	ch <- prometheus.MustNewConstMetric(p.PlotterMinTime, prometheus.CounterValue, plotterMinTime)
+	ch <- prometheus.MustNewConstMetric(p.PlotterPlotCount, prometheus.CounterValue, float64(PlotterPlotCount))
 }

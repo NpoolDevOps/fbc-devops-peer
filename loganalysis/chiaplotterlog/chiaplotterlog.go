@@ -9,11 +9,11 @@ import (
 )
 
 const (
-	RegChiaPlotter = "Total plot creation time was"
+	RegPlotterPlottingTime = "Total plot creation time was"
 )
 
 const (
-	KeyChiaPlotter = RegChiaPlotter
+	KeyPlotterPlottingTime = RegPlotterPlottingTime
 )
 
 type LogRegKey struct {
@@ -23,15 +23,18 @@ type LogRegKey struct {
 
 var logRegKeys = []LogRegKey{
 	{
-		RegName:  RegChiaPlotter,
-		ItemName: KeyChiaPlotter,
+		RegName:  RegPlotterPlottingTime,
+		ItemName: KeyPlotterPlottingTime,
 	},
 }
 
 type ChiaPlotterLog struct {
-	logbase         *logbase.Logbase
-	newline         chan logbase.LogLine
-	chiaPlotterTime float64
+	logbase           *logbase.Logbase
+	newline           chan logbase.LogLine
+	chiaPlotMaxTime   float64
+	chiaPlotTotalTime float64
+	chiaPlotMinTime   float64
+	chiaPlotCount     int64
 
 	mutex sync.Mutex
 }
@@ -48,11 +51,22 @@ func NewChiaMinerLog(logfile string) *ChiaPlotterLog {
 	return cpl
 }
 
-func (cpl *ChiaPlotterLog) setChiaPlotterTime(line logbase.LogLine) {
+func (cpl *ChiaPlotterLog) parseChiaPlotterTime(line logbase.LogLine) {
 	ll := line.Msg
 	llsec := strings.TrimSpace(strings.Split(strings.TrimSpace(strings.Split(ll, "time was")[1]), "sec")[0])
 	llsec2Float, _ := strconv.ParseFloat(llsec, 64)
-	cpl.chiaPlotterTime = llsec2Float
+
+	cpl.mutex.Lock()
+	if llsec2Float >= cpl.chiaPlotMaxTime {
+		cpl.chiaPlotMaxTime = llsec2Float
+	}
+	if cpl.chiaPlotMinTime >= llsec2Float {
+		cpl.chiaPlotMinTime = llsec2Float
+	}
+
+	cpl.chiaPlotTotalTime += llsec2Float
+	cpl.chiaPlotCount++
+	cpl.mutex.Unlock()
 }
 
 func (cpl *ChiaPlotterLog) processLine(line logbase.LogLine) {
@@ -62,8 +76,8 @@ func (cpl *ChiaPlotterLog) processLine(line logbase.LogLine) {
 		}
 
 		switch item.RegName {
-		case RegChiaPlotter:
-			cpl.setChiaPlotterTime(line)
+		case RegPlotterPlottingTime:
+			cpl.parseChiaPlotterTime(line)
 		}
 
 	}
@@ -76,9 +90,30 @@ func (cpl *ChiaPlotterLog) watch() {
 	}
 }
 
-func (cpl *ChiaPlotterLog) GetChiaPlotterTime() float64 {
+func (cpl *ChiaPlotterLog) GetChiaPlotterMaxTime() float64 {
 	cpl.mutex.Lock()
-	chiaPlotterTime := cpl.chiaPlotterTime
+	chiaPlotterMaxTime := cpl.chiaPlotMaxTime
 	cpl.mutex.Unlock()
-	return chiaPlotterTime
+	return chiaPlotterMaxTime
+}
+
+func (cpl *ChiaPlotterLog) GetChiaPlotterAvgTime() float64 {
+	cpl.mutex.Lock()
+	chiaPlotterAvgTime := cpl.chiaPlotTotalTime / float64(cpl.chiaPlotCount)
+	cpl.mutex.Unlock()
+	return chiaPlotterAvgTime
+}
+
+func (cpl *ChiaPlotterLog) GetChiaPlotterMinTime() float64 {
+	cpl.mutex.Lock()
+	chiaPlotterMinTime := cpl.chiaPlotMinTime
+	cpl.mutex.Unlock()
+	return chiaPlotterMinTime
+}
+
+func (cpl *ChiaPlotterLog) GetParseChiaPlotterTimeCount() int64 {
+	cpl.mutex.Lock()
+	parseChiaPlotterTimeCount := cpl.chiaPlotCount
+	cpl.mutex.Unlock()
+	return parseChiaPlotterTimeCount
 }

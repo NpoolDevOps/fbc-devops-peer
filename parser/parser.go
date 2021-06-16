@@ -92,6 +92,8 @@ func NewParser() *Parser {
 		cephEntries:           map[string]struct{}{},
 		cephStoragePeers:      map[string]string{},
 		minerShareStorageRoot: "/opt/sharestorage",
+		chiaMinerNodeLogFile:  "/var/log/chia/miner.log",
+		chiaPlotterLogFile:    "/var/log/chia-plotter.log",
 	}
 	err := parser.parse()
 	if err != nil {
@@ -363,8 +365,6 @@ func (p *Parser) parseLogFileFromService(file string) string {
 func (p *Parser) parseLogFiles() {
 	p.fullnodeLogFile = p.parseLogFileFromService(FullnodeServiceFile)
 	p.minerLogFile = p.parseLogFileFromService(MinerServiceFile)
-	p.chiaMinerNodeLogFile = "/var/log/chia/miner.log"
-	p.chiaPlotterLogFile = "/var/log/chia-plotter.log"
 }
 
 func (p *Parser) parse() error {
