@@ -74,7 +74,7 @@ func NewBaseMetrics() *BaseMetrics {
 		NvmeTemperature: prometheus.NewDesc(
 			"base_nvme_temperature",
 			"show nvme temperature",
-			[]string{"nvme", "tempname"}, nil,
+			[]string{"nvme"}, nil,
 		),
 	}
 
@@ -133,10 +133,8 @@ func (m *BaseMetrics) Collect(ch chan<- prometheus.Metric) {
 	}
 
 	nvmeTemperatureList, _ := systemapi.GetNvmeTemperatureList()
-	for nvmeName, temperatureList := range nvmeTemperatureList {
-		for temperaturename, temperature := range temperatureList {
-			ch <- prometheus.MustNewConstMetric(m.NvmeTemperature, prometheus.CounterValue, temperature, nvmeName, temperaturename)
-		}
+	for nvmeName, temperature := range nvmeTemperatureList {
+		ch <- prometheus.MustNewConstMetric(m.NvmeTemperature, prometheus.CounterValue, temperature, nvmeName)
 	}
 }
 
