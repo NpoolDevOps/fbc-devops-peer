@@ -663,9 +663,9 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 		ch <- prometheus.MustNewConstMetric(m.StorageMountpointPermission, prometheus.CounterValue, float64(filePerm), k)
 	}
 
-	minerFileOpenNumber, _ := systemapi.GetSystemProcessOpenFileNumber("lotus-miner")
+	minerFileOpenNumber, _ := systemapi.GetProcessOpenFileNumber("lotus-miner")
 	ch <- prometheus.MustNewConstMetric(m.MinerOpenFileNumber, prometheus.CounterValue, float64(minerFileOpenNumber))
 
-	tcpConnectNumber, _ := systemapi.GetSystemProcessTcpConnectNumber("lotus-miner")
+	tcpConnectNumber, _ := systemapi.GetProcessTcpConnectNumber("lotus-miner")
 	ch <- prometheus.MustNewConstMetric(m.MinerProcessTcpConnectNumber, prometheus.CounterValue, float64(tcpConnectNumber))
 }
