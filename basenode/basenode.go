@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 	"os/exec"
+	"strings"
 	"time"
 
 	log "github.com/EntropyPool/entropy-logger"
@@ -337,10 +338,7 @@ func (n *Basenode) ToDeviceRegisterInput() *types.DeviceRegisterInput {
 		versions = append(versions, string(b))
 	}
 
-	var parentSpecs string = ""
-	for _, spec := range n.NodeDesc.NodeConfig.ParentSpec {
-		parentSpecs += spec + ","
-	}
+	parentSpecs := strings.Join(n.NodeDesc.NodeConfig.ParentSpec, ",")
 
 	return &types.DeviceRegisterInput{
 		Id:            n.Id,
