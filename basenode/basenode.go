@@ -68,7 +68,7 @@ type NodeDesc struct {
 type NodeConfig struct {
 	MainRole       string        `json:"main_role"`
 	SubRole        string        `json:"sub_role"`
-	ParentSpec     string        `json:"parent_spec"`
+	ParentSpec     []string      `json:"parent_spec"`
 	HardwareConfig *NodeHardware `json:"hardware_config"`
 	LocalAddr      string        `json:"local_addr"`
 	PublicAddr     string        `json:"public_addr"`
@@ -337,10 +337,15 @@ func (n *Basenode) ToDeviceRegisterInput() *types.DeviceRegisterInput {
 		versions = append(versions, string(b))
 	}
 
+	var parentSpecs string = ""
+	for _, spec := range n.NodeDesc.NodeConfig.ParentSpec {
+		parentSpecs += spec + ","
+	}
+
 	return &types.DeviceRegisterInput{
 		Id:            n.Id,
 		Spec:          n.NodeDesc.MySpec,
-		ParentSpec:    n.NodeDesc.NodeConfig.ParentSpec,
+		ParentSpec:    parentSpecs,
 		Role:          n.NodeDesc.NodeConfig.MainRole,
 		SubRole:       n.NodeDesc.NodeConfig.SubRole,
 		CurrentUser:   n.Username,
@@ -415,10 +420,12 @@ func (n *Basenode) GetSubRole() string {
 }
 
 func (n *Basenode) NotifyParentSpec(spec string) {
-	if n.NodeDesc.NodeConfig.ParentSpec == spec {
-		return
+	for _, pspec := range n.NodeDesc.NodeConfig.ParentSpec {
+		if pspec == spec {
+			return
+		}
 	}
-	n.NodeDesc.NodeConfig.ParentSpec = spec
+	n.NodeDesc.NodeConfig.ParentSpec = append(n.NodeDesc.NodeConfig.ParentSpec, spec)
 	n.devopsClient.FeedMsg(types.DeviceRegisterAPI, n.ToDeviceRegisterInput(), true)
 }
 
