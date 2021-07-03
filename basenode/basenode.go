@@ -55,7 +55,7 @@ type NodeHardware struct {
 	CpuCount      int      `json:"cpu_count"`
 	CpuDesc       []string `json:"cpu_desc"`
 	HddCount      int      `json:"hdd_count"`
-	HddDesc       []string `json:"hdd_count"`
+	HddDesc       []string `json:"hdd_desc"`
 	EthernetCount int      `json:"ethernet_count"`
 	EthernetDesc  []string `json:"ethernet_desc"`
 }
