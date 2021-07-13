@@ -40,7 +40,7 @@ func MountpointWrittable(mountpoint string) (bool, error) {
 	var info *mountinfo.Info = nil
 
 	_, err := mountinfo.GetMounts(func(i *mountinfo.Info) (skip, stop bool) {
-		if info.Mountpoint == mountpoint {
+		if i.Mountpoint == mountpoint {
 			info = i
 			return false, true
 		}

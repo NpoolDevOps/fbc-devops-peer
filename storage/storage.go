@@ -21,11 +21,11 @@ func NewStorageNode(config *basenode.BasenodeConfig, devopsClient *devops.Devops
 }
 
 func (n *StorageNode) Describe(ch chan<- *prometheus.Desc) {
-	log.Infof(log.Fields{}, "NOT IMPLEMENT FOR STORAGENODE")
+	n.BaseMetrics.Describe(ch)
 }
 
 func (n *StorageNode) Collect(ch chan<- prometheus.Metric) {
-	log.Infof(log.Fields{}, "NOT IMPLEMENT FOR STORAGENODE")
+	n.BaseMetrics.Collect(ch)
 }
 
 func (n *StorageNode) CreateExporter() *exporter.Exporter {

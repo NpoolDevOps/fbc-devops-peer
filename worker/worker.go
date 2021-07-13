@@ -21,11 +21,11 @@ func NewWorkerNode(config *basenode.BasenodeConfig, devopsClient *devops.DevopsC
 }
 
 func (n *WorkerNode) Describe(ch chan<- *prometheus.Desc) {
-	log.Infof(log.Fields{}, "NOT IMPLEMENT FOR WORKERNODE")
+	n.BaseMetrics.Describe(ch)
 }
 
 func (n *WorkerNode) Collect(ch chan<- prometheus.Metric) {
-	log.Infof(log.Fields{}, "NOT IMPLEMENT FOR WORKERNODE")
+	n.BaseMetrics.Collect(ch)
 }
 
 func (n *WorkerNode) CreateExporter() *exporter.Exporter {
