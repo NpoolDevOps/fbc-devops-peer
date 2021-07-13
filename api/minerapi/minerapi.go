@@ -14,7 +14,7 @@ import (
 
 type MinerInfo struct {
 	MinerId    string
-	SectorSize string
+	SectorSize float64
 	Power      float64
 	Raw        float64
 	Committed  float64
@@ -72,8 +72,10 @@ func GetMinerInfo(ch chan MinerInfo, sectors bool) {
 
 			if strings.Contains(lineStr, "Miner: ") {
 				info.MinerId = strings.Split(lineStr, " ")[1]
-				info.SectorSize = strings.Split(lineStr, "(")[1]
-				info.SectorSize = strings.Split(info.SectorSize, ")")[0]
+				sectorSize := strings.Split(lineStr, "(")[1]
+				sectorSize = strings.Split(sectorSize, ")")[0]
+				sectorSize = strings.TrimSpace(strings.Split(sectorSize, "GiB sectors")[0])
+				info.SectorSize, _ = strconv.ParseFloat(sectorSize, 64)
 			}
 			if strings.Contains(lineStr, "Power: ") {
 				info.Power, _ = strconv.ParseFloat(strings.Split(lineStr, " ")[1], 64)
