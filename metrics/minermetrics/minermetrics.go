@@ -100,6 +100,7 @@ type MinerMetrics struct {
 	fullnodeHost string
 	config       MinerMetricsConfig
 	storageStat  map[string]error
+	sectorStat   map[string]uint64
 }
 
 func NewMinerMetrics(cfg MinerMetricsConfig) *MinerMetrics {
@@ -410,6 +411,12 @@ func NewMinerMetrics(cfg MinerMetricsConfig) *MinerMetrics {
 			minerapi.GetMinerInfo(infoCh, showSectors)
 			info := <-infoCh
 
+			if info.State != nil {
+				mm.mutex.Lock()
+				mm.sectorStat = info.State
+				mm.mutex.Unlock()
+			}
+
 			mm.mutex.Lock()
 			mm.minerInfo = info
 			mm.mutex.Unlock()
@@ -614,7 +621,7 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 	ch <- prometheus.MustNewConstMetric(m.Available, prometheus.CounterValue, float64(info.Available))
 	ch <- prometheus.MustNewConstMetric(m.WorkerBalance, prometheus.CounterValue, float64(info.WorkerBalance))
 	ch <- prometheus.MustNewConstMetric(m.ControlBalance, prometheus.CounterValue, float64(info.ControlBalance))
-	for state, count := range info.State {
+	for state, count := range m.sectorStat {
 		ch <- prometheus.MustNewConstMetric(m.MinerTaskState, prometheus.CounterValue, float64(count), state)
 	}
 	ch <- prometheus.MustNewConstMetric(m.MinerSectorSize, prometheus.CounterValue, float64(info.SectorSize))

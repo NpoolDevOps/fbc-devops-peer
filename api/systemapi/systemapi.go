@@ -128,8 +128,9 @@ func GetProcessPid(process string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	linestr := strings.TrimSpace(string(line))
-	return linestr, nil
+	pidArr := strings.Split(strings.TrimSpace(string(line)), " ")
+	pid := strings.TrimSpace(pidArr[len(pidArr)-1])
+	return pid, nil
 }
 
 func GetProcessOpenFileNumber(process string) (int64, error) {
