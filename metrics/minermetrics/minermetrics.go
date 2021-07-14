@@ -411,7 +411,7 @@ func NewMinerMetrics(cfg MinerMetricsConfig) *MinerMetrics {
 			minerapi.GetMinerInfo(infoCh, showSectors)
 			info := <-infoCh
 
-			if info.State != nil {
+			if len(info.State) != 0 {
 				mm.mutex.Lock()
 				mm.sectorStat = info.State
 				mm.mutex.Unlock()
