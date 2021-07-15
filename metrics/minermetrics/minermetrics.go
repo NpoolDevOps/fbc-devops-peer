@@ -57,6 +57,7 @@ type MinerMetrics struct {
 	SectorTaskWaitingElapsed *prometheus.Desc
 	MinerSectorTaskRunning   *prometheus.Desc
 	MinerSectorTaskWaiting   *prometheus.Desc
+	MinerSectorSizeGib       *prometheus.Desc
 
 	MinerBaseFee             *prometheus.Desc
 	MinerWorkers             *prometheus.Desc
@@ -99,6 +100,7 @@ type MinerMetrics struct {
 	fullnodeHost string
 	config       MinerMetricsConfig
 	storageStat  map[string]error
+	sectorStat   map[string]uint64
 }
 
 func NewMinerMetrics(cfg MinerMetricsConfig) *MinerMetrics {
@@ -385,6 +387,11 @@ func NewMinerMetrics(cfg MinerMetricsConfig) *MinerMetrics {
 			"show miner fee adjust base fee",
 			nil, nil,
 		),
+		MinerSectorSizeGib: prometheus.NewDesc(
+			"miner_sector_size_gib",
+			"show miner sector size Gib",
+			nil, nil,
+		),
 	}
 
 	go func() {
@@ -403,6 +410,12 @@ func NewMinerMetrics(cfg MinerMetricsConfig) *MinerMetrics {
 
 			minerapi.GetMinerInfo(infoCh, showSectors)
 			info := <-infoCh
+
+			if len(info.State) != 0 {
+				mm.mutex.Lock()
+				mm.sectorStat = info.State
+				mm.mutex.Unlock()
+			}
 
 			mm.mutex.Lock()
 			mm.minerInfo = info
@@ -501,6 +514,7 @@ func (m *MinerMetrics) Describe(ch chan<- *prometheus.Desc) {
 	ch <- m.MinerProcessTcpConnectNumber
 	ch <- m.MinerAdjustBaseFee
 	ch <- m.MinerAdjustGasFeecap
+	ch <- m.MinerSectorSizeGib
 
 }
 
@@ -607,9 +621,10 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 	ch <- prometheus.MustNewConstMetric(m.Available, prometheus.CounterValue, float64(info.Available))
 	ch <- prometheus.MustNewConstMetric(m.WorkerBalance, prometheus.CounterValue, float64(info.WorkerBalance))
 	ch <- prometheus.MustNewConstMetric(m.ControlBalance, prometheus.CounterValue, float64(info.ControlBalance))
-	for state, count := range info.State {
+	for state, count := range m.sectorStat {
 		ch <- prometheus.MustNewConstMetric(m.MinerTaskState, prometheus.CounterValue, float64(count), state)
 	}
+	ch <- prometheus.MustNewConstMetric(m.MinerSectorSizeGib, prometheus.CounterValue, float64(info.SectorSize))
 
 	basefee, _ := lotusapi.ChainBaseFee(m.fullnodeHost)
 	ch <- prometheus.MustNewConstMetric(m.MinerBaseFee, prometheus.CounterValue, basefee)
@@ -660,6 +675,7 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 	ch <- prometheus.MustNewConstMetric(m.LogFileSize, prometheus.CounterValue, float64(filesize))
 
 	chainSyncNotCompletedHosts := m.ml.GetChainSyncNotCompletedHosts()
+	//
 	for host, _ := range chainSyncNotCompletedHosts {
 		ch <- prometheus.MustNewConstMetric(m.ChainSyncNotCompleted, prometheus.CounterValue, float64(1), host)
 	}
