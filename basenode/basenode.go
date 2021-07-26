@@ -169,7 +169,7 @@ func (n *Basenode) WatchVersions(versionGetter func(string) []version.Version) {
 
 			if updated {
 				n.Versions = vs
-				n.devopsClient.FeedMsg(types.DeviceReportAPI, n.ToDeviceRegisterInput(), true)
+				n.devopsClient.FeedMsg(types.DeviceRegisterAPI, n.ToDeviceRegisterInput(), true)
 			}
 
 			<-ticker.C
@@ -320,7 +320,7 @@ func (n *Basenode) AddressUpdater() {
 			}
 
 			if updated {
-				n.devopsClient.FeedMsg(types.DeviceReportAPI, n.ToDeviceRegisterInput(), true)
+				n.devopsClient.FeedMsg(types.DeviceRegisterAPI, n.ToDeviceRegisterInput(), true)
 				if n.addrNotifier != nil {
 					n.addrNotifier(localAddr, publicAddr)
 				}
@@ -424,7 +424,7 @@ func (n *Basenode) NotifyParentSpec(spec string) {
 		}
 	}
 	n.NodeDesc.NodeConfig.ParentSpec = append(n.NodeDesc.NodeConfig.ParentSpec, spec)
-	n.devopsClient.FeedMsg(types.DeviceReportAPI, n.ToDeviceRegisterInput(), true)
+	n.devopsClient.FeedMsg(types.DeviceRegisterAPI, n.ToDeviceRegisterInput(), true)
 }
 
 func (n *Basenode) GetParentIP() (string, error) {
