@@ -2,11 +2,13 @@ package miner
 
 import (
 	log "github.com/EntropyPool/entropy-logger"
+	"github.com/NpoolDevOps/fbc-devops-peer/api/lotusapi"
 	"github.com/NpoolDevOps/fbc-devops-peer/basenode"
 	devops "github.com/NpoolDevOps/fbc-devops-peer/devops"
 	exporter "github.com/NpoolDevOps/fbc-devops-peer/exporter"
 	"github.com/NpoolDevOps/fbc-devops-peer/metrics/minermetrics"
 	"github.com/NpoolDevOps/fbc-devops-peer/types"
+	"github.com/NpoolDevOps/fbc-devops-peer/version"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -30,6 +32,8 @@ func NewMinerNode(config *basenode.BasenodeConfig, devopsClient *devops.DevopsCl
 	})
 
 	miner.SetAddrNotifier(miner.addressNotifier)
+	fullnodeHost, err := miner.GetFullnodeHost()
+	miner.WatchVersions(fullnodeHost, err, miner.getVersions)
 	return miner
 }
 
@@ -37,6 +41,17 @@ func (n *MinerNode) addressNotifier(local, public string) {
 	n.minerMetrics.SetHost(local)
 	fullnodeHost, _ := n.GetFullnodeHost()
 	n.minerMetrics.SetFullnodeHost(fullnodeHost)
+}
+
+func (n *MinerNode) getVersions(host string) []version.Version {
+	vers := []version.Version{}
+
+	ver, err := lotusapi.ClientVersion(host)
+	if err == nil {
+		vers = append(vers, ver)
+	}
+
+	return vers
 }
 
 func (n *MinerNode) Describe(ch chan<- *prometheus.Desc) {

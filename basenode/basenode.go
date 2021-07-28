@@ -145,7 +145,7 @@ func (n *Basenode) SetAddrNotifier(addrNotifier func(string, string)) {
 	addrNotifier(localAddr, publicAddr)
 }
 
-func (n *Basenode) WatchVersions(versionGetter func(string) []version.Version) {
+func (n *Basenode) WatchVersions(localAddr string, err error, versionGetter func(string) []version.Version) {
 	go func() {
 		ticker := time.NewTicker(2 * time.Minute)
 		vers := []version.Version{}
