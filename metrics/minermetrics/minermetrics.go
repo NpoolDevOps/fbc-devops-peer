@@ -653,7 +653,7 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 	m.mutex.Unlock()
 
 	if 0 < len(minerId) {
-		deadlines, err := lotusapi.ProvingDeadlines(m.host, minerId)
+		deadlines, err := lotusapi.ProvingDeadlines(m.fullnodeHost, minerId)
 		if err == nil {
 			for dlIdx, deadline := range deadlines.Deadlines {
 				current := 0

@@ -145,12 +145,11 @@ func (n *Basenode) SetAddrNotifier(addrNotifier func(string, string)) {
 	addrNotifier(localAddr, publicAddr)
 }
 
-func (n *Basenode) WatchVersions(versionGetter func(string) []version.Version) {
+func (n *Basenode) WatchVersions(localAddr string, err error, versionGetter func(string) []version.Version) {
 	go func() {
 		ticker := time.NewTicker(2 * time.Minute)
 		vers := []version.Version{}
 		for {
-			localAddr, err := n.MyLocalAddr()
 			if err != nil {
 				<-ticker.C
 				continue
@@ -437,6 +436,10 @@ func (n *Basenode) GetChildsIPs() ([]string, error) {
 
 func (n *Basenode) GetLogFileByRole(role string) (string, error) {
 	return n.parser.GetLogFile(role)
+}
+
+func (n *Basenode) GetFullnodeHost() (string, error) {
+	return n.parser.GetFullnodeHost()
 }
 
 func (n *Basenode) GetShareStorageRoot() (string, error) {

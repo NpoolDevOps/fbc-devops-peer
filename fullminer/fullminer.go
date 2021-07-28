@@ -36,7 +36,8 @@ func NewFullMinerNode(config *basenode.BasenodeConfig, devopsClient *devops.Devo
 	})
 
 	fullminer.SetAddrNotifier(fullminer.addressNotifier)
-	fullminer.WatchVersions(fullminer.getVersions)
+	localAddr, err := fullminer.MyLocalAddr()
+	fullminer.WatchVersions(localAddr, err, fullminer.getVersions)
 
 	return fullminer
 }
