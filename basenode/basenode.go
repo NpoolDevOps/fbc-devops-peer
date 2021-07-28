@@ -439,6 +439,10 @@ func (n *Basenode) GetLogFileByRole(role string) (string, error) {
 	return n.parser.GetLogFile(role)
 }
 
+func (n *Basenode) GetFullnodeHost() (string, error) {
+	return n.parser.GetFullnodeHost()
+}
+
 func (n *Basenode) GetShareStorageRoot() (string, error) {
 	return n.parser.GetShareStorageRoot(n.GetMainRole())
 }

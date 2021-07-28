@@ -56,6 +56,7 @@ type Parser struct {
 	minerShareStorageRoot string
 	chiaMinerNodeLogFile  string
 	chiaPlotterLogFile    string
+	fullnodeHost          string
 }
 
 type OSSInfo struct {
@@ -390,6 +391,9 @@ func (p *Parser) dump() {
 	fmt.Printf("  API INFOS ---\n")
 	for key, val := range p.fileAPIInfo {
 		fmt.Printf("    %v ---\n", key)
+		if strings.Contains(key, "fullnode-api-info.sh") {
+			p.fullnodeHost = val.ip
+		}
 		fmt.Printf("      env: %v\n", val.apiInfo)
 		fmt.Printf("      ip:  %v\n", val.ip)
 	}
@@ -487,4 +491,8 @@ func (p *Parser) GetShareStorageRoot(myRole string) (string, error) {
 	default:
 		return "", xerrors.Errorf("no share storage for role: %v", myRole)
 	}
+}
+
+func (p *Parser) GetFullnodeHost() (string, error) {
+	return p.fullnodeHost, nil
 }
