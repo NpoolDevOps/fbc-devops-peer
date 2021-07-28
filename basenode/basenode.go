@@ -150,7 +150,6 @@ func (n *Basenode) WatchVersions(localAddr string, err error, versionGetter func
 		ticker := time.NewTicker(2 * time.Minute)
 		vers := []version.Version{}
 		for {
-			localAddr, err := n.MyLocalAddr()
 			if err != nil {
 				<-ticker.C
 				continue
