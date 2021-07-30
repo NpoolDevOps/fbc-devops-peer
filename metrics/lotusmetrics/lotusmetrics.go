@@ -2,6 +2,7 @@ package lotusmetrics
 
 import (
 	api "github.com/NpoolDevOps/fbc-devops-peer/api/lotusapi"
+	"github.com/NpoolDevOps/fbc-devops-peer/api/systemapi"
 	lotuslog "github.com/NpoolDevOps/fbc-devops-peer/loganalysis/lotuslog"
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -9,14 +10,15 @@ import (
 type LotusMetrics struct {
 	ll *lotuslog.LotusLog
 
-	HeightDiff         *prometheus.Desc
-	BlockElapsed       *prometheus.Desc
-	NetPeers           *prometheus.Desc
-	LotusError         *prometheus.Desc
-	SyncError          *prometheus.Desc
-	ConnectionRefuseds *prometheus.Desc
-	ConnectionTimeouts *prometheus.Desc
-	LogFileSize        *prometheus.Desc
+	HeightDiff          *prometheus.Desc
+	BlockElapsed        *prometheus.Desc
+	NetPeers            *prometheus.Desc
+	LotusError          *prometheus.Desc
+	SyncError           *prometheus.Desc
+	ConnectionRefuseds  *prometheus.Desc
+	ConnectionTimeouts  *prometheus.Desc
+	LogFileSize         *prometheus.Desc
+	LotusOpenFileNumber *prometheus.Desc
 
 	host    string
 	hasHost bool
@@ -66,6 +68,11 @@ func NewLotusMetrics(logfile string) *LotusMetrics {
 			"Show daemon log filesize",
 			nil, nil,
 		),
+		LotusOpenFileNumber: prometheus.NewDesc(
+			"lotus_open_file_number",
+			"show lotus open file number",
+			nil, nil,
+		),
 	}
 }
 
@@ -83,6 +90,7 @@ func (m *LotusMetrics) Describe(ch chan<- *prometheus.Desc) {
 	ch <- m.ConnectionRefuseds
 	ch <- m.ConnectionTimeouts
 	ch <- m.LogFileSize
+	ch <- m.LotusOpenFileNumber
 }
 
 func (m *LotusMetrics) Collect(ch chan<- prometheus.Metric) {
@@ -119,4 +127,9 @@ func (m *LotusMetrics) Collect(ch chan<- prometheus.Metric) {
 	ch <- prometheus.MustNewConstMetric(m.ConnectionRefuseds, prometheus.CounterValue, float64(int(refuseds)))
 	ch <- prometheus.MustNewConstMetric(m.ConnectionTimeouts, prometheus.CounterValue, float64(int(timeouts)))
 	ch <- prometheus.MustNewConstMetric(m.LogFileSize, prometheus.CounterValue, float64(int(filesize)))
+	lotusOpenFileNumber, err := systemapi.GetProcessOpenFileNumber("lotus")
+	if err != nil {
+		ch <- prometheus.MustNewConstMetric(m.LotusOpenFileNumber, prometheus.CounterValue, 0)
+	}
+	ch <- prometheus.MustNewConstMetric(m.LotusOpenFileNumber, prometheus.CounterValue, float64(lotusOpenFileNumber))
 }
