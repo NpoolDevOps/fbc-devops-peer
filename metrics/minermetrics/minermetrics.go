@@ -88,6 +88,8 @@ type MinerMetrics struct {
 	MinerAdjustGasFeecap *prometheus.Desc
 	MinerAdjustBaseFee   *prometheus.Desc
 
+	MinerIsMaster *prometheus.Desc
+
 	minerInfo   minerapi.MinerInfo
 	sealingJobs minerapi.SealingJobs
 	workerInfos minerapi.WorkerInfos
@@ -392,6 +394,11 @@ func NewMinerMetrics(cfg MinerMetricsConfig) *MinerMetrics {
 			"show miner sector size Gib",
 			nil, nil,
 		),
+		MinerIsMaster: prometheus.NewDesc(
+			"miner_is_master",
+			"show whether miner is master",
+			nil, nil,
+		),
 	}
 
 	go func() {
@@ -515,6 +522,7 @@ func (m *MinerMetrics) Describe(ch chan<- *prometheus.Desc) {
 	ch <- m.MinerAdjustBaseFee
 	ch <- m.MinerAdjustGasFeecap
 	ch <- m.MinerSectorSizeGib
+	ch <- m.MinerIsMaster
 
 }
 
@@ -525,6 +533,7 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 	failedBlocks := m.ml.GetFailedBlocks()
 	minerAdjustGasFeecap := m.ml.GetMinerFeeAdjustGasFeecap()
 	minerAdjustBaseFee := m.ml.GetMinerAdjustBaseFee()
+	minerIsMaster := m.ml.GetMinerIsMaster()
 
 	avgMs := uint64(0)
 	maxMs := uint64(0)
@@ -550,6 +559,7 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 	ch <- prometheus.MustNewConstMetric(m.BlockTookMaxMs, prometheus.CounterValue, float64(maxMs))
 	ch <- prometheus.MustNewConstMetric(m.BlockTookMinMs, prometheus.CounterValue, float64(minMs))
 	ch <- prometheus.MustNewConstMetric(m.Blocks, prometheus.CounterValue, float64(len(tooks)))
+	ch <- prometheus.MustNewConstMetric(m.MinerIsMaster, prometheus.CounterValue, minerIsMaster)
 
 	sectorTasks := m.ml.GetSectorTasks()
 	for taskType, typedTasks := range sectorTasks {

@@ -24,6 +24,7 @@ const (
 	RegChainNotSuitable      = "cannot find suitable fullnode"
 	RegChainHeadListen       = "success to listen chain head from "
 	RegGetFeeMiner           = "adjust fee for nonce"
+	RegMinerIsMaster         = "play as master"
 )
 
 const (
@@ -37,6 +38,7 @@ const (
 	KeyChainNotSuitable      = RegChainNotSuitable
 	KeyChainHeadListen       = RegChainHeadListen
 	keyGetFeeMiner           = RegGetFeeMiner
+	keyMinerIsMaster         = RegMinerIsMaster
 )
 
 type LogRegKey struct {
@@ -85,6 +87,10 @@ var logRegKeys = []LogRegKey{
 		RegName:  RegGetFeeMiner,
 		ItemName: keyGetFeeMiner,
 	},
+	LogRegKey{
+		RegName:  RegMinerIsMaster,
+		ItemName: keyMinerIsMaster,
+	},
 }
 
 type minedBlock struct {
@@ -131,7 +137,19 @@ type MinerLog struct {
 	chainHeadListenHosts       map[string]uint64
 	minerAdjustGasFeecap       float64
 	minerAdjustBaseFee         float64
+	minerIsMaster              bool
 	mutex                      sync.Mutex
+}
+
+func (ml *MinerLog) processMinerIsMaster(line logbase.LogLine) {
+	ll := line.Msg
+	isMasterStr := strings.TrimSpace(strings.Split(ll, RegMinerIsMaster)[1])
+	if isMasterStr == "true" {
+		ml.minerIsMaster = true
+	} else {
+		ml.minerIsMaster = false
+	}
+
 }
 
 func (ml *MinerLog) setMinerFee(line logbase.LogLine) {
@@ -327,6 +345,8 @@ func (ml *MinerLog) processLine(line logbase.LogLine) {
 			ml.processChainHeadListen(line)
 		case RegGetFeeMiner:
 			ml.setMinerFee(line)
+		case RegMinerIsMaster:
+			ml.processMinerIsMaster(line)
 		}
 
 		break
@@ -505,4 +525,16 @@ func (ml *MinerLog) GetMinerAdjustBaseFee() float64 {
 	minerAdjustBaseFee := ml.minerAdjustBaseFee
 	ml.mutex.Unlock()
 	return minerAdjustBaseFee
+}
+
+func (ml *MinerLog) GetMinerIsMaster() float64 {
+	var minerIsMaster float64
+	ml.mutex.Lock()
+	if ml.minerIsMaster {
+		minerIsMaster = 1
+	} else {
+		minerIsMaster = 0
+	}
+	ml.mutex.Unlock()
+	return minerIsMaster
 }
