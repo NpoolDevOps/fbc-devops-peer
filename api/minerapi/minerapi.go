@@ -239,7 +239,12 @@ func GetWorkerInfos(ch chan WorkerInfos) {
 			lineStr := string(line)
 			status := ""
 
+			if strings.Contains(lineStr, "host localhost") {
+				continue
+			}
+
 			if strings.HasPrefix(lineStr, "Worker ") {
+
 				hostStr := strings.Split(lineStr, ", host ")[1]
 				hostStrs := strings.Split(hostStr, "/")
 				if len(hostStrs) < 2 {
