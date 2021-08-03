@@ -8,10 +8,11 @@ import (
 )
 
 type LotusLog struct {
-	logbase *logbase.Logbase
-	newline chan logbase.LogLine
-	host    string
-	hasHost bool
+	logbase    *logbase.Logbase
+	newline    chan logbase.LogLine
+	host       string
+	hasHost    bool
+	largeDelay int64
 
 	timeouts uint64
 	refuseds uint64
@@ -22,6 +23,7 @@ const (
 	KeyGotError          = "got error"
 	KeyConnectionRefused = "connection refused"
 	KeyIOTimeout         = "i/o timeout"
+	KeyLargeDelay        = "large delay"
 )
 
 type levelLogKeys struct {
@@ -36,6 +38,10 @@ var logKeys = []levelLogKeys{
 			KeyConnectionRefused,
 			KeyIOTimeout,
 		},
+	},
+	levelLogKeys{
+		mainKey: KeyLargeDelay,
+		subKeys: []string{},
 	},
 }
 
@@ -79,6 +85,10 @@ func (ll *LotusLog) processLine(line string) {
 		switch key.mainKey {
 		case KeyGotError:
 			ll.processGotError(line, key.subKeys)
+		case KeyLargeDelay:
+			ll.mutex.Lock()
+			ll.largeDelay += 1
+			ll.mutex.Unlock()
 		}
 	}
 }
@@ -106,4 +116,11 @@ func (ll *LotusLog) GetTimeouts() uint64 {
 
 func (ll *LotusLog) LogFileSize() uint64 {
 	return ll.logbase.LogFileSize()
+}
+
+func (ll *LotusLog) GetLargeDelay() float64 {
+	ll.mutex.Lock()
+	largeDelay := ll.largeDelay
+	ll.mutex.Unlock()
+	return float64(largeDelay)
 }
