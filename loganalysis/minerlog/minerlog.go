@@ -95,11 +95,11 @@ var logRegKeys = []LogRegKey{
 
 type minedBlock struct {
 	logbase.LogLine
-	Cid       string   `json:"cid"`
-	Height    string   `json:"height"`
-	Miner     string   `json:"miner"`
-	Parents   []string `json:"parents"`
-	Took      float64  `json:"took"`
+	Cid       string      `json:"cid"`
+	Height    interface{} `json:"height"`
+	Miner     string      `json:"miner"`
+	Parents   []string    `json:"parents"`
+	Took      float64     `json:"took"`
 	InThePast bool
 }
 
@@ -365,7 +365,17 @@ func (ml *MinerLog) processCandidateBlocks() {
 			continue
 		}
 
-		height, _ := strconv.ParseUint(b.Height, 10, 64)
+		var height uint64
+
+		switch b.Height.(type) {
+		case int:
+			height = uint64(b.Height.(int))
+		case int64:
+			height = uint64(b.Height.(int64))
+		case string:
+			height, _ = strconv.ParseUint(b.Height.(string), 10, 64)
+		}
+
 		cids, err := lotusapi.TipSetByHeight(ml.fullnodeHost, height)
 		if err != nil {
 			blocks = append(blocks, b)
