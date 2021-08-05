@@ -47,47 +47,47 @@ type LogRegKey struct {
 }
 
 var logRegKeys = []LogRegKey{
-	LogRegKey{
+	{
 		RegName:  RegMinedNewBlock,
 		ItemName: KeyMinedNewBlock,
 	},
-	LogRegKey{
+	{
 		RegName:  RegMinedPastBlock,
 		ItemName: KeyMinedPastBlock,
 	},
-	LogRegKey{
+	{
 		RegName:  RegMiningFailedBlock,
 		ItemName: KeyMiningFailedBlock,
 	},
-	LogRegKey{
+	{
 		RegName:  RegRunTaskStart,
 		ItemName: KeySectorTask,
 	},
-	LogRegKey{
+	{
 		RegName:  RegRunTaskEnd,
 		ItemName: KeySectorTask,
 	},
-	LogRegKey{
+	{
 		RegName:  RegCheckSectors,
 		ItemName: KeyCheckSectors,
 	},
-	LogRegKey{
+	{
 		RegName:  RegChainSyncNotCompleted,
 		ItemName: KeyChainSyncNotCompleted,
 	},
-	LogRegKey{
+	{
 		RegName:  RegChainNotSuitable,
 		ItemName: KeyChainNotSuitable,
 	},
-	LogRegKey{
+	{
 		RegName:  RegChainHeadListen,
 		ItemName: KeyChainHeadListen,
 	},
-	LogRegKey{
+	{
 		RegName:  RegGetFeeMiner,
 		ItemName: keyGetFeeMiner,
 	},
-	LogRegKey{
+	{
 		RegName:  RegMinerIsMaster,
 		ItemName: keyMinerIsMaster,
 	},
@@ -368,6 +368,8 @@ func (ml *MinerLog) processCandidateBlocks() {
 		var height uint64
 
 		switch b.Height.(type) {
+		case float64:
+			height = uint64(b.Height.(float64))
 		case int:
 			height = uint64(b.Height.(int))
 		case int64:
@@ -493,7 +495,6 @@ func (ml *MinerLog) GetSectorTasks() map[string]map[string][]SectorTaskStat {
 				} else {
 					elapsed = uint64(time.Now().Unix()) - ml.BootTime
 				}
-				elapsed = elapsed
 			} else {
 				delete(ml.sectorTasks[taskType], task.SectorNumber)
 			}
