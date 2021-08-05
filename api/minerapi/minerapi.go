@@ -239,12 +239,7 @@ func GetWorkerInfos(ch chan WorkerInfos) {
 			lineStr := string(line)
 			status := ""
 
-			if strings.Contains(lineStr, "host localhost") {
-				continue
-			}
-
 			if strings.HasPrefix(lineStr, "Worker ") {
-
 				hostStr := strings.Split(lineStr, ", host ")[1]
 				hostStrs := strings.Split(hostStr, "/")
 				if len(hostStrs) < 2 {
@@ -257,7 +252,7 @@ func GetWorkerInfos(ch chan WorkerInfos) {
 				}
 			}
 
-			if _, ok := info.Infos[curWorker]; !ok {
+			if _, ok := info.Infos[curWorker]; !ok && curWorker != "localhost" {
 				maintaining := 0
 				if strings.Contains(status, "M") {
 					maintaining = 1
@@ -274,7 +269,7 @@ func GetWorkerInfos(ch chan WorkerInfos) {
 
 			workerInfo := info.Infos[curWorker]
 
-			if strings.Contains(lineStr, "GPU: ") {
+			if strings.Contains(lineStr, "GPU: ") && curWorker != "localhost" {
 				workerInfo.GPUs += 1
 			}
 
