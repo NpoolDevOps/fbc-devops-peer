@@ -2,7 +2,6 @@ package minermetrics
 
 import (
 	"fmt"
-	"reflect"
 	"strconv"
 	"sync"
 	"time"
@@ -419,7 +418,7 @@ func NewMinerMetrics(cfg MinerMetricsConfig) *MinerMetrics {
 			nil, nil,
 		),
 		MiningLateWinner: prometheus.NewDesc(
-			"miner_minging_late_winner",
+			"miner_mining_late_winner",
 			"show mining late winner",
 			nil, nil,
 		),
@@ -777,7 +776,6 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 	} else {
 		ch <- prometheus.MustNewConstMetric(m.MiningLateWinner, prometheus.CounterValue, float64(0))
 	}
-	log.Infof(log.Fields{}, "MiningLateBaseDeltaSecond type is %v", reflect.TypeOf(mineOne.MiningLateBaseDeltaSecond))
 	switch mineOne.MiningLateBaseDeltaSecond.(type) {
 	case float64:
 		ch <- prometheus.MustNewConstMetric(m.MiningLateBaseDeltaSecond, prometheus.CounterValue, mineOne.MiningLateBaseDeltaSecond.(float64))
