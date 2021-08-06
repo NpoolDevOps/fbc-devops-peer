@@ -25,6 +25,7 @@ const (
 	RegChainHeadListen       = "success to listen chain head from "
 	RegGetFeeMiner           = "adjust fee for nonce"
 	RegMinerIsMaster         = "play as master"
+	RegMineOne               = "\"msg\":\"completed mineOne\""
 )
 
 const (
@@ -39,6 +40,7 @@ const (
 	KeyChainHeadListen       = RegChainHeadListen
 	keyGetFeeMiner           = RegGetFeeMiner
 	keyMinerIsMaster         = RegMinerIsMaster
+	keyMineOne               = RegMineOne
 )
 
 type LogRegKey struct {
@@ -91,6 +93,10 @@ var logRegKeys = []LogRegKey{
 		RegName:  RegMinerIsMaster,
 		ItemName: keyMinerIsMaster,
 	},
+	{
+		RegName:  RegMineOne,
+		ItemName: keyMineOne,
+	},
 }
 
 type minedBlock struct {
@@ -119,6 +125,15 @@ type CheckSectors struct {
 	Deadline int `json:"deadline"`
 }
 
+type MineOne struct {
+	MiningLateBase            bool        `json:"lateStart"`
+	MiningLateWinner          bool        `json:"isWinner"`
+	MiningLateBaseDeltaSecond interface{} `json:"baseDeltaSeconds"`
+	MiningEligible            bool        `json:"isEligible"`
+	MiningNetworkPower        string      `json:"networkPowerAtLookback"`
+	MiningMinerPower          string      `json:"minerPowerAtLookback"`
+}
+
 type MinerLog struct {
 	logbase                    *logbase.Logbase
 	newline                    chan logbase.LogLine
@@ -138,7 +153,20 @@ type MinerLog struct {
 	minerAdjustGasFeecap       float64
 	minerAdjustBaseFee         float64
 	minerIsMaster              bool
+	mineOne                    MineOne
 	mutex                      sync.Mutex
+}
+
+func (ml *MinerLog) processMineOne(line logbase.LogLine) {
+	mineOne := MineOne{}
+	err := json.Unmarshal([]byte(line.Line), &mineOne)
+	if err != nil {
+		log.Errorf(log.Fields{}, "fail to unmarshal %v: %v", line.Line, err)
+		return
+	}
+	ml.mutex.Lock()
+	ml.mineOne = mineOne
+	ml.mutex.Unlock()
 }
 
 func (ml *MinerLog) processMinerIsMaster(line logbase.LogLine) {
@@ -347,6 +375,8 @@ func (ml *MinerLog) processLine(line logbase.LogLine) {
 			ml.setMinerFee(line)
 		case RegMinerIsMaster:
 			ml.processMinerIsMaster(line)
+		case RegMineOne:
+			ml.processMineOne(line)
 		}
 
 		break
@@ -548,4 +578,11 @@ func (ml *MinerLog) GetMinerIsMaster() float64 {
 	}
 	ml.mutex.Unlock()
 	return minerIsMaster
+}
+
+func (ml *MinerLog) GetMineOne() MineOne {
+	ml.mutex.Lock()
+	mineOne := ml.mineOne
+	ml.mutex.Unlock()
+	return mineOne
 }

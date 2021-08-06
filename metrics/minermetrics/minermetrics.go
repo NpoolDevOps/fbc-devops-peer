@@ -2,6 +2,7 @@ package minermetrics
 
 import (
 	"fmt"
+	"strconv"
 	"sync"
 	"time"
 
@@ -89,6 +90,13 @@ type MinerMetrics struct {
 	MinerAdjustBaseFee   *prometheus.Desc
 
 	MinerIsMaster *prometheus.Desc
+
+	MiningLateBase            *prometheus.Desc
+	MiningLateWinner          *prometheus.Desc
+	MiningLateBaseDeltaSecond *prometheus.Desc
+	MiningEligible            *prometheus.Desc
+	MiningNetworkPower        *prometheus.Desc
+	MiningMinerPower          *prometheus.Desc
 
 	minerInfo   minerapi.MinerInfo
 	sealingJobs minerapi.SealingJobs
@@ -399,6 +407,36 @@ func NewMinerMetrics(cfg MinerMetricsConfig) *MinerMetrics {
 			"show whether miner is master",
 			nil, nil,
 		),
+		MiningLateBase: prometheus.NewDesc(
+			"miner_mining_late_base",
+			"show mining late base",
+			nil, nil,
+		),
+		MiningLateBaseDeltaSecond: prometheus.NewDesc(
+			"miner_mining_late_base_delta_second",
+			"show mining late base delta second",
+			nil, nil,
+		),
+		MiningLateWinner: prometheus.NewDesc(
+			"miner_mining_late_winner",
+			"show mining late winner",
+			nil, nil,
+		),
+		MiningEligible: prometheus.NewDesc(
+			"miner_mining_eligible",
+			"show mining eligible",
+			nil, nil,
+		),
+		MiningNetworkPower: prometheus.NewDesc(
+			"miner_mining_network_power",
+			"show mining network power",
+			nil, nil,
+		),
+		MiningMinerPower: prometheus.NewDesc(
+			"miner_mining_miner_power",
+			"show mining miner power",
+			nil, nil,
+		),
 	}
 
 	go func() {
@@ -523,6 +561,12 @@ func (m *MinerMetrics) Describe(ch chan<- *prometheus.Desc) {
 	ch <- m.MinerAdjustGasFeecap
 	ch <- m.MinerSectorSizeGib
 	ch <- m.MinerIsMaster
+	ch <- m.MiningEligible
+	ch <- m.MiningLateBase
+	ch <- m.MiningLateBaseDeltaSecond
+	ch <- m.MiningLateWinner
+	ch <- m.MiningMinerPower
+	ch <- m.MiningNetworkPower
 
 }
 
@@ -534,6 +578,7 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 	minerAdjustGasFeecap := m.ml.GetMinerFeeAdjustGasFeecap()
 	minerAdjustBaseFee := m.ml.GetMinerAdjustBaseFee()
 	minerIsMaster := m.ml.GetMinerIsMaster()
+	mineOne := m.ml.GetMineOne()
 
 	avgMs := uint64(0)
 	maxMs := uint64(0)
@@ -715,4 +760,34 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 
 	ch <- prometheus.MustNewConstMetric(m.MinerAdjustBaseFee, prometheus.CounterValue, minerAdjustBaseFee)
 	ch <- prometheus.MustNewConstMetric(m.MinerAdjustGasFeecap, prometheus.CounterValue, minerAdjustGasFeecap)
+
+	if mineOne.MiningEligible {
+		ch <- prometheus.MustNewConstMetric(m.MiningEligible, prometheus.CounterValue, float64(1))
+	} else {
+		ch <- prometheus.MustNewConstMetric(m.MiningEligible, prometheus.CounterValue, float64(0))
+	}
+	if mineOne.MiningLateBase {
+		ch <- prometheus.MustNewConstMetric(m.MiningLateBase, prometheus.CounterValue, float64(1))
+	} else {
+		ch <- prometheus.MustNewConstMetric(m.MiningLateBase, prometheus.CounterValue, float64(0))
+	}
+	if mineOne.MiningLateWinner {
+		ch <- prometheus.MustNewConstMetric(m.MiningLateWinner, prometheus.CounterValue, float64(1))
+	} else {
+		ch <- prometheus.MustNewConstMetric(m.MiningLateWinner, prometheus.CounterValue, float64(0))
+	}
+	switch mineOne.MiningLateBaseDeltaSecond.(type) {
+	case float64:
+		ch <- prometheus.MustNewConstMetric(m.MiningLateBaseDeltaSecond, prometheus.CounterValue, mineOne.MiningLateBaseDeltaSecond.(float64))
+	case int64:
+		ch <- prometheus.MustNewConstMetric(m.MiningLateBaseDeltaSecond, prometheus.CounterValue, float64(mineOne.MiningLateBaseDeltaSecond.(int64)))
+	case string:
+		miningLateBaseDeltaSecond, _ := strconv.ParseFloat(mineOne.MiningLateBaseDeltaSecond.(string), 64)
+		ch <- prometheus.MustNewConstMetric(m.MiningLateBaseDeltaSecond, prometheus.CounterValue, miningLateBaseDeltaSecond)
+	}
+	miningNetworkPower, _ := strconv.ParseFloat(mineOne.MiningNetworkPower, 64)
+	miningMinerPower, _ := strconv.ParseFloat(mineOne.MiningMinerPower, 64)
+	ch <- prometheus.MustNewConstMetric(m.MiningNetworkPower, prometheus.CounterValue, miningNetworkPower)
+	ch <- prometheus.MustNewConstMetric(m.MiningMinerPower, prometheus.CounterValue, miningMinerPower)
+
 }
