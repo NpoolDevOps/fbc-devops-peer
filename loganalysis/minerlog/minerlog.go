@@ -271,6 +271,10 @@ func (ml *MinerLog) processSectorTask(line logbase.LogLine, end bool) {
 	if len(mline.Worker) == 0 {
 		mline.Worker = "miner"
 	}
+	taskSector := mline.TaskType + ":" + mline.SectorNumber + ","
+	if !strings.Contains(ml.sectorNumGroup, taskSector) {
+		ml.sectorNumGroup += taskSector
+	}
 	sectorTasks[mline.SectorNumber] = mline
 	ml.sectorTasks[mline.TaskType] = sectorTasks
 	ml.mutex.Unlock()
@@ -533,10 +537,6 @@ func (ml *MinerLog) GetSectorTasks() map[string]map[string][]SectorTaskStat {
 		}
 		typedTasks := tasks[taskType]
 		for _, task := range sectorTasks {
-			taskSector := taskType + ": " + task.SectorNumber + ", "
-			if !strings.Contains(ml.sectorNumGroup, taskSector) {
-				ml.sectorNumGroup = ml.sectorNumGroup + taskSector
-			}
 			if _, ok := typedTasks[task.Worker]; !ok {
 				typedTasks[task.Worker] = []SectorTaskStat{}
 			}
@@ -550,9 +550,9 @@ func (ml *MinerLog) GetSectorTasks() map[string]map[string][]SectorTaskStat {
 					elapsed = ml.timeStamp - ml.BootTime
 				}
 			}
-			if len(strings.Split(ml.sectorNumGroup, ", ")) > 100 {
-				delete(ml.sectorTasks[taskType], strings.Split(strings.Split(ml.sectorNumGroup, ", ")[0], ": ")[1])
-				strings.Join(strings.Split(ml.sectorNumGroup, ", ")[1:100], ", ")
+			if len(strings.Split(ml.sectorNumGroup, ",")) > 100 {
+				delete(ml.sectorTasks[taskType], strings.Split(strings.Split(ml.sectorNumGroup, ",")[0], ":")[1])
+				strings.Join(strings.Split(ml.sectorNumGroup, ",")[1:100], ",")
 			}
 
 			workerTasks = append(workerTasks, SectorTaskStat{
