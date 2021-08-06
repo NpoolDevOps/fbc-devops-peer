@@ -154,6 +154,8 @@ type MinerLog struct {
 	minerAdjustBaseFee         float64
 	minerIsMaster              bool
 	mineOne                    MineOne
+	timeStamp                  uint64
+	sectorNumArr               []map[string]string
 	mutex                      sync.Mutex
 }
 
@@ -339,8 +341,26 @@ func (ml *MinerLog) processChainHeadListen(line logbase.LogLine) {
 	ml.chainHeadListenHosts[host] = uint64(epoch)
 }
 
+type Line struct {
+	TimeStamp string `json:"ts"`
+}
+
+func (ml *MinerLog) setTimeStamp(line logbase.LogLine) {
+	var everyLine Line
+	ml.mutex.Lock()
+	err := json.Unmarshal([]byte(line.Line), &everyLine)
+	if err != nil {
+		log.Errorf(log.Fields{}, "fail to unmarshal &v, err is %v", line.Line, err)
+	} else {
+		theTime, _ := time.Parse("2006-01-02T15:04:05.000", strings.TrimSpace(strings.Split(everyLine.TimeStamp, "+")[0]))
+		ml.timeStamp = uint64(theTime.Unix() - 28800)
+	}
+	ml.mutex.Unlock()
+}
+
 func (ml *MinerLog) processLine(line logbase.LogLine) {
 	for _, item := range logRegKeys {
+		ml.setTimeStamp(line)
 		if !ml.logbase.LineMatchKey(line.Line, item.RegName) {
 			continue
 		}
@@ -521,12 +541,21 @@ func (ml *MinerLog) GetSectorTasks() map[string]map[string][]SectorTaskStat {
 			elapsed := task.Elapsed
 			if !task.taskDone {
 				if 0 < task.TaskStart {
-					elapsed = uint64(time.Now().Unix()) - task.TaskStart
+					elapsed = ml.timeStamp - task.TaskStart
 				} else {
-					elapsed = uint64(time.Now().Unix()) - ml.BootTime
+					elapsed = ml.timeStamp - ml.BootTime
 				}
 			} else {
-				delete(ml.sectorTasks[taskType], task.SectorNumber)
+				taskSector := make(map[string]string)
+				taskSector[taskType] = task.SectorNumber
+				ml.sectorNumArr = append(ml.sectorNumArr, taskSector)
+				if len(ml.sectorNumArr) > 100 {
+					for k := range ml.sectorNumArr[0] {
+						delete(ml.sectorTasks[taskType], k)
+						break
+					}
+					ml.sectorNumArr = ml.sectorNumArr[1:100]
+				}
 			}
 			workerTasks = append(workerTasks, SectorTaskStat{
 				Worker:  task.Worker,
