@@ -155,7 +155,7 @@ type MinerLog struct {
 	minerIsMaster              bool
 	mineOne                    MineOne
 	timeStamp                  uint64
-	sectorNumArr               []map[string]string
+	sectorNumGroup             string
 	mutex                      sync.Mutex
 }
 
@@ -533,6 +533,10 @@ func (ml *MinerLog) GetSectorTasks() map[string]map[string][]SectorTaskStat {
 		}
 		typedTasks := tasks[taskType]
 		for _, task := range sectorTasks {
+			taskSector := taskType + ": " + task.SectorNumber + ", "
+			if !strings.Contains(ml.sectorNumGroup, taskSector) {
+				ml.sectorNumGroup = ml.sectorNumGroup + taskSector
+			}
 			if _, ok := typedTasks[task.Worker]; !ok {
 				typedTasks[task.Worker] = []SectorTaskStat{}
 			}
@@ -545,18 +549,12 @@ func (ml *MinerLog) GetSectorTasks() map[string]map[string][]SectorTaskStat {
 				} else {
 					elapsed = ml.timeStamp - ml.BootTime
 				}
-			} else {
-				taskSector := make(map[string]string)
-				taskSector[taskType] = task.SectorNumber
-				ml.sectorNumArr = append(ml.sectorNumArr, taskSector)
-				if len(ml.sectorNumArr) > 100 {
-					for k := range ml.sectorNumArr[0] {
-						delete(ml.sectorTasks[taskType], k)
-						break
-					}
-					ml.sectorNumArr = ml.sectorNumArr[1:100]
-				}
 			}
+			if len(strings.Split(ml.sectorNumGroup, ", ")) > 100 {
+				delete(ml.sectorTasks[taskType], strings.Split(strings.Split(ml.sectorNumGroup, ", ")[0], ": ")[1])
+				strings.Join(strings.Split(ml.sectorNumGroup, ", ")[1:100], ", ")
+			}
+
 			workerTasks = append(workerTasks, SectorTaskStat{
 				Worker:  task.Worker,
 				Elapsed: elapsed,
