@@ -623,7 +623,7 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 						duration = task.Elapsed
 					}
 					ch <- prometheus.MustNewConstMetric(m.SectorTaskProgress, prometheus.CounterValue,
-						float64(duration), taskType, worker, task.Sector, "1")
+						float64(task.Elapsed), taskType, worker, task.Sector, "1")
 				} else {
 					concurrent += 1
 					totalConcurrent += 1
@@ -631,7 +631,7 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 						elapsed = task.Elapsed
 					}
 					ch <- prometheus.MustNewConstMetric(m.SectorTaskProgress, prometheus.CounterValue,
-						float64(elapsed), taskType, worker, task.Sector, "0")
+						float64(task.Elapsed), taskType, worker, task.Sector, "0")
 				}
 			}
 			ch <- prometheus.MustNewConstMetric(m.SectorTaskElapsed, prometheus.CounterValue, float64(elapsed), taskType, worker)
@@ -731,7 +731,7 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 
 	chainSyncNotCompletedHosts := m.ml.GetChainSyncNotCompletedHosts()
 	//
-	for host, _ := range chainSyncNotCompletedHosts {
+	for host := range chainSyncNotCompletedHosts {
 		ch <- prometheus.MustNewConstMetric(m.ChainSyncNotCompleted, prometheus.CounterValue, float64(1), host)
 	}
 	chainNotSuitable := m.ml.GetChainNotSuitable()
