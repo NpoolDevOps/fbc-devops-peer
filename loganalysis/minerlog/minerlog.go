@@ -261,11 +261,11 @@ func (ml *MinerLog) processSectorTask(line logbase.LogLine, end bool) {
 	if end {
 		mline.taskDone = true
 		if mline.Elapsed == 0 {
-			mline.Elapsed = uint64(time.Now().Unix()) - mline.TaskStart
+			mline.Elapsed = ml.timeStamp - mline.TaskStart
 		}
 	} else {
 		if mline.TaskStart == 0 {
-			mline.TaskStart = uint64(time.Now().Unix())
+			mline.TaskStart = ml.timeStamp
 		}
 	}
 	if len(mline.Worker) == 0 {
