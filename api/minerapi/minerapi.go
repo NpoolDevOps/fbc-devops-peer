@@ -272,8 +272,9 @@ func GetWorkerInfos(ch chan WorkerInfos) {
 			if strings.Contains(lineStr, "GPU: ") && curWorker != "localhost" {
 				workerInfo.GPUs += 1
 			}
-
-			info.Infos[curWorker] = workerInfo
+			if curWorker != "localhost" {
+				info.Infos[curWorker] = workerInfo
+			}
 		}
 
 		ch <- info
