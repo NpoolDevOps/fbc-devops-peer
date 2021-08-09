@@ -556,11 +556,12 @@ func (ml *MinerLog) GetSectorTasks() map[string]map[string][]SectorTaskStat {
 					elapsed = ml.timeStamp - ml.BootTime
 				}
 			}
-			if len(ml.sectorGroup) > 1000 {
-				for i := 0; i < len(ml.sectorGroup)-1000; i++ {
-                                        delete(ml.sectorTasks[taskType], ml.sectorGroup[i].SectorNumber)
-                                }
-                                ml.sectorGroup = ml.sectorGroup[len(ml.sectorGroup)-1000 : len(ml.sectorGroup)-1]
+			
+			for {
+				if len(ml.sectorGroup) <= 1000 {
+					break	
+				}
+				ml.sectorGroup = ml.sectorGroup[1:]
 			}
 
 			workerTasks = append(workerTasks, SectorTaskStat{
