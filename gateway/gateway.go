@@ -4,6 +4,13 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
+	"time"
+
 	log "github.com/EntropyPool/entropy-logger"
 	"github.com/NpoolDevOps/fbc-devops-peer/basenode"
 	devops "github.com/NpoolDevOps/fbc-devops-peer/devops"
@@ -13,15 +20,9 @@ import (
 	mytypes "github.com/NpoolDevOps/fbc-devops-peer/types"
 	devopsapi "github.com/NpoolDevOps/fbc-devops-service/devopsapi"
 	types "github.com/NpoolDevOps/fbc-devops-service/types"
-	"github.com/NpoolRD/http-daemon"
+	httpdaemon "github.com/NpoolRD/http-daemon"
 	"github.com/prometheus/client_golang/prometheus"
 	"gopkg.in/yaml.v2"
-	"io/ioutil"
-	"os"
-	"os/exec"
-	"path/filepath"
-	"strings"
-	"time"
 )
 
 type hostMonitor struct {
@@ -153,7 +154,10 @@ func (g *GatewayNode) onlineCheck() {
 	myPublicAddr, _ := g.MyPublicAddr()
 
 	updated := false
-	for host, monitor := range g.hosts {
+	hosts := g.hosts
+	g.hosts = map[string]hostMonitor{}
+
+	for host, monitor := range hosts {
 		lastIndex := strings.LastIndex(monitor.publicAddr, ".")
 		if lastIndex < 0 {
 			log.Errorf(log.Fields{}, "%v miss public address: %v", host, monitor.publicAddr)
