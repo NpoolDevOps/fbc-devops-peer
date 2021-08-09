@@ -561,6 +561,7 @@ func (ml *MinerLog) GetSectorTasks() map[string]map[string][]SectorTaskStat {
 				if len(ml.sectorGroup) <= 1000 {
 					break	
 				}
+				delete(ml.sectorTasks[taskType], ml.sectorGroup[0].SectorNumber)
 				ml.sectorGroup = ml.sectorGroup[1:]
 			}
 
