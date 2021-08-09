@@ -153,7 +153,9 @@ func (g *GatewayNode) onlineCheck() {
 	myPublicAddr, _ := g.MyPublicAddr()
 
 	updated := false
-	for host, monitor := range g.hosts {
+	hosts := g.hosts
+	g.hosts = map[string]hostMonitor{}
+	for host, monitor := range hosts {
 		lastIndex := strings.LastIndex(monitor.publicAddr, ".")
 		if lastIndex < 0 {
 			log.Errorf(log.Fields{}, "%v miss public address: %v", host, monitor.publicAddr)
