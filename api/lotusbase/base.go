@@ -44,6 +44,9 @@ func NewRpcParam(method string, params interface{}) *RpcParam {
 
 func Request(url string, params interface{}, method string) ([]byte, error) {
 	ret, err := RequestWithBearerToken(url, params, method, "")
+	if err != nil {
+		return nil, err
+	}
 	return ret.([]byte), err
 }
 
