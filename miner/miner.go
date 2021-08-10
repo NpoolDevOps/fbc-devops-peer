@@ -37,8 +37,9 @@ func NewMinerNode(config *basenode.BasenodeConfig, devopsClient *devops.DevopsCl
 	return miner
 }
 
-func (n *MinerNode) addressNotifier(local, public string) {
-	n.minerMetrics.SetHost(local)
+func (n *MinerNode) addressNotifier(string, string) {
+	minerHost, _ := n.GetMinerApiHost()
+	n.minerMetrics.SetHost(minerHost)
 	fullnodeHost, _ := n.GetFullnodeApiHost()
 	n.minerMetrics.SetFullnodeHost(fullnodeHost)
 }
