@@ -31,6 +31,7 @@ const (
 	ProcSelfMounts      = "/proc/self/mounts"
 	HostsFile           = "/etc/hosts"
 	CephConfigFile      = "/etc/ceph/ceph.conf"
+	LotusChainFile      = "/opt/chain/lotus/api"
 )
 
 type nodeDesc struct {
@@ -495,4 +496,28 @@ func (p *Parser) GetShareStorageRoot(myRole string) (string, error) {
 
 func (p *Parser) GetFullnodeHost() (string, error) {
 	return p.fullnodeHost, nil
+}
+
+func (p *Parser) GetMyFullnodeLocalAddr() (string, error) {
+	f, err := os.Open(LotusChainFile)
+	if err != nil {
+		log.Errorf(log.Fields{}, "%v can not find: %v", LotusChainFile, err)
+		return "", err
+	}
+	bio := bufio.NewReader(f)
+	for {
+		line, _, err := bio.ReadLine()
+		if err != nil {
+			log.Errorf(log.Fields{}, "fail to read %v: %v", LotusChainFile, err)
+			break
+		}
+
+		if !strings.HasPrefix(string(line), "/ip4/") {
+			continue
+		}
+
+		s := strings.Split(string(line), "/")
+		return s[2], nil
+	}
+	return "", err
 }

@@ -442,6 +442,14 @@ func (n *Basenode) GetFullnodeHost() (string, error) {
 	return n.parser.GetFullnodeHost()
 }
 
+func (n *Basenode) GetFullnodeLocalAddr() string {
+	localAddr, err := n.parser.GetMyFullnodeLocalAddr()
+	if err != nil {
+		log.Errorf(log.Fields{}, "fail to get fullnode local addr: %v", err)
+	}
+	return localAddr
+}
+
 func (n *Basenode) GetShareStorageRoot() (string, error) {
 	return n.parser.GetShareStorageRoot(n.GetMainRole())
 }
