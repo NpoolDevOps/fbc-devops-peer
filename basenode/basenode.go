@@ -439,11 +439,11 @@ func (n *Basenode) GetLogFileByRole(role string) (string, error) {
 }
 
 func (n *Basenode) GetFullnodeApiHost() (string, error) {
-	return n.parser.GetFullnodeApiHostByRole(n.GetMainRole())
+	return n.parser.GetApiHostByHostRole("fullnode")
 }
 
 func (n *Basenode) GetMinerApiHost() (string, error) {
-	return n.parser.GetMinerApiHostByRole(n.GetMainRole())
+	return n.parser.GetApiHostByHostRole("miner")
 }
 
 func (n *Basenode) GetShareStorageRoot() (string, error) {

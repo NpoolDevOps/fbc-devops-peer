@@ -62,8 +62,8 @@ type Parser struct {
 	minerApiHost          string
 	fullnodeApiHost       string
 	fullminerApiHost      string
-	minerRepoFile         string
-	fullnodeRepoFile      string
+	minerRepoApiFile      string
+	fullnodeRepoApiFile   string
 }
 
 type OSSInfo struct {
@@ -375,28 +375,43 @@ func (p *Parser) parseLogFiles() {
 	p.minerLogFile = p.parseLogFileFromService(MinerServiceFile)
 }
 
-func (p *Parser) parseRepoFileFromService(file string) string {
-	f, _ := os.Open(file)
+func (p *Parser) parseRepoApiFileFromService(file string) (string, error) {
+	f, err := os.Open(file)
+	if err != nil {
+		log.Errorf(log.Fields{}, "open file %v err: %v", file, err)
+		return "", err
+	}
 	bio := bufio.NewReader(f)
 	for {
 		line, _, err := bio.ReadLine()
 		if err != nil {
-			log.Errorf(log.Fields{}, "fail to read %v: %v", file, err)
 			break
 		}
 		if !strings.HasPrefix(string(line), "ExecStart=/usr/local/bin") {
 			continue
 		}
 		s := strings.Split(string(line), "-repo=")
-		ss := strings.Split(s[1], " ")[0] + "/api"
-		return ss
+		var ss string
+		if len(s) != 1 && s[0] != string(line) {
+			ss = strings.Split(s[1], " ")[0] + "/api"
+		}
+		return ss, nil
 	}
-	return ""
+	return "", err
 }
 
 func (p *Parser) parseRepoFile() {
-	p.minerRepoFile = p.parseRepoFileFromService(MinerServiceFile)
-	p.fullnodeRepoFile = p.parseRepoFileFromService(FullnodeServiceFile)
+	minerRepoApiFile, err := p.parseRepoApiFileFromService(MinerServiceFile)
+	if err != nil {
+		log.Errorf(log.Fields{}, "get miner Repo dir api file err: %v", err)
+	}
+	p.minerRepoApiFile = minerRepoApiFile
+
+	fullnodeRepoApiFile, err := p.parseRepoApiFileFromService(FullnodeServiceFile)
+	if err != nil {
+		log.Errorf(log.Fields{}, "get fullnode Repo dir api file err: %v", err)
+	}
+	p.fullnodeRepoApiFile = fullnodeRepoApiFile
 }
 
 func (p *Parser) parseApiHostFromRepoFile(file string) (string, error) {
@@ -444,7 +459,7 @@ func (p *Parser) parseApiHostFromApiInfoShell(file string) (string, error) {
 func (p *Parser) parseApiHosts() {
 	fullnodeApiHost, err := p.parseApiHostFromApiInfoShell(FullnodeAPIFile)
 	if err != nil {
-		fullnodeApiHost, err = p.parseApiHostFromRepoFile(p.fullnodeRepoFile)
+		fullnodeApiHost, err = p.parseApiHostFromRepoFile(p.fullnodeRepoApiFile)
 		if err != nil {
 			p.fullnodeApiHost = ""
 		}
@@ -453,7 +468,7 @@ func (p *Parser) parseApiHosts() {
 
 	minerApiHost, err := p.parseApiHostFromApiInfoShell(MinerAPIFile)
 	if err != nil {
-		minerApiHost, err = p.parseApiHostFromRepoFile(p.minerRepoFile)
+		minerApiHost, err = p.parseApiHostFromRepoFile(p.minerRepoApiFile)
 		if err != nil {
 			p.minerApiHost = ""
 		}
@@ -585,28 +600,12 @@ func (p *Parser) GetShareStorageRoot(myRole string) (string, error) {
 	}
 }
 
-func (p *Parser) GetFullnodeApiHostByRole(myRole string) (string, error) {
+func (p *Parser) GetApiHostByHostRole(myRole string) (string, error) {
 	switch myRole {
-	case types.MinerNode:
-		return p.fullnodeApiHost, nil
-	case types.FullNode:
-		return p.fullnodeApiHost, nil
-	case types.FullMinerNode:
-		return p.fullnodeApiHost, nil
-	default:
-		return "", xerrors.Errorf("no api host for role: %v", myRole)
-	}
-
-}
-
-func (p *Parser) GetMinerApiHostByRole(myRole string) (string, error) {
-	switch myRole {
-	case types.MinerNode:
+	case "miner":
 		return p.minerApiHost, nil
-	case types.FullNode:
-		return p.minerApiHost, nil
-	case types.FullMinerNode:
-		return p.minerApiHost, nil
+	case "fullnode":
+		return p.fullnodeApiHost, nil
 	default:
 		return "", xerrors.Errorf("no api host for role: %v", myRole)
 	}
