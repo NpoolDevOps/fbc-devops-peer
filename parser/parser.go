@@ -31,9 +31,6 @@ const (
 	ProcSelfMounts      = "/proc/self/mounts"
 	HostsFile           = "/etc/hosts"
 	CephConfigFile      = "/etc/ceph/ceph.conf"
-	FullNodeLotusFile   = "/opt/chain/lotus/api"
-	MinerLotusFile      = "/opt/data/lotusstorage"
-	FullminerLotusFile  = MinerLotusFile
 )
 
 type nodeDesc struct {
@@ -61,7 +58,6 @@ type Parser struct {
 	chiaPlotterLogFile     string
 	minerApiHost           string
 	fullnodeApiHost        string
-	fullminerApiHost       string
 	minerRepoDirApiFile    string
 	fullnodeRepoDirApiFile string
 }

@@ -7,6 +7,7 @@ import (
 	devops "github.com/NpoolDevOps/fbc-devops-peer/devops"
 	exporter "github.com/NpoolDevOps/fbc-devops-peer/exporter"
 	lotusmetrics "github.com/NpoolDevOps/fbc-devops-peer/metrics/lotusmetrics"
+	"github.com/NpoolDevOps/fbc-devops-peer/types"
 	"github.com/NpoolDevOps/fbc-devops-peer/version"
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -26,7 +27,7 @@ func NewFullNode(config *basenode.BasenodeConfig, devopsClient *devops.DevopsCli
 	logfile, _ := fullnode.GetLogFile()
 	fullnode.lotusMetrics = lotusmetrics.NewLotusMetrics(logfile)
 
-	fullnodeHost, err := fullnode.GetFullnodeApiHost()
+	fullnodeHost, err := fullnode.GetFullnodeApiHost(types.FullNode)
 	fullnode.SetAddrNotifier(fullnode.addressNotifier)
 	fullnode.WatchVersions(fullnodeHost, err, fullnode.getVersions)
 
@@ -34,7 +35,7 @@ func NewFullNode(config *basenode.BasenodeConfig, devopsClient *devops.DevopsCli
 }
 
 func (n *FullNode) addressNotifier(string, string) {
-	fullnodeHost, _ := n.GetFullnodeApiHost()
+	fullnodeHost, _ := n.GetFullnodeApiHost(types.FullNode)
 	n.lotusMetrics.SetHost(fullnodeHost)
 }
 
