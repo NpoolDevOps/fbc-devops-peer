@@ -499,9 +499,12 @@ func (p *Parser) GetFullnodeHost() (string, error) {
 }
 
 func (p *Parser) GetMyFullnodeLocalAddr() (string, error) {
-	f, _ := os.Open(LotusChainFile)
+	f, err := os.Open(LotusChainFile)
+	if err != nil {
+		log.Errorf(log.Fields{}, "%v can not find: %v", LotusChainFile, err)
+		return "", err
+	}
 	bio := bufio.NewReader(f)
-	var err error
 	for {
 		line, _, err := bio.ReadLine()
 		if err != nil {
