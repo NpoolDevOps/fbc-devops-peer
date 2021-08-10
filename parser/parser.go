@@ -388,7 +388,7 @@ func (p *Parser) parseRepoDirFromService(file string) (string, error) {
 		}
 		s := strings.Split(string(line), "-repo=")
 		var ss string
-		if len(s) < 2 {
+		if len(s) > 1 {
 			ss = strings.Split(s[1], " ")[0]
 		}
 		return ss, nil
@@ -455,19 +455,13 @@ func (p *Parser) parseApiHostFromApiFile(file string) (string, error) {
 func (p *Parser) parseApiHosts() {
 	fullnodeApiHost, err := p.parseApiHostFromApiFile(FullnodeAPIFile)
 	if err != nil {
-		fullnodeApiHost, err = p.parseApiHostFromRepoDirApiFile(p.fullnodeRepoDirApiFile)
-		if err != nil {
-			p.fullnodeApiHost = ""
-		}
+		fullnodeApiHost, _ = p.parseApiHostFromRepoDirApiFile(p.fullnodeRepoDirApiFile)
 	}
 	p.fullnodeApiHost = fullnodeApiHost
 
 	minerApiHost, err := p.parseApiHostFromApiFile(MinerAPIFile)
 	if err != nil {
-		minerApiHost, err = p.parseApiHostFromRepoDirApiFile(p.minerRepoDirApiFile)
-		if err != nil {
-			p.minerApiHost = ""
-		}
+		minerApiHost, _ = p.parseApiHostFromRepoDirApiFile(p.minerRepoDirApiFile)
 	}
 	p.minerApiHost = minerApiHost
 }
