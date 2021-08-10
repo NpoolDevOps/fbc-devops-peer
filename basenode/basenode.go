@@ -18,8 +18,9 @@ import (
 	parser "github.com/NpoolDevOps/fbc-devops-peer/parser"
 	"github.com/NpoolDevOps/fbc-devops-peer/peer"
 	runtime "github.com/NpoolDevOps/fbc-devops-peer/runtime"
+	"github.com/NpoolDevOps/fbc-devops-peer/types"
 	version "github.com/NpoolDevOps/fbc-devops-peer/version"
-	types "github.com/NpoolDevOps/fbc-devops-service/types"
+	devopsTypes "github.com/NpoolDevOps/fbc-devops-service/types"
 	lic "github.com/NpoolDevOps/fbc-license"
 	"github.com/google/uuid"
 	"github.com/prometheus/client_golang/prometheus"
@@ -120,7 +121,7 @@ func NewBasenode(config *BasenodeConfig, devopsClient *devops.DevopsClient) *Bas
 	basenode.BaseMetrics = basemetrics.NewBaseMetrics()
 
 	basenode.startLicenseChecker()
-	basenode.devopsClient.FeedMsg(types.DeviceRegisterAPI, basenode.ToDeviceRegisterInput(), true)
+	basenode.devopsClient.FeedMsg(devopsTypes.DeviceRegisterAPI, basenode.ToDeviceRegisterInput(), true)
 
 	devopsClient.SetNode(basenode)
 
@@ -168,7 +169,7 @@ func (n *Basenode) WatchVersions(localAddr string, err error, versionGetter func
 
 			if updated {
 				n.Versions = vs
-				n.devopsClient.FeedMsg(types.DeviceRegisterAPI, n.ToDeviceRegisterInput(), true)
+				n.devopsClient.FeedMsg(devopsTypes.DeviceRegisterAPI, n.ToDeviceRegisterInput(), true)
 			}
 
 			<-ticker.C
@@ -319,7 +320,7 @@ func (n *Basenode) AddressUpdater() {
 			}
 
 			if updated {
-				n.devopsClient.FeedMsg(types.DeviceRegisterAPI, n.ToDeviceRegisterInput(), true)
+				n.devopsClient.FeedMsg(devopsTypes.DeviceRegisterAPI, n.ToDeviceRegisterInput(), true)
 				if n.addrNotifier != nil {
 					n.addrNotifier(localAddr, publicAddr)
 				}
@@ -329,7 +330,7 @@ func (n *Basenode) AddressUpdater() {
 	}()
 }
 
-func (n *Basenode) ToDeviceRegisterInput() *types.DeviceRegisterInput {
+func (n *Basenode) ToDeviceRegisterInput() *devopsTypes.DeviceRegisterInput {
 	versions := []string{}
 
 	for _, ver := range n.Versions {
@@ -339,7 +340,7 @@ func (n *Basenode) ToDeviceRegisterInput() *types.DeviceRegisterInput {
 
 	parentSpecs := strings.Join(n.NodeDesc.NodeConfig.ParentSpec, ",")
 
-	return &types.DeviceRegisterInput{
+	return &devopsTypes.DeviceRegisterInput{
 		Id:            n.Id,
 		Spec:          n.NodeDesc.MySpec,
 		ParentSpec:    parentSpecs,
@@ -423,7 +424,7 @@ func (n *Basenode) NotifyParentSpec(spec string) {
 		}
 	}
 	n.NodeDesc.NodeConfig.ParentSpec = append(n.NodeDesc.NodeConfig.ParentSpec, spec)
-	n.devopsClient.FeedMsg(types.DeviceRegisterAPI, n.ToDeviceRegisterInput(), true)
+	n.devopsClient.FeedMsg(devopsTypes.DeviceRegisterAPI, n.ToDeviceRegisterInput(), true)
 }
 
 func (n *Basenode) GetParentIP() (string, error) {
@@ -439,11 +440,11 @@ func (n *Basenode) GetLogFileByRole(role string) (string, error) {
 }
 
 func (n *Basenode) GetFullnodeApiHost() (string, error) {
-	return n.parser.GetApiHostByHostRole("fullnode")
+	return n.parser.GetApiHostByHostRole(types.FullNode)
 }
 
 func (n *Basenode) GetMinerApiHost() (string, error) {
-	return n.parser.GetApiHostByHostRole("miner")
+	return n.parser.GetApiHostByHostRole(types.MinerNode)
 }
 
 func (n *Basenode) GetShareStorageRoot() (string, error) {
