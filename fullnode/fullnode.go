@@ -29,8 +29,9 @@ func NewFullNode(config *basenode.BasenodeConfig, devopsClient *devops.DevopsCli
 	fullnode.SetAddrNotifier(func(local, public string) {
 		fullnode.lotusMetrics.SetHost(local)
 	})
-	localAddr, err := fullnode.MyLocalAddr()
-	fullnode.WatchVersions(localAddr, err, fullnode.getVersions)
+
+	localAddr := fullnode.GetFullnodeLocalAddr()
+	fullnode.WatchVersions(localAddr, nil, fullnode.getVersions)
 
 	return fullnode
 }
