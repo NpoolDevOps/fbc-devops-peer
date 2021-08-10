@@ -36,16 +36,18 @@ func NewFullMinerNode(config *basenode.BasenodeConfig, devopsClient *devops.Devo
 	})
 
 	fullminer.SetAddrNotifier(fullminer.addressNotifier)
-	localAddr, err := fullminer.MyLocalAddr()
-	fullminer.WatchVersions(localAddr, err, fullminer.getVersions)
-
+	fullnodeHost, err := fullminer.GetFullnodeApiHost(types.FullNode)
+	fullminer.WatchVersions(fullnodeHost, err, fullminer.getVersions)
 	return fullminer
 }
 
-func (n *FullMinerNode) addressNotifier(local, public string) {
-	n.lotusMetrics.SetHost(local)
-	n.minerMetrics.SetHost(local)
-	n.minerMetrics.SetFullnodeHost(local)
+func (n *FullMinerNode) addressNotifier(string, string) {
+	fullnodeHost, _ := n.GetFullnodeApiHost(types.FullNode)
+	n.lotusMetrics.SetHost(fullnodeHost)
+	n.minerMetrics.SetFullnodeHost(fullnodeHost)
+	minerHost, _ := n.GetMinerApiHost(types.MinerNode)
+	n.minerMetrics.SetHost(minerHost)
+
 }
 
 func (n *FullMinerNode) getVersions(host string) []version.Version {

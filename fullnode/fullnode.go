@@ -7,6 +7,7 @@ import (
 	devops "github.com/NpoolDevOps/fbc-devops-peer/devops"
 	exporter "github.com/NpoolDevOps/fbc-devops-peer/exporter"
 	lotusmetrics "github.com/NpoolDevOps/fbc-devops-peer/metrics/lotusmetrics"
+	"github.com/NpoolDevOps/fbc-devops-peer/types"
 	"github.com/NpoolDevOps/fbc-devops-peer/version"
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -26,14 +27,16 @@ func NewFullNode(config *basenode.BasenodeConfig, devopsClient *devops.DevopsCli
 	logfile, _ := fullnode.GetLogFile()
 	fullnode.lotusMetrics = lotusmetrics.NewLotusMetrics(logfile)
 
-	fullnode.SetAddrNotifier(func(local, public string) {
-		fullnode.lotusMetrics.SetHost(local)
-	})
-
-	localAddr := fullnode.GetFullnodeLocalAddr()
-	fullnode.WatchVersions(localAddr, nil, fullnode.getVersions)
+	fullnodeHost, err := fullnode.GetFullnodeApiHost(types.FullNode)
+	fullnode.SetAddrNotifier(fullnode.addressNotifier)
+	fullnode.WatchVersions(fullnodeHost, err, fullnode.getVersions)
 
 	return fullnode
+}
+
+func (n *FullNode) addressNotifier(string, string) {
+	fullnodeHost, _ := n.GetFullnodeApiHost(types.FullNode)
+	n.lotusMetrics.SetHost(fullnodeHost)
 }
 
 func (n *FullNode) getVersions(host string) []version.Version {
@@ -59,4 +62,10 @@ func (n *FullNode) Collect(ch chan<- prometheus.Metric) {
 
 func (n *FullNode) CreateExporter() *exporter.Exporter {
 	return exporter.NewExporter(n)
+}
+
+func (n *FullNode) Banner() {
+	log.Infof(log.Fields{}, "IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII")
+	log.Infof(log.Fields{}, "      FFFUUULLLLNNNNOOODDDEEE      ")
+	log.Infof(log.Fields{}, "IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII")
 }

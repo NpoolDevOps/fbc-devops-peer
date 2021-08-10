@@ -31,7 +31,6 @@ const (
 	ProcSelfMounts      = "/proc/self/mounts"
 	HostsFile           = "/etc/hosts"
 	CephConfigFile      = "/etc/ceph/ceph.conf"
-	LotusChainFile      = "/opt/chain/lotus/api"
 )
 
 type nodeDesc struct {
@@ -40,24 +39,27 @@ type nodeDesc struct {
 }
 
 type Parser struct {
-	fileAPIInfo           map[string]nodeDesc
-	minerStorageChilds    []string
-	storagePath           string
-	validStoragePath      bool
-	storageConfig         StorageConfig
-	validStorageConfig    bool
-	storageMetas          []LocalStorageMeta
-	cephEntries           map[string]struct{}
-	localAddr             string
-	cephStoragePeers      map[string]string
-	storageSubRole        string
-	storageChilds         []string
-	minerLogFile          string
-	fullnodeLogFile       string
-	minerShareStorageRoot string
-	chiaMinerNodeLogFile  string
-	chiaPlotterLogFile    string
-	fullnodeHost          string
+	fileAPIInfo            map[string]nodeDesc
+	minerStorageChilds     []string
+	storagePath            string
+	validStoragePath       bool
+	storageConfig          StorageConfig
+	validStorageConfig     bool
+	storageMetas           []LocalStorageMeta
+	cephEntries            map[string]struct{}
+	localAddr              string
+	cephStoragePeers       map[string]string
+	storageSubRole         string
+	storageChilds          []string
+	minerLogFile           string
+	fullnodeLogFile        string
+	minerShareStorageRoot  string
+	chiaMinerNodeLogFile   string
+	chiaPlotterLogFile     string
+	minerApiHost           string
+	fullnodeApiHost        string
+	minerRepoDirApiFile    string
+	fullnodeRepoDirApiFile string
 }
 
 type OSSInfo struct {
@@ -253,7 +255,7 @@ func (p *Parser) getMountedGluster() {
 }
 
 func (p *Parser) parseMinerStorageChilds() {
-	for entry, _ := range p.cephEntries {
+	for entry := range p.cephEntries {
 		s := strings.Split(entry, ",")
 		for _, ss := range s {
 			sss := strings.Split(ss, ":")[0]
@@ -369,6 +371,101 @@ func (p *Parser) parseLogFiles() {
 	p.minerLogFile = p.parseLogFileFromService(MinerServiceFile)
 }
 
+func (p *Parser) parseRepoDirFromService(file string) (string, error) {
+	f, err := os.Open(file)
+	if err != nil {
+		log.Errorf(log.Fields{}, "open file %v err: %v", file, err)
+		return "", err
+	}
+	bio := bufio.NewReader(f)
+	for {
+		line, _, err := bio.ReadLine()
+		if err != nil {
+			break
+		}
+		if !strings.HasPrefix(string(line), "ExecStart=/usr/local/bin") {
+			continue
+		}
+		s := strings.Split(string(line), "-repo=")
+		var ss string
+		if len(s) > 1 {
+			ss = strings.Split(s[1], " ")[0]
+		}
+		return ss, nil
+	}
+	return "", err
+}
+
+func (p *Parser) parseRepoFile() {
+	minerRepoDir, err := p.parseRepoDirFromService(MinerServiceFile)
+	if err != nil {
+		log.Errorf(log.Fields{}, "get miner Repo dir api file err: %v", err)
+	}
+	p.minerRepoDirApiFile = minerRepoDir + "/api"
+
+	fullnodeRepoDir, err := p.parseRepoDirFromService(FullnodeServiceFile)
+	if err != nil {
+		log.Errorf(log.Fields{}, "get fullnode Repo dir api file err: %v", err)
+	}
+	p.fullnodeRepoDirApiFile = fullnodeRepoDir + "/api"
+}
+
+func (p *Parser) parseApiHostFromRepoDirApiFile(file string) (string, error) {
+	repoDirApiFile, err := os.Open(file)
+	if err != nil {
+		log.Errorf(log.Fields{}, "open file %v err: %v", file, err)
+		return "", err
+	}
+	bio := bufio.NewReader(repoDirApiFile)
+	for {
+		line, _, err := bio.ReadLine()
+		if err != nil {
+			break
+		}
+		if !strings.HasPrefix(string(line), "/ip4/") {
+			continue
+		}
+		s := strings.Split(string(line), "/")
+		return s[2], nil
+	}
+	return "", err
+}
+
+func (p *Parser) parseApiHostFromApiFile(file string) (string, error) {
+	apiFile, err := os.Open(file)
+	if err != nil {
+		log.Errorf(log.Fields{}, "open file %v err: %v", file, err)
+		return "", err
+	}
+	bio := bufio.NewReader(apiFile)
+	for {
+		line, _, err := bio.ReadLine()
+		if err != nil {
+			break
+		}
+		if !strings.HasPrefix(string(line), "/ip4/") {
+			continue
+		}
+		s := strings.Split(string(line), "/")
+		return s[2], nil
+	}
+	return "", err
+}
+
+func (p *Parser) parseApiHosts() {
+	fullnodeApiHost, err := p.parseApiHostFromApiFile(FullnodeAPIFile)
+	if err != nil {
+		fullnodeApiHost, _ = p.parseApiHostFromRepoDirApiFile(p.fullnodeRepoDirApiFile)
+	}
+	p.fullnodeApiHost = fullnodeApiHost
+
+	minerApiHost, err := p.parseApiHostFromApiFile(MinerAPIFile)
+	if err != nil {
+		minerApiHost, _ = p.parseApiHostFromRepoDirApiFile(p.minerRepoDirApiFile)
+	}
+	p.minerApiHost = minerApiHost
+}
+
 func (p *Parser) parse() error {
 	p.readEnvFromAPIFile(FullnodeAPIFile)
 	p.readEnvFromAPIFile(MinerAPIFile)
@@ -384,6 +481,8 @@ func (p *Parser) parse() error {
 	p.parseMyStorageRole()
 	p.parseStorageChilds()
 	p.parseLogFiles()
+	p.parseRepoFile()
+	p.parseApiHosts()
 	return nil
 }
 
@@ -392,15 +491,12 @@ func (p *Parser) dump() {
 	fmt.Printf("  API INFOS ---\n")
 	for key, val := range p.fileAPIInfo {
 		fmt.Printf("    %v ---\n", key)
-		if strings.Contains(key, "fullnode-api-info.sh") {
-			p.fullnodeHost = val.ip
-		}
 		fmt.Printf("      env: %v\n", val.apiInfo)
 		fmt.Printf("      ip:  %v\n", val.ip)
 	}
 	fmt.Printf("  Storage Path --- %v\n", p.storagePath)
 	fmt.Printf("  Ceph Entries --\n")
-	for entry, _ := range p.cephEntries {
+	for entry := range p.cephEntries {
 		fmt.Printf("    %v\n", entry)
 	}
 	fmt.Printf("  Ceph IPs --\n")
@@ -494,30 +590,14 @@ func (p *Parser) GetShareStorageRoot(myRole string) (string, error) {
 	}
 }
 
-func (p *Parser) GetFullnodeHost() (string, error) {
-	return p.fullnodeHost, nil
-}
-
-func (p *Parser) GetMyFullnodeLocalAddr() (string, error) {
-	f, err := os.Open(LotusChainFile)
-	if err != nil {
-		log.Errorf(log.Fields{}, "%v can not find: %v", LotusChainFile, err)
-		return "", err
+func (p *Parser) GetApiHostByHostRole(myRole string) (string, error) {
+	switch myRole {
+	case types.MinerNode:
+		return p.minerApiHost, nil
+	case types.FullNode:
+		return p.fullnodeApiHost, nil
+	default:
+		return "", xerrors.Errorf("no api host for role: %v", myRole)
 	}
-	bio := bufio.NewReader(f)
-	for {
-		line, _, err := bio.ReadLine()
-		if err != nil {
-			log.Errorf(log.Fields{}, "fail to read %v: %v", LotusChainFile, err)
-			break
-		}
 
-		if !strings.HasPrefix(string(line), "/ip4/") {
-			continue
-		}
-
-		s := strings.Split(string(line), "/")
-		return s[2], nil
-	}
-	return "", err
 }

@@ -438,16 +438,12 @@ func (n *Basenode) GetLogFileByRole(role string) (string, error) {
 	return n.parser.GetLogFile(role)
 }
 
-func (n *Basenode) GetFullnodeHost() (string, error) {
-	return n.parser.GetFullnodeHost()
+func (n *Basenode) GetFullnodeApiHost(myRole string) (string, error) {
+	return n.parser.GetApiHostByHostRole(myRole)
 }
 
-func (n *Basenode) GetFullnodeLocalAddr() string {
-	localAddr, err := n.parser.GetMyFullnodeLocalAddr()
-	if err != nil {
-		log.Errorf(log.Fields{}, "fail to get fullnode local addr: %v", err)
-	}
-	return localAddr
+func (n *Basenode) GetMinerApiHost(myRole string) (string, error) {
+	return n.parser.GetApiHostByHostRole(myRole)
 }
 
 func (n *Basenode) GetShareStorageRoot() (string, error) {
