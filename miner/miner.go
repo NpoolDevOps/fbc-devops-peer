@@ -32,14 +32,14 @@ func NewMinerNode(config *basenode.BasenodeConfig, devopsClient *devops.DevopsCl
 	})
 
 	miner.SetAddrNotifier(miner.addressNotifier)
-	fullnodeHost, err := miner.GetFullnodeHost()
+	fullnodeHost, err := miner.GetFullnodeApiHost()
 	miner.WatchVersions(fullnodeHost, err, miner.getVersions)
 	return miner
 }
 
 func (n *MinerNode) addressNotifier(local, public string) {
 	n.minerMetrics.SetHost(local)
-	fullnodeHost, _ := n.GetFullnodeHost()
+	fullnodeHost, _ := n.GetFullnodeApiHost()
 	n.minerMetrics.SetFullnodeHost(fullnodeHost)
 }
 

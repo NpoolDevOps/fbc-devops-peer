@@ -31,7 +31,9 @@ const (
 	ProcSelfMounts      = "/proc/self/mounts"
 	HostsFile           = "/etc/hosts"
 	CephConfigFile      = "/etc/ceph/ceph.conf"
-	LotusChainFile      = "/opt/chain/lotus/api"
+	FullNodeLotusFile   = "/opt/chain/lotus/api"
+	MinerLotusFile      = "/opt/data/lotusstorage"
+	FullminerLotusFile  = MinerLotusFile
 )
 
 type nodeDesc struct {
@@ -57,7 +59,9 @@ type Parser struct {
 	minerShareStorageRoot string
 	chiaMinerNodeLogFile  string
 	chiaPlotterLogFile    string
-	fullnodeHost          string
+	minerApiHost          string
+	fullnodeApiHost       string
+	fullminerApiHost      string
 }
 
 type OSSInfo struct {
@@ -253,7 +257,7 @@ func (p *Parser) getMountedGluster() {
 }
 
 func (p *Parser) parseMinerStorageChilds() {
-	for entry, _ := range p.cephEntries {
+	for entry := range p.cephEntries {
 		s := strings.Split(entry, ",")
 		for _, ss := range s {
 			sss := strings.Split(ss, ":")[0]
@@ -369,6 +373,50 @@ func (p *Parser) parseLogFiles() {
 	p.minerLogFile = p.parseLogFileFromService(MinerServiceFile)
 }
 
+func (p *Parser) parseApiHost(fileLotus, fileShell string) string {
+	lotusFile, err := os.Open(fileLotus)
+	if err == nil {
+		bio := bufio.NewReader(lotusFile)
+		for {
+			line, _, err := bio.ReadLine()
+			if err != nil {
+				log.Errorf(log.Fields{}, "fail to read %v: %v", fileLotus, err)
+				break
+			}
+			if !strings.HasPrefix(string(line), "/ip4/") {
+				continue
+			}
+			s := strings.Split(string(line), "/")
+			return s[2]
+		}
+	} else {
+		shellFile, err := os.Open(fileShell)
+		if err != nil {
+			log.Errorf(log.Fields{}, "open %v and %v error, %v", fileLotus, fileShell, err)
+		}
+		bio := bufio.NewReader(shellFile)
+		for {
+			line, _, err := bio.ReadLine()
+			if err != nil {
+				log.Errorf(log.Fields{}, "fail to read %v: %v", fileLotus, err)
+				break
+			}
+			if !strings.HasPrefix(string(line), "/ip4/") {
+				continue
+			}
+			s := strings.Split(string(line), "/")
+			return s[2]
+		}
+	}
+	return ""
+}
+
+func (p *Parser) parseApiHosts() {
+	p.fullnodeApiHost = p.parseApiHost(FullNodeLotusFile, FullnodeAPIFile)
+	p.minerApiHost = p.parseApiHost(MinerLotusFile, FullnodeAPIFile)
+	p.fullminerApiHost = p.parseApiHost(FullminerLotusFile, FullnodeAPIFile)
+}
+
 func (p *Parser) parse() error {
 	p.readEnvFromAPIFile(FullnodeAPIFile)
 	p.readEnvFromAPIFile(MinerAPIFile)
@@ -384,6 +432,7 @@ func (p *Parser) parse() error {
 	p.parseMyStorageRole()
 	p.parseStorageChilds()
 	p.parseLogFiles()
+	p.parseApiHosts()
 	return nil
 }
 
@@ -392,15 +441,12 @@ func (p *Parser) dump() {
 	fmt.Printf("  API INFOS ---\n")
 	for key, val := range p.fileAPIInfo {
 		fmt.Printf("    %v ---\n", key)
-		if strings.Contains(key, "fullnode-api-info.sh") {
-			p.fullnodeHost = val.ip
-		}
 		fmt.Printf("      env: %v\n", val.apiInfo)
 		fmt.Printf("      ip:  %v\n", val.ip)
 	}
 	fmt.Printf("  Storage Path --- %v\n", p.storagePath)
 	fmt.Printf("  Ceph Entries --\n")
-	for entry, _ := range p.cephEntries {
+	for entry := range p.cephEntries {
 		fmt.Printf("    %v\n", entry)
 	}
 	fmt.Printf("  Ceph IPs --\n")
@@ -494,30 +540,16 @@ func (p *Parser) GetShareStorageRoot(myRole string) (string, error) {
 	}
 }
 
-func (p *Parser) GetFullnodeHost() (string, error) {
-	return p.fullnodeHost, nil
-}
-
-func (p *Parser) GetMyFullnodeLocalAddr() (string, error) {
-	f, err := os.Open(LotusChainFile)
-	if err != nil {
-		log.Errorf(log.Fields{}, "%v can not find: %v", LotusChainFile, err)
-		return "", err
+func (p *Parser) GetApiHostByRole(myRole string) (string, error) {
+	switch myRole {
+	case types.MinerNode:
+		return p.minerApiHost, nil
+	case types.FullNode:
+		return p.fullnodeApiHost, nil
+	case types.FullMinerNode:
+		return p.fullminerApiHost, nil
+	default:
+		return "", xerrors.Errorf("no api host for role: %v", myRole)
 	}
-	bio := bufio.NewReader(f)
-	for {
-		line, _, err := bio.ReadLine()
-		if err != nil {
-			log.Errorf(log.Fields{}, "fail to read %v: %v", LotusChainFile, err)
-			break
-		}
 
-		if !strings.HasPrefix(string(line), "/ip4/") {
-			continue
-		}
-
-		s := strings.Split(string(line), "/")
-		return s[2], nil
-	}
-	return "", err
 }
