@@ -61,12 +61,23 @@ func RequestWithBearerToken(url string, params interface{}, method string, token
 	}
 
 	result := RpcResult{}
-	json.Unmarshal(resp.Body(), &result)
+	err = json.Unmarshal(resp.Body(), &result)
+	if err != nil {
+		return nil, err
+	}
+
+	if result.Result == nil {
+		return nil, xerrors.Errorf("%v to %v response nil", method, url)
+	}
 
 	b, err := json.Marshal(result.Result)
 	if err != nil {
 		log.Infof(log.Fields{}, "cannot marshal '%v', fallback", result.Result)
 		return result.Result, nil
+	}
+
+	if b == nil {
+		return nil, xerrors.Errorf("fail to marshal result %v to %v", method, url)
 	}
 
 	return b, nil
