@@ -399,8 +399,10 @@ func (p *Parser) setEnvFromRepo(file string) {
 	switch file {
 	case MinerServiceFile:
 		os.Setenv(MinerEnvKey, env)
+		log.Infof(log.Fields{}, "set environment %v -> %v", MinerEnvKey, env)
 	case FullnodeServiceFile:
 		os.Setenv(FullnodeEnvKey, env)
+		log.Infof(log.Fields{}, "set environment %v -> %v", FullnodeEnvKey, env)
 	}
 }
 
