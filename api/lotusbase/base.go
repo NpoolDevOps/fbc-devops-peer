@@ -2,10 +2,11 @@ package lotusbase
 
 import (
 	"encoding/json"
-	log "github.com/EntropyPool/entropy-logger"
-	"github.com/NpoolRD/http-daemon"
-	"golang.org/x/xerrors"
 	"sync"
+
+	log "github.com/EntropyPool/entropy-logger"
+	httpdaemon "github.com/NpoolRD/http-daemon"
+	"golang.org/x/xerrors"
 )
 
 type RpcResult struct {
@@ -46,6 +47,9 @@ func Request(url string, params interface{}, method string) ([]byte, error) {
 	ret, err := RequestWithBearerToken(url, params, method, "")
 	if err != nil {
 		return nil, err
+	}
+	if ret == nil {
+		return nil, xerrors.Errorf("ret is nil as an interface")
 	}
 	return ret.([]byte), err
 }
