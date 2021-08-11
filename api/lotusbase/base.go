@@ -77,7 +77,7 @@ func RequestWithBearerToken(url string, params interface{}, method string, token
 	}
 
 	if result.Result == nil {
-		return nil, xerrors.Errorf("%v to %v response nil", method, url)
+		return []byte{}, nil
 	}
 
 	b, err := json.Marshal(result.Result)
