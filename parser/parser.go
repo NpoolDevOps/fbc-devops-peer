@@ -387,7 +387,7 @@ func (p *Parser) setEnvFromRepo(file string) {
 	apiS := strings.TrimSpace(string(b))
 
 	dirPath := dir + "/token"
-	b, err = ioutil.ReadFile(apiPath)
+	b, err = ioutil.ReadFile(dirPath)
 	if err != nil {
 		log.Errorf(log.Fields{}, "read %v error %v", dirPath, err)
 		return
