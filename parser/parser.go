@@ -371,6 +371,39 @@ func (p *Parser) parseLogFiles() {
 	p.minerLogFile = p.parseLogFileFromService(MinerServiceFile)
 }
 
+func (p *Parser) setEnvFromRepo(file string) {
+	dir, err := p.parseRepoDirFromService(file)
+	if err != nil {
+		log.Errorf(log.Fields{}, "cannot parse %v", err)
+		return
+	}
+	apiPath := dir + "/api"
+	b, err := ioutil.ReadFile(apiPath)
+	if err != nil {
+		log.Errorf(log.Fields{}, "read %v error %v", apiPath, err)
+		return
+	}
+
+	apiS := strings.TrimSpace(string(b))
+
+	dirPath := dir + "/token"
+	b, err = ioutil.ReadFile(apiPath)
+	if err != nil {
+		log.Errorf(log.Fields{}, "read %v error %v", dirPath, err)
+		return
+	}
+	dirS := strings.TrimSpace(string(b))
+
+	env := dirS + ":" + apiS
+
+	switch file {
+	case MinerServiceFile:
+		os.Setenv(MinerEnvKey, env)
+	case FullnodeServiceFile:
+		os.Setenv(FullnodeEnvKey, env)
+	}
+}
+
 func (p *Parser) parseRepoDirFromService(file string) (string, error) {
 	f, err := os.Open(file)
 	if err != nil {
@@ -467,6 +500,9 @@ func (p *Parser) parseApiHosts() {
 }
 
 func (p *Parser) parse() error {
+	p.parseRepoFile()
+	p.setEnvFromRepo(MinerServiceFile)
+	p.setEnvFromRepo(FullnodeServiceFile)
 	p.readEnvFromAPIFile(FullnodeAPIFile)
 	p.readEnvFromAPIFile(MinerAPIFile)
 	p.parseEnvs()
@@ -481,7 +517,7 @@ func (p *Parser) parse() error {
 	p.parseMyStorageRole()
 	p.parseStorageChilds()
 	p.parseLogFiles()
-	p.parseRepoFile()
+
 	p.parseApiHosts()
 	return nil
 }
