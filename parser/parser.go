@@ -443,7 +443,7 @@ func (p *Parser) parseApiHostFromApiFile(file string) (string, error) {
 		if err != nil {
 			break
 		}
-		if !strings.HasPrefix(string(line), "/ip4/") {
+		if !strings.Contains(string(line), "/ip4/") {
 			continue
 		}
 		s := strings.Split(string(line), "/")
