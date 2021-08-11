@@ -44,7 +44,17 @@ func NewRpcParam(method string, params interface{}) *RpcParam {
 
 func Request(url string, params interface{}, method string) ([]byte, error) {
 	ret, err := RequestWithBearerToken(url, params, method, "")
-	return ret.([]byte), err
+	if err != nil {
+		return nil, err
+	}
+
+	bytes, ok := ret.([]byte)
+	if ok {
+		return bytes, nil
+	}
+
+	log.Errorf(log.Fields{}, "NOT IMPLEMENTED %v to %v response non-bytes", method, url)
+	return nil, xerrors.Errorf("NOT IMPLEMENTED")
 }
 
 func RequestWithBearerToken(url string, params interface{}, method string, token string) (interface{}, error) {
