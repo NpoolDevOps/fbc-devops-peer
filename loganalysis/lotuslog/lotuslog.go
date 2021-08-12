@@ -89,7 +89,7 @@ func (ll *LotusLog) processGatherTipsets(line string) {
 	lstr := strings.Split(line, KeyGatherTipsets)
 	llstr := strings.Split(lstr[1], ",")
 	tipsets := strings.Split(llstr[0], ":")[1]
-	spent := strings.Split(llstr[2], ":")[1]
+	spent := strings.Split(strings.Split(llstr[2], ":")[1], "}")[0]
 
 	ll.tipset, _ = strconv.ParseUint(tipsets, 10, 64)
 	ll.spent, _ = strconv.ParseUint(spent, 10, 64)
