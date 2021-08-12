@@ -1,9 +1,12 @@
 package lotusmetrics
 
 import (
+	"fmt"
+
 	api "github.com/NpoolDevOps/fbc-devops-peer/api/lotusapi"
 	"github.com/NpoolDevOps/fbc-devops-peer/api/systemapi"
 	lotuslog "github.com/NpoolDevOps/fbc-devops-peer/loganalysis/lotuslog"
+	"github.com/NpoolDevOps/fbc-devops-peer/types"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -20,6 +23,8 @@ type LotusMetrics struct {
 	LogFileSize         *prometheus.Desc
 	LotusLargeDelay     *prometheus.Desc
 	LotusOpenFileNumber *prometheus.Desc
+
+	LotusRepoDirUsage *prometheus.Desc
 
 	host    string
 	hasHost bool
@@ -79,6 +84,11 @@ func NewLotusMetrics(logfile string) *LotusMetrics {
 			"show lotus open file number",
 			nil, nil,
 		),
+		LotusRepoDirUsage: prometheus.NewDesc(
+			"lotus_repo_dir_usage",
+			"show lotus repo dir usage",
+			[]string{"repodir", "totalcap"}, nil,
+		),
 	}
 }
 
@@ -98,6 +108,7 @@ func (m *LotusMetrics) Describe(ch chan<- *prometheus.Desc) {
 	ch <- m.LogFileSize
 	ch <- m.LotusLargeDelay
 	ch <- m.LotusOpenFileNumber
+	ch <- m.LotusRepoDirUsage
 }
 
 func (m *LotusMetrics) Collect(ch chan<- prometheus.Metric) {
@@ -142,4 +153,7 @@ func (m *LotusMetrics) Collect(ch chan<- prometheus.Metric) {
 		ch <- prometheus.MustNewConstMetric(m.LotusOpenFileNumber, prometheus.CounterValue, 0)
 	}
 	ch <- prometheus.MustNewConstMetric(m.LotusOpenFileNumber, prometheus.CounterValue, float64(lotusOpenFileNumber))
+
+	dirStatus, dirPath := systemapi.GetRepoDirUsageByRole(types.FullNode)
+	ch <- prometheus.MustNewConstMetric(m.LotusRepoDirUsage, prometheus.CounterValue, dirStatus.Used, fmt.Sprintf("%v", dirPath), fmt.Sprintf("%v", dirStatus.All))
 }

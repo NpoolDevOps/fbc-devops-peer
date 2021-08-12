@@ -11,6 +11,7 @@ import (
 	"github.com/NpoolDevOps/fbc-devops-peer/api/minerapi"
 	"github.com/NpoolDevOps/fbc-devops-peer/api/systemapi"
 	"github.com/NpoolDevOps/fbc-devops-peer/loganalysis/minerlog"
+	"github.com/NpoolDevOps/fbc-devops-peer/types"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -52,6 +53,8 @@ type MinerMetrics struct {
 	ControlBalance   *prometheus.Desc
 	MinerTaskState   *prometheus.Desc
 
+	MinerId *prometheus.Desc
+
 	SectorTaskRunning        *prometheus.Desc
 	SectorTaskWaiting        *prometheus.Desc
 	SectorTaskRunningElapsed *prometheus.Desc
@@ -89,7 +92,8 @@ type MinerMetrics struct {
 	MinerAdjustGasFeecap *prometheus.Desc
 	MinerAdjustBaseFee   *prometheus.Desc
 
-	MinerIsMaster *prometheus.Desc
+	MinerIsMaster     *prometheus.Desc
+	MinerRepoDirUsage *prometheus.Desc
 
 	MiningLateBase            *prometheus.Desc
 	MiningLateWinner          *prometheus.Desc
@@ -437,6 +441,16 @@ func NewMinerMetrics(cfg MinerMetricsConfig) *MinerMetrics {
 			"show mining miner power",
 			nil, nil,
 		),
+		MinerId: prometheus.NewDesc(
+			"miner_id",
+			"show miner id",
+			[]string{"minerid"}, nil,
+		),
+		MinerRepoDirUsage: prometheus.NewDesc(
+			"miner_repo_dir_usage",
+			"show miner repo dir usage",
+			[]string{"repodir", "totalcap"}, nil,
+		),
 	}
 
 	go func() {
@@ -567,6 +581,7 @@ func (m *MinerMetrics) Describe(ch chan<- *prometheus.Desc) {
 	ch <- m.MiningLateWinner
 	ch <- m.MiningMinerPower
 	ch <- m.MiningNetworkPower
+	ch <- m.MinerId
 
 }
 
@@ -708,6 +723,7 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 	m.mutex.Unlock()
 
 	if 0 < len(minerId) {
+		ch <- prometheus.MustNewConstMetric(m.MinerId, prometheus.CounterValue, float64(1), minerId)
 		deadlines, err := lotusapi.ProvingDeadlines(m.fullnodeHost, minerId)
 		if err == nil {
 			for dlIdx, deadline := range deadlines.Deadlines {
@@ -789,5 +805,8 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 	miningMinerPower, _ := strconv.ParseFloat(mineOne.MiningMinerPower, 64)
 	ch <- prometheus.MustNewConstMetric(m.MiningNetworkPower, prometheus.CounterValue, miningNetworkPower)
 	ch <- prometheus.MustNewConstMetric(m.MiningMinerPower, prometheus.CounterValue, miningMinerPower)
+
+	dirStatus, dirPath := systemapi.GetRepoDirUsageByRole(types.MinerNode)
+	ch <- prometheus.MustNewConstMetric(m.MinerRepoDirUsage, prometheus.CounterValue, dirStatus.Used, fmt.Sprintf("%v", dirPath), fmt.Sprintf("%v", dirStatus.All))
 
 }
