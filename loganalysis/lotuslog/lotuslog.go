@@ -1,6 +1,7 @@
 package lotuslog
 
 import (
+	"strconv"
 	"strings"
 	"sync"
 
@@ -13,6 +14,8 @@ type LotusLog struct {
 	host       string
 	hasHost    bool
 	largeDelay int64
+	tipset     uint64
+	spent      uint64
 
 	timeouts uint64
 	refuseds uint64
@@ -24,6 +27,7 @@ const (
 	KeyConnectionRefused = "connection refused"
 	KeyIOTimeout         = "i/o timeout"
 	KeyLargeDelay        = "large delay"
+	KeyGatherTipsets     = "\"msg\":\"gathered tipset\","
 )
 
 type levelLogKeys struct {
@@ -41,6 +45,10 @@ var logKeys = []levelLogKeys{
 	},
 	levelLogKeys{
 		mainKey: KeyLargeDelay,
+		subKeys: []string{},
+	},
+	levelLogKeys{
+		mainKey: KeyGatherTipsets,
 		subKeys: []string{},
 	},
 }
@@ -76,6 +84,19 @@ func (ll *LotusLog) processGotError(line string, subKeys []string) {
 	}
 }
 
+func (ll *LotusLog) processGatherTipsets(line string) {
+	ll.mutex.Lock()
+	lstr := strings.Split(line, KeyGatherTipsets)
+	llstr := strings.Split(lstr[1], ",")
+	tipsets := strings.Split(llstr[0], ":")[1]
+	spent := strings.Split(strings.Split(llstr[2], ":")[1], "}")[0]
+
+	ll.tipset, _ = strconv.ParseUint(tipsets, 10, 64)
+	ll.spent, _ = strconv.ParseUint(spent, 10, 64)
+	ll.mutex.Unlock()
+
+}
+
 func (ll *LotusLog) processLine(line string) {
 	for _, key := range logKeys {
 		if !strings.Contains(line, key.mainKey) {
@@ -89,6 +110,8 @@ func (ll *LotusLog) processLine(line string) {
 			ll.mutex.Lock()
 			ll.largeDelay += 1
 			ll.mutex.Unlock()
+		case KeyGatherTipsets:
+			ll.processGatherTipsets(line)
 		}
 	}
 }
@@ -123,4 +146,18 @@ func (ll *LotusLog) GetLargeDelay() float64 {
 	largeDelay := ll.largeDelay
 	ll.mutex.Unlock()
 	return float64(largeDelay)
+}
+
+func (ll *LotusLog) GetGatherTipsets() float64 {
+	ll.mutex.Lock()
+	tipsets := ll.tipset
+	ll.mutex.Unlock()
+	return float64(tipsets)
+}
+
+func (ll *LotusLog) GetTookBlocksSpent() float64 {
+	ll.mutex.Lock()
+	spent := ll.spent
+	ll.mutex.Unlock()
+	return float64(spent)
 }
