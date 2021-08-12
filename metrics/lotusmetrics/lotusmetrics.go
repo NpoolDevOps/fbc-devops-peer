@@ -24,7 +24,9 @@ type LotusMetrics struct {
 	LotusLargeDelay     *prometheus.Desc
 	LotusOpenFileNumber *prometheus.Desc
 
-	LotusRepoDirUsage *prometheus.Desc
+	LotusRepoDirUsage   *prometheus.Desc
+	LotusGatherTipsets  *prometheus.Desc
+	LotusTookBlockSpent *prometheus.Desc
 
 	host    string
 	hasHost bool
@@ -89,6 +91,16 @@ func NewLotusMetrics(logfile string) *LotusMetrics {
 			"show lotus repo dir usage",
 			[]string{"repodir", "totalcap"}, nil,
 		),
+		LotusGatherTipsets: prometheus.NewDesc(
+			"lotus_gather_tipsets",
+			"show lotus gather tipsets number",
+			nil, nil,
+		),
+		LotusTookBlockSpent: prometheus.NewDesc(
+			"lotus_took_blocks_spent",
+			"show lotus took blocks spent",
+			nil, nil,
+		),
 	}
 }
 
@@ -109,6 +121,8 @@ func (m *LotusMetrics) Describe(ch chan<- *prometheus.Desc) {
 	ch <- m.LotusLargeDelay
 	ch <- m.LotusOpenFileNumber
 	ch <- m.LotusRepoDirUsage
+	ch <- m.LotusGatherTipsets
+	ch <- m.LotusTookBlockSpent
 }
 
 func (m *LotusMetrics) Collect(ch chan<- prometheus.Metric) {
@@ -156,4 +170,9 @@ func (m *LotusMetrics) Collect(ch chan<- prometheus.Metric) {
 
 	dirStatus, dirPath := systemapi.GetRepoDirUsageByRole(types.FullNode)
 	ch <- prometheus.MustNewConstMetric(m.LotusRepoDirUsage, prometheus.CounterValue, dirStatus.Used, fmt.Sprintf("%v", dirPath), fmt.Sprintf("%v", dirStatus.All))
+
+	tipset := m.ll.GetGatherTipsets()
+	spent := m.ll.GetTookBlocksSpent()
+	ch <- prometheus.MustNewConstMetric(m.LotusGatherTipsets, prometheus.CounterValue, tipset)
+	ch <- prometheus.MustNewConstMetric(m.LotusTookBlockSpent, prometheus.CounterValue, spent)
 }
