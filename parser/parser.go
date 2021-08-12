@@ -639,3 +639,16 @@ func (p *Parser) GetApiHostByHostRole(myRole string) (string, error) {
 	}
 
 }
+
+func (p *Parser) GetRepoDirFromServiceByRole(myRole string) string {
+	switch myRole {
+	case types.MinerNode:
+		dir, _ := p.parseRepoDirFromService(MinerServiceFile)
+		return dir
+	case types.FullNode:
+		dir, _ := p.parseRepoDirFromService(FullnodeServiceFile)
+		return dir
+	default:
+		return ""
+	}
+}

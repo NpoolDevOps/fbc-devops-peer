@@ -10,8 +10,10 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"syscall"
 
 	log "github.com/EntropyPool/entropy-logger"
+	parser "github.com/NpoolDevOps/fbc-devops-peer/parser"
 	runtime "github.com/NpoolDevOps/fbc-devops-peer/runtime"
 	"github.com/moby/sys/mountinfo"
 	"golang.org/x/xerrors"
@@ -196,4 +198,30 @@ func GetProcessCount(process string) (int64, error) {
 		}
 	}
 	return processCount, nil
+}
+
+type DiskStatus struct {
+	All  float64
+	Used float64
+	Free float64
+}
+
+func GetRepoDirUsageByRole(myRole string) (DiskStatus, string) {
+	dir := parser.NewParser().GetRepoDirFromServiceByRole(myRole)
+	return diskUsage(dir), dir
+}
+
+func diskUsage(path string) DiskStatus {
+	GB := float64(1024 * 1024 * 1024)
+	disk := DiskStatus{}
+	fs := syscall.Statfs_t{}
+	err := syscall.Statfs(path, &fs)
+	if err != nil {
+		log.Errorf(log.Fields{}, "get %v status error: %v", path, err)
+		return disk
+	}
+	disk.All = float64(fs.Blocks*uint64(fs.Bsize)) / GB
+	disk.Free = float64(fs.Bfree*uint64(fs.Bsize)) / GB
+	disk.Used = float64(disk.All-disk.Free) / GB
+	return disk
 }
