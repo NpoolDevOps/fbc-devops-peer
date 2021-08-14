@@ -207,7 +207,7 @@ type DiskStatus struct {
 }
 
 func GetRepoDirUsageByRole(myRole string) (DiskStatus, string) {
-	dir := parser.NewParser().GetRepoDirFromServiceByRole(myRole)
+	dir := parser.GetRepoDirFromServiceByRole(myRole)
 	return diskUsage(dir), dir
 }
 

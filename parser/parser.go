@@ -38,6 +38,8 @@ type nodeDesc struct {
 	ip      string
 }
 
+var myParser *Parser
+
 type Parser struct {
 	fileAPIInfo            map[string]nodeDesc
 	minerStorageChilds     []string
@@ -60,6 +62,8 @@ type Parser struct {
 	fullnodeApiHost        string
 	minerRepoDirApiFile    string
 	fullnodeRepoDirApiFile string
+	minerRepoDir           string
+	fullnodeRepoDir        string
 }
 
 type OSSInfo struct {
@@ -436,12 +440,14 @@ func (p *Parser) parseRepoFile() {
 	if err != nil {
 		log.Errorf(log.Fields{}, "get miner Repo dir api file err: %v", err)
 	}
+	p.minerRepoDir = minerRepoDir
 	p.minerRepoDirApiFile = minerRepoDir + "/api"
 
 	fullnodeRepoDir, err := p.parseRepoDirFromService(FullnodeServiceFile)
 	if err != nil {
 		log.Errorf(log.Fields{}, "get fullnode Repo dir api file err: %v", err)
 	}
+	p.fullnodeRepoDir = fullnodeRepoDir
 	p.fullnodeRepoDirApiFile = fullnodeRepoDir + "/api"
 }
 
@@ -640,13 +646,13 @@ func (p *Parser) GetApiHostByHostRole(myRole string) (string, error) {
 
 }
 
-func (p *Parser) GetRepoDirFromServiceByRole(myRole string) string {
+func GetRepoDirFromServiceByRole(myRole string) string {
 	switch myRole {
 	case types.MinerNode:
-		dir, _ := p.parseRepoDirFromService(MinerServiceFile)
+		dir := myParser.minerRepoDir
 		return dir
 	case types.FullNode:
-		dir, _ := p.parseRepoDirFromService(FullnodeServiceFile)
+		dir := myParser.fullnodeRepoDir
 		return dir
 	default:
 		return ""
