@@ -444,7 +444,9 @@ func (ml *MinerLog) processCandidateBlocks() {
 			continue
 		}
 
-		if height > ml.chainHeadListenHosts["mainnode"] {
+		chainHeight, _ := lotusapi.ChainHeadHeight(ml.fullnodeHost)
+
+		if height > uint64(chainHeight) {
 			blocks = append(blocks, b)
 			continue
 		}
