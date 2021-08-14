@@ -24,9 +24,9 @@ func NewFullNode(config *basenode.BasenodeConfig, devopsClient *devops.DevopsCli
 		nil,
 	}
 
-	parser := fullnode.GetParser()
+	dir := fullnode.GetRepoDirByRole(types.FullNode)
 	logfile, _ := fullnode.GetLogFile()
-	fullnode.lotusMetrics = lotusmetrics.NewLotusMetrics(logfile, parser)
+	fullnode.lotusMetrics = lotusmetrics.NewLotusMetrics(logfile, dir)
 
 	fullnodeHost, err := fullnode.GetFullnodeApiHost(types.FullNode)
 	fullnode.SetAddrNotifier(fullnode.addressNotifier)

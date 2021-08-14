@@ -457,8 +457,9 @@ func (n *Basenode) GetLogFile() (string, error) {
 	return n.parser.GetLogFile(n.GetMainRole())
 }
 
-func (n *Basenode) GetParser() *parser.Parser {
-	return n.parser
+func (n *Basenode) GetRepoDirByRole(myRole string) string {
+	dir := n.parser.GetRepoDirFromServiceByRole(myRole)
+	return dir
 }
 
 func (n *Basenode) NotifyPeerId(id uuid.UUID) {

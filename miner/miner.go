@@ -24,13 +24,13 @@ func NewMinerNode(config *basenode.BasenodeConfig, devopsClient *devops.DevopsCl
 		nil,
 	}
 
-	parser := miner.GetParser()
+	dir := miner.GetRepoDirByRole(types.MinerNode)
 	logfile, _ := miner.GetLogFileByRole(types.MinerNode)
 	shareStorageRoot, _ := miner.GetShareStorageRootByRole(types.MinerNode)
 	miner.minerMetrics = minermetrics.NewMinerMetrics(minermetrics.MinerMetricsConfig{
 		ShareStorageRoot: shareStorageRoot,
 		Logfile:          logfile,
-	}, parser)
+	}, dir)
 
 	miner.SetAddrNotifier(miner.addressNotifier)
 	fullnodeHost, err := miner.GetFullnodeApiHost(types.FullNode)

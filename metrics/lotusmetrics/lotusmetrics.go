@@ -6,8 +6,6 @@ import (
 	api "github.com/NpoolDevOps/fbc-devops-peer/api/lotusapi"
 	"github.com/NpoolDevOps/fbc-devops-peer/api/systemapi"
 	lotuslog "github.com/NpoolDevOps/fbc-devops-peer/loganalysis/lotuslog"
-	"github.com/NpoolDevOps/fbc-devops-peer/parser"
-	"github.com/NpoolDevOps/fbc-devops-peer/types"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -29,17 +27,16 @@ type LotusMetrics struct {
 	LotusGatherTipsets  *prometheus.Desc
 	LotusTookBlockSpent *prometheus.Desc
 
-	parser *parser.Parser
-
-	host    string
-	hasHost bool
-	errors  int
+	host         string
+	hasHost      bool
+	lotusRepoDir string
+	errors       int
 }
 
-func NewLotusMetrics(logfile string, parser *parser.Parser) *LotusMetrics {
+func NewLotusMetrics(logfile, dir string) *LotusMetrics {
 	return &LotusMetrics{
-		ll:     lotuslog.NewLotusLog(logfile),
-		parser: parser,
+		ll:           lotuslog.NewLotusLog(logfile),
+		lotusRepoDir: dir,
 		HeightDiff: prometheus.NewDesc(
 			"lotus_chain_height_diff",
 			"Show lotus chain sync height diff",
@@ -172,7 +169,7 @@ func (m *LotusMetrics) Collect(ch chan<- prometheus.Metric) {
 	}
 	ch <- prometheus.MustNewConstMetric(m.LotusOpenFileNumber, prometheus.CounterValue, float64(lotusOpenFileNumber))
 
-	dirStatus, dirPath := getFullnodeRepoDirUsage(m.parser)
+	dirStatus, dirPath := getFullnodeRepoDirUsage(m.lotusRepoDir)
 	ch <- prometheus.MustNewConstMetric(m.LotusRepoDirUsage, prometheus.CounterValue, dirStatus.Used, fmt.Sprintf("%v", dirPath), fmt.Sprintf("%v", dirStatus.All))
 
 	tipset := m.ll.GetGatherTipsets()
@@ -181,7 +178,6 @@ func (m *LotusMetrics) Collect(ch chan<- prometheus.Metric) {
 	ch <- prometheus.MustNewConstMetric(m.LotusTookBlockSpent, prometheus.CounterValue, spent)
 }
 
-func getFullnodeRepoDirUsage(parser *parser.Parser) (systemapi.DiskStatus, string) {
-	dir := parser.GetRepoDirFromServiceByRole(types.FullNode)
+func getFullnodeRepoDirUsage(dir string) (systemapi.DiskStatus, string) {
 	return systemapi.DiskUsage(dir), dir
 }

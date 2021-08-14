@@ -4,6 +4,10 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"strconv"
+	"strings"
+	"time"
+
 	log "github.com/EntropyPool/entropy-logger"
 	"github.com/NpoolDevOps/fbc-devops-peer/api/lotusbase"
 	"github.com/NpoolDevOps/fbc-devops-peer/version"
@@ -12,9 +16,6 @@ import (
 	"github.com/filecoin-project/lotus/chain/types"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"golang.org/x/xerrors"
-	"strconv"
-	"strings"
-	"time"
 )
 
 type SyncState struct {
@@ -26,6 +27,22 @@ type SyncState struct {
 
 func lotusRpcUrl(host string) string {
 	return fmt.Sprintf("http://%v:1234/rpc/v0", host)
+}
+
+func ChainHeadHeight(host string) (int64, error) {
+	bh, err := lotusbase.Request(lotusRpcUrl(host), []string{}, "Filecoin.ChainHead")
+	if err != nil {
+		log.Errorf(log.Fields{}, "lotusapi request error: %v", err)
+		return -1, err
+	}
+	head := types.TipSet{}
+	err = json.Unmarshal(bh, &head)
+	if err != nil {
+		log.Errorf(log.Fields{}, "cannot unmarshal chain head resp, err is %v", err)
+		return -2, err
+	}
+
+	return int64(head.Height()), nil
 }
 
 func stateHeightDiff(state api.SyncState, host string) (int64, error) {

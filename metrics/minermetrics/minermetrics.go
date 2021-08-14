@@ -11,8 +11,6 @@ import (
 	"github.com/NpoolDevOps/fbc-devops-peer/api/minerapi"
 	"github.com/NpoolDevOps/fbc-devops-peer/api/systemapi"
 	"github.com/NpoolDevOps/fbc-devops-peer/loganalysis/minerlog"
-	"github.com/NpoolDevOps/fbc-devops-peer/parser"
-	"github.com/NpoolDevOps/fbc-devops-peer/types"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -103,13 +101,12 @@ type MinerMetrics struct {
 	MiningNetworkPower        *prometheus.Desc
 	MiningMinerPower          *prometheus.Desc
 
-	minerInfo   minerapi.MinerInfo
-	sealingJobs minerapi.SealingJobs
-	workerInfos minerapi.WorkerInfos
+	minerInfo    minerapi.MinerInfo
+	sealingJobs  minerapi.SealingJobs
+	workerInfos  minerapi.WorkerInfos
+	minerRepoDir string
 
 	mutex sync.Mutex
-
-	parser *parser.Parser
 
 	errors       int
 	host         string
@@ -120,11 +117,11 @@ type MinerMetrics struct {
 	sectorStat   map[string]uint64
 }
 
-func NewMinerMetrics(cfg MinerMetricsConfig, parser *parser.Parser) *MinerMetrics {
+func NewMinerMetrics(cfg MinerMetricsConfig, dir string) *MinerMetrics {
 	mm := &MinerMetrics{
-		ml:     minerlog.NewMinerLog(cfg.Logfile),
-		parser: parser,
-		config: cfg,
+		ml:           minerlog.NewMinerLog(cfg.Logfile),
+		minerRepoDir: dir,
+		config:       cfg,
 		ForkBlocks: prometheus.NewDesc(
 			"miner_fork_blocks",
 			"Show miner fork blocks",
@@ -810,12 +807,11 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 	ch <- prometheus.MustNewConstMetric(m.MiningNetworkPower, prometheus.CounterValue, miningNetworkPower)
 	ch <- prometheus.MustNewConstMetric(m.MiningMinerPower, prometheus.CounterValue, miningMinerPower)
 
-	dirStatus, dirPath := getMinerRepoDirUsage(m.parser)
+	dirStatus, dirPath := getMinerRepoDirUsage(m.minerRepoDir)
 	ch <- prometheus.MustNewConstMetric(m.MinerRepoDirUsage, prometheus.CounterValue, dirStatus.Used, fmt.Sprintf("%v", dirPath), fmt.Sprintf("%v", dirStatus.All))
 
 }
 
-func getMinerRepoDirUsage(parser *parser.Parser) (systemapi.DiskStatus, string) {
-	dir := parser.GetRepoDirFromServiceByRole(types.MinerNode)
+func getMinerRepoDirUsage(dir string) (systemapi.DiskStatus, string) {
 	return systemapi.DiskUsage(dir), dir
 }
