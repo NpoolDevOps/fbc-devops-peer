@@ -444,6 +444,11 @@ func (ml *MinerLog) processCandidateBlocks() {
 			continue
 		}
 
+		if height > ml.chainHeadListenHosts["mainnode"] {
+			blocks = append(blocks, b)
+			continue
+		}
+
 		found := false
 		for _, cid := range cids {
 			if b.Cid == cid {
@@ -556,10 +561,10 @@ func (ml *MinerLog) GetSectorTasks() map[string]map[string][]SectorTaskStat {
 					elapsed = ml.timeStamp - ml.BootTime
 				}
 			}
-			
+
 			for {
 				if len(ml.sectorGroup) <= 1000 {
-					break	
+					break
 				}
 				delete(ml.sectorTasks[taskType], ml.sectorGroup[0].SectorNumber)
 				ml.sectorGroup = ml.sectorGroup[1:]
