@@ -13,7 +13,6 @@ import (
 	"syscall"
 
 	log "github.com/EntropyPool/entropy-logger"
-	parser "github.com/NpoolDevOps/fbc-devops-peer/parser"
 	runtime "github.com/NpoolDevOps/fbc-devops-peer/runtime"
 	"github.com/moby/sys/mountinfo"
 	"golang.org/x/xerrors"
@@ -206,12 +205,7 @@ type DiskStatus struct {
 	Free float64
 }
 
-func GetRepoDirUsageByRole(myRole string) (DiskStatus, string) {
-	dir := parser.NewParser().GetRepoDirFromServiceByRole(myRole)
-	return diskUsage(dir), dir
-}
-
-func diskUsage(path string) DiskStatus {
+func DiskUsage(path string) DiskStatus {
 	GB := float64(1024 * 1024 * 1024)
 	disk := DiskStatus{}
 	fs := syscall.Statfs_t{}

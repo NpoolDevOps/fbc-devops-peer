@@ -60,6 +60,8 @@ type Parser struct {
 	fullnodeApiHost        string
 	minerRepoDirApiFile    string
 	fullnodeRepoDirApiFile string
+	minerRepoDir           string
+	fullnodeRepoDir        string
 }
 
 type OSSInfo struct {
@@ -90,8 +92,10 @@ type LocalPath struct {
 	Path string
 }
 
+var parser *Parser
+
 func NewParser() *Parser {
-	parser := &Parser{
+	parser = &Parser{
 		fileAPIInfo:           map[string]nodeDesc{},
 		cephEntries:           map[string]struct{}{},
 		cephStoragePeers:      map[string]string{},
@@ -436,12 +440,14 @@ func (p *Parser) parseRepoFile() {
 	if err != nil {
 		log.Errorf(log.Fields{}, "get miner Repo dir api file err: %v", err)
 	}
+	p.minerRepoDir = minerRepoDir
 	p.minerRepoDirApiFile = minerRepoDir + "/api"
 
 	fullnodeRepoDir, err := p.parseRepoDirFromService(FullnodeServiceFile)
 	if err != nil {
 		log.Errorf(log.Fields{}, "get fullnode Repo dir api file err: %v", err)
 	}
+	p.fullnodeRepoDir = fullnodeRepoDir
 	p.fullnodeRepoDirApiFile = fullnodeRepoDir + "/api"
 }
 
@@ -643,10 +649,10 @@ func (p *Parser) GetApiHostByHostRole(myRole string) (string, error) {
 func (p *Parser) GetRepoDirFromServiceByRole(myRole string) string {
 	switch myRole {
 	case types.MinerNode:
-		dir, _ := p.parseRepoDirFromService(MinerServiceFile)
+		dir := parser.minerRepoDir
 		return dir
 	case types.FullNode:
-		dir, _ := p.parseRepoDirFromService(FullnodeServiceFile)
+		dir := parser.fullnodeRepoDir
 		return dir
 	default:
 		return ""
