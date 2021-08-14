@@ -38,8 +38,6 @@ type nodeDesc struct {
 	ip      string
 }
 
-var myParser *Parser
-
 type Parser struct {
 	fileAPIInfo            map[string]nodeDesc
 	minerStorageChilds     []string
@@ -94,8 +92,10 @@ type LocalPath struct {
 	Path string
 }
 
+var parser *Parser
+
 func NewParser() *Parser {
-	parser := &Parser{
+	parser = &Parser{
 		fileAPIInfo:           map[string]nodeDesc{},
 		cephEntries:           map[string]struct{}{},
 		cephStoragePeers:      map[string]string{},
@@ -649,10 +649,10 @@ func (p *Parser) GetApiHostByHostRole(myRole string) (string, error) {
 func GetRepoDirFromServiceByRole(myRole string) string {
 	switch myRole {
 	case types.MinerNode:
-		dir := myParser.minerRepoDir
+		dir := parser.minerRepoDir
 		return dir
 	case types.FullNode:
-		dir := myParser.fullnodeRepoDir
+		dir := parser.fullnodeRepoDir
 		return dir
 	default:
 		return ""
