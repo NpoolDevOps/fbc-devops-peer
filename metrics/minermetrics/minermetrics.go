@@ -11,6 +11,7 @@ import (
 	"github.com/NpoolDevOps/fbc-devops-peer/api/minerapi"
 	"github.com/NpoolDevOps/fbc-devops-peer/api/systemapi"
 	"github.com/NpoolDevOps/fbc-devops-peer/loganalysis/minerlog"
+	"github.com/NpoolDevOps/fbc-devops-peer/parser"
 	"github.com/NpoolDevOps/fbc-devops-peer/types"
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -108,6 +109,8 @@ type MinerMetrics struct {
 
 	mutex sync.Mutex
 
+	parser *parser.Parser
+
 	errors       int
 	host         string
 	hasHost      bool
@@ -117,9 +120,10 @@ type MinerMetrics struct {
 	sectorStat   map[string]uint64
 }
 
-func NewMinerMetrics(cfg MinerMetricsConfig) *MinerMetrics {
+func NewMinerMetrics(cfg MinerMetricsConfig, parser *parser.Parser) *MinerMetrics {
 	mm := &MinerMetrics{
 		ml:     minerlog.NewMinerLog(cfg.Logfile),
+		parser: parser,
 		config: cfg,
 		ForkBlocks: prometheus.NewDesc(
 			"miner_fork_blocks",
@@ -806,7 +810,12 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 	ch <- prometheus.MustNewConstMetric(m.MiningNetworkPower, prometheus.CounterValue, miningNetworkPower)
 	ch <- prometheus.MustNewConstMetric(m.MiningMinerPower, prometheus.CounterValue, miningMinerPower)
 
-	dirStatus, dirPath := systemapi.GetRepoDirUsageByRole(types.MinerNode)
+	dirStatus, dirPath := getMinerRepoDirUsage(m.parser)
 	ch <- prometheus.MustNewConstMetric(m.MinerRepoDirUsage, prometheus.CounterValue, dirStatus.Used, fmt.Sprintf("%v", dirPath), fmt.Sprintf("%v", dirStatus.All))
 
+}
+
+func getMinerRepoDirUsage(parser *parser.Parser) (systemapi.DiskStatus, string) {
+	dir := parser.GetRepoDirFromServiceByRole(types.MinerNode)
+	return systemapi.DiskUsage(dir), dir
 }

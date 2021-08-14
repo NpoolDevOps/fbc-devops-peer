@@ -646,7 +646,7 @@ func (p *Parser) GetApiHostByHostRole(myRole string) (string, error) {
 
 }
 
-func GetRepoDirFromServiceByRole(myRole string) string {
+func (p *Parser) GetRepoDirFromServiceByRole(myRole string) string {
 	switch myRole {
 	case types.MinerNode:
 		dir := parser.minerRepoDir
