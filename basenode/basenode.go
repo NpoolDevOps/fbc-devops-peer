@@ -438,6 +438,14 @@ func (n *Basenode) GetLogFileByRole(role string) (string, error) {
 	return n.parser.GetLogFile(role)
 }
 
+func (n *Basenode) GetMinerStoragePath() []string {
+	return n.parser.GetMinerStoragePath()
+}
+
+func (n *Basenode) GetFullnodeStoragePath() string {
+	return n.parser.GetFullnodeStoragePath()
+}
+
 func (n *Basenode) GetFullnodeApiHost(myRole string) (string, error) {
 	return n.parser.GetApiHostByHostRole(myRole)
 }
@@ -455,11 +463,6 @@ func (n *Basenode) GetShareStorageRootByRole(role string) (string, error) {
 
 func (n *Basenode) GetLogFile() (string, error) {
 	return n.parser.GetLogFile(n.GetMainRole())
-}
-
-func (n *Basenode) GetRepoDirByRole(myRole string) string {
-	dir := n.parser.GetRepoDirFromServiceByRole(myRole)
-	return dir
 }
 
 func (n *Basenode) NotifyPeerId(id uuid.UUID) {

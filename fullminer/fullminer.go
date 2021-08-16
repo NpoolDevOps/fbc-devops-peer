@@ -26,8 +26,9 @@ func NewFullMinerNode(config *basenode.BasenodeConfig, devopsClient *devops.Devo
 		nil, nil,
 	}
 
-	minerRepoDir := fullminer.GetRepoDirByRole(types.MinerNode)
-	fullnodeRepoDir := fullminer.GetRepoDirByRole(types.FullNode)
+	paths := fullminer.GetMinerStoragePath()
+
+	fullnodeRepoDir := fullminer.GetFullnodeStoragePath()
 	logfile, _ := fullminer.GetLogFileByRole(types.FullNode)
 	fullminer.lotusMetrics = lotusmetrics.NewLotusMetrics(logfile, fullnodeRepoDir)
 	logfile, _ = fullminer.GetLogFileByRole(types.MinerNode)
@@ -35,7 +36,7 @@ func NewFullMinerNode(config *basenode.BasenodeConfig, devopsClient *devops.Devo
 	fullminer.minerMetrics = minermetrics.NewMinerMetrics(minermetrics.MinerMetricsConfig{
 		ShareStorageRoot: shareStorageRoot,
 		Logfile:          logfile,
-	}, minerRepoDir)
+	}, paths)
 
 	fullminer.SetAddrNotifier(fullminer.addressNotifier)
 	fullnodeHost, err := fullminer.GetFullnodeApiHost(types.FullNode)

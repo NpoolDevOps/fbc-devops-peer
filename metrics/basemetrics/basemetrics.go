@@ -25,8 +25,7 @@ type BaseMetrics struct {
 	RootPermission   *prometheus.Desc
 	RootMountRW      *prometheus.Desc
 
-	NvmeTemperature      *prometheus.Desc
-	WorkerOpenFileNumber *prometheus.Desc
+	NvmeTemperature *prometheus.Desc
 
 	pingGatewayDelayMs int64
 	pingBaiduDelayMs   int64
@@ -77,11 +76,6 @@ func NewBaseMetrics() *BaseMetrics {
 			"show nvme temperature",
 			[]string{"nvme"}, nil,
 		),
-		WorkerOpenFileNumber: prometheus.NewDesc(
-			"worker_open_file_number",
-			"show worker open file number",
-			nil, nil,
-		),
 	}
 
 	go metrics.updater()
@@ -120,7 +114,6 @@ func (m *BaseMetrics) Describe(ch chan<- *prometheus.Desc) {
 	ch <- m.RootPermission
 	ch <- m.RootMountRW
 	ch <- m.NvmeTemperature
-	ch <- m.WorkerOpenFileNumber
 }
 
 func (m *BaseMetrics) Collect(ch chan<- prometheus.Metric) {
@@ -142,11 +135,6 @@ func (m *BaseMetrics) Collect(ch chan<- prometheus.Metric) {
 	nvmeTemperatureList, _ := systemapi.GetNvmeTemperatureList()
 	for nvmeName, temperature := range nvmeTemperatureList {
 		ch <- prometheus.MustNewConstMetric(m.NvmeTemperature, prometheus.CounterValue, temperature, nvmeName)
-	}
-
-	workerOpenFileNumber, err := systemapi.GetProcessOpenFileNumber("lotus-worker")
-	if err == nil {
-		ch <- prometheus.MustNewConstMetric(m.WorkerOpenFileNumber, prometheus.CounterValue, float64(workerOpenFileNumber))
 	}
 }
 

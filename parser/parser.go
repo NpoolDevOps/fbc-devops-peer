@@ -646,15 +646,15 @@ func (p *Parser) GetApiHostByHostRole(myRole string) (string, error) {
 
 }
 
-func (p *Parser) GetRepoDirFromServiceByRole(myRole string) string {
-	switch myRole {
-	case types.MinerNode:
-		dir := parser.minerRepoDir
-		return dir
-	case types.FullNode:
-		dir := parser.fullnodeRepoDir
-		return dir
-	default:
-		return ""
+func (p *Parser) GetMinerStoragePath() []string {
+	var paths []string
+	paths = append(paths, p.minerRepoDir)
+	for _, path := range p.storageConfig.StoragePaths {
+		paths = append(paths, path.Path)
 	}
+	return paths
+}
+
+func (p *Parser) GetFullnodeStoragePath() string {
+	return p.fullnodeRepoDir
 }
