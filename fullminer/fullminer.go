@@ -8,7 +8,6 @@ import (
 	exporter "github.com/NpoolDevOps/fbc-devops-peer/exporter"
 	lotusmetrics "github.com/NpoolDevOps/fbc-devops-peer/metrics/lotusmetrics"
 	minermetrics "github.com/NpoolDevOps/fbc-devops-peer/metrics/minermetrics"
-	parser "github.com/NpoolDevOps/fbc-devops-peer/parser"
 	types "github.com/NpoolDevOps/fbc-devops-peer/types"
 	version "github.com/NpoolDevOps/fbc-devops-peer/version"
 	"github.com/prometheus/client_golang/prometheus"
@@ -27,12 +26,9 @@ func NewFullMinerNode(config *basenode.BasenodeConfig, devopsClient *devops.Devo
 		nil, nil,
 	}
 
-	paths := fullminer.GetLotusStoragePath()
-	var repoPath parser.LocalPath
-	repoPath.Path = fullminer.GetRepoDirByRole(types.MinerNode)
-	paths = append(paths, repoPath)
+	paths := fullminer.GetMinerStoragePath()
 
-	fullnodeRepoDir := fullminer.GetRepoDirByRole(types.FullNode)
+	fullnodeRepoDir := fullminer.GetFullnodeStoragePath()
 	logfile, _ := fullminer.GetLogFileByRole(types.FullNode)
 	fullminer.lotusMetrics = lotusmetrics.NewLotusMetrics(logfile, fullnodeRepoDir)
 	logfile, _ = fullminer.GetLogFileByRole(types.MinerNode)

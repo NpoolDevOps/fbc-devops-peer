@@ -24,7 +24,7 @@ func NewFullNode(config *basenode.BasenodeConfig, devopsClient *devops.DevopsCli
 		nil,
 	}
 
-	dir := fullnode.GetRepoDirByRole(types.FullNode)
+	dir := fullnode.GetFullnodeStoragePath()
 	logfile, _ := fullnode.GetLogFile()
 	fullnode.lotusMetrics = lotusmetrics.NewLotusMetrics(logfile, dir)
 

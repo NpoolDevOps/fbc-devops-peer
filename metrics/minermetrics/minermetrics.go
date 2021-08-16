@@ -11,7 +11,6 @@ import (
 	"github.com/NpoolDevOps/fbc-devops-peer/api/minerapi"
 	"github.com/NpoolDevOps/fbc-devops-peer/api/systemapi"
 	"github.com/NpoolDevOps/fbc-devops-peer/loganalysis/minerlog"
-	parser "github.com/NpoolDevOps/fbc-devops-peer/parser"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -113,12 +112,12 @@ type MinerMetrics struct {
 	hasHost          bool
 	fullnodeHost     string
 	config           MinerMetricsConfig
-	lotusStoragePath []parser.LocalPath
+	lotusStoragePath []string
 	storageStat      map[string]error
 	sectorStat       map[string]uint64
 }
 
-func NewMinerMetrics(cfg MinerMetricsConfig, paths []parser.LocalPath) *MinerMetrics {
+func NewMinerMetrics(cfg MinerMetricsConfig, paths []string) *MinerMetrics {
 	mm := &MinerMetrics{
 		ml:               minerlog.NewMinerLog(cfg.Logfile),
 		lotusStoragePath: paths,
@@ -809,8 +808,8 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 	ch <- prometheus.MustNewConstMetric(m.MiningMinerPower, prometheus.CounterValue, miningMinerPower)
 
 	for _, path := range m.lotusStoragePath {
-		pathStatus := getMinerRepoDirUsage(path.Path)
-		ch <- prometheus.MustNewConstMetric(m.MinerRepoDirUsage, prometheus.CounterValue, pathStatus.Used, fmt.Sprintf("%v", path.Path), fmt.Sprintf("%v", pathStatus.All))
+		pathStatus := getMinerRepoDirUsage(path)
+		ch <- prometheus.MustNewConstMetric(m.MinerRepoDirUsage, prometheus.CounterValue, pathStatus.Used, fmt.Sprintf("%v", path), fmt.Sprintf("%v", pathStatus.All))
 	}
 }
 

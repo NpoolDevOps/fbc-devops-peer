@@ -7,7 +7,6 @@ import (
 	devops "github.com/NpoolDevOps/fbc-devops-peer/devops"
 	exporter "github.com/NpoolDevOps/fbc-devops-peer/exporter"
 	"github.com/NpoolDevOps/fbc-devops-peer/metrics/minermetrics"
-	parser "github.com/NpoolDevOps/fbc-devops-peer/parser"
 	"github.com/NpoolDevOps/fbc-devops-peer/types"
 	"github.com/NpoolDevOps/fbc-devops-peer/version"
 	"github.com/prometheus/client_golang/prometheus"
@@ -25,10 +24,7 @@ func NewMinerNode(config *basenode.BasenodeConfig, devopsClient *devops.DevopsCl
 		nil,
 	}
 
-	paths := miner.GetLotusStoragePath()
-	var repoPath parser.LocalPath
-	repoPath.Path = miner.GetRepoDirByRole(types.MinerNode)
-	paths = append(paths, repoPath)
+	paths := miner.GetMinerStoragePath()
 
 	logfile, _ := miner.GetLogFileByRole(types.MinerNode)
 	shareStorageRoot, _ := miner.GetShareStorageRootByRole(types.MinerNode)
