@@ -438,6 +438,10 @@ func (n *Basenode) GetLogFileByRole(role string) (string, error) {
 	return n.parser.GetLogFile(role)
 }
 
+func (n *Basenode) GetLotusStoragePath() []parser.LocalPath {
+	return n.parser.GetLotusStoragePath()
+}
+
 func (n *Basenode) GetFullnodeApiHost(myRole string) (string, error) {
 	return n.parser.GetApiHostByHostRole(myRole)
 }

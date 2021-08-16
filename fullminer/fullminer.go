@@ -8,6 +8,7 @@ import (
 	exporter "github.com/NpoolDevOps/fbc-devops-peer/exporter"
 	lotusmetrics "github.com/NpoolDevOps/fbc-devops-peer/metrics/lotusmetrics"
 	minermetrics "github.com/NpoolDevOps/fbc-devops-peer/metrics/minermetrics"
+	parser "github.com/NpoolDevOps/fbc-devops-peer/parser"
 	types "github.com/NpoolDevOps/fbc-devops-peer/types"
 	version "github.com/NpoolDevOps/fbc-devops-peer/version"
 	"github.com/prometheus/client_golang/prometheus"
@@ -26,7 +27,11 @@ func NewFullMinerNode(config *basenode.BasenodeConfig, devopsClient *devops.Devo
 		nil, nil,
 	}
 
-	minerRepoDir := fullminer.GetRepoDirByRole(types.MinerNode)
+	paths := fullminer.GetLotusStoragePath()
+	var repoPath parser.LocalPath
+	repoPath.Path = fullminer.GetRepoDirByRole(types.MinerNode)
+	paths = append(paths, repoPath)
+
 	fullnodeRepoDir := fullminer.GetRepoDirByRole(types.FullNode)
 	logfile, _ := fullminer.GetLogFileByRole(types.FullNode)
 	fullminer.lotusMetrics = lotusmetrics.NewLotusMetrics(logfile, fullnodeRepoDir)
@@ -35,7 +40,7 @@ func NewFullMinerNode(config *basenode.BasenodeConfig, devopsClient *devops.Devo
 	fullminer.minerMetrics = minermetrics.NewMinerMetrics(minermetrics.MinerMetricsConfig{
 		ShareStorageRoot: shareStorageRoot,
 		Logfile:          logfile,
-	}, minerRepoDir)
+	}, paths)
 
 	fullminer.SetAddrNotifier(fullminer.addressNotifier)
 	fullnodeHost, err := fullminer.GetFullnodeApiHost(types.FullNode)

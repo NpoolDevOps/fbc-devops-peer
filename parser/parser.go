@@ -658,3 +658,7 @@ func (p *Parser) GetRepoDirFromServiceByRole(myRole string) string {
 		return ""
 	}
 }
+
+func (p *Parser) GetLotusStoragePath() []LocalPath {
+	return p.storageConfig.StoragePaths
+}

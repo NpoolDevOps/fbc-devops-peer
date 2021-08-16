@@ -11,6 +11,7 @@ import (
 	"github.com/NpoolDevOps/fbc-devops-peer/api/minerapi"
 	"github.com/NpoolDevOps/fbc-devops-peer/api/systemapi"
 	"github.com/NpoolDevOps/fbc-devops-peer/loganalysis/minerlog"
+	parser "github.com/NpoolDevOps/fbc-devops-peer/parser"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -101,27 +102,27 @@ type MinerMetrics struct {
 	MiningNetworkPower        *prometheus.Desc
 	MiningMinerPower          *prometheus.Desc
 
-	minerInfo    minerapi.MinerInfo
-	sealingJobs  minerapi.SealingJobs
-	workerInfos  minerapi.WorkerInfos
-	minerRepoDir string
+	minerInfo   minerapi.MinerInfo
+	sealingJobs minerapi.SealingJobs
+	workerInfos minerapi.WorkerInfos
 
 	mutex sync.Mutex
 
-	errors       int
-	host         string
-	hasHost      bool
-	fullnodeHost string
-	config       MinerMetricsConfig
-	storageStat  map[string]error
-	sectorStat   map[string]uint64
+	errors           int
+	host             string
+	hasHost          bool
+	fullnodeHost     string
+	config           MinerMetricsConfig
+	lotusStoragePath []parser.LocalPath
+	storageStat      map[string]error
+	sectorStat       map[string]uint64
 }
 
-func NewMinerMetrics(cfg MinerMetricsConfig, dir string) *MinerMetrics {
+func NewMinerMetrics(cfg MinerMetricsConfig, paths []parser.LocalPath) *MinerMetrics {
 	mm := &MinerMetrics{
-		ml:           minerlog.NewMinerLog(cfg.Logfile),
-		minerRepoDir: dir,
-		config:       cfg,
+		ml:               minerlog.NewMinerLog(cfg.Logfile),
+		lotusStoragePath: paths,
+		config:           cfg,
 		ForkBlocks: prometheus.NewDesc(
 			"miner_fork_blocks",
 			"Show miner fork blocks",
@@ -807,11 +808,12 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 	ch <- prometheus.MustNewConstMetric(m.MiningNetworkPower, prometheus.CounterValue, miningNetworkPower)
 	ch <- prometheus.MustNewConstMetric(m.MiningMinerPower, prometheus.CounterValue, miningMinerPower)
 
-	dirStatus, dirPath := getMinerRepoDirUsage(m.minerRepoDir)
-	ch <- prometheus.MustNewConstMetric(m.MinerRepoDirUsage, prometheus.CounterValue, dirStatus.Used, fmt.Sprintf("%v", dirPath), fmt.Sprintf("%v", dirStatus.All))
-
+	for _, path := range m.lotusStoragePath {
+		pathStatus := getMinerRepoDirUsage(path.Path)
+		ch <- prometheus.MustNewConstMetric(m.MinerRepoDirUsage, prometheus.CounterValue, pathStatus.Used, fmt.Sprintf("%v", path.Path), fmt.Sprintf("%v", pathStatus.All))
+	}
 }
 
-func getMinerRepoDirUsage(dir string) (systemapi.DiskStatus, string) {
-	return systemapi.DiskUsage(dir), dir
+func getMinerRepoDirUsage(dir string) systemapi.DiskStatus {
+	return systemapi.DiskUsage(dir)
 }
