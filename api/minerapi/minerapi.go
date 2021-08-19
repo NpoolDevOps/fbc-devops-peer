@@ -79,24 +79,24 @@ func GetMinerInfo(ch chan MinerInfo, sectors bool) {
 			}
 			if strings.Contains(lineStr, "Power: ") {
 				info.Power, _ = strconv.ParseFloat(strings.Split(lineStr, " ")[1], 64)
-				setUnitTiB(info.Power, lineStr)
+				info.Power = setUnitTiB(info.Power, lineStr)
 			}
 			if strings.Contains(lineStr, "Raw: ") {
 				info.Raw, _ = strconv.ParseFloat(strings.Split(lineStr, " ")[1], 64)
-				setUnitTiB(info.Raw, lineStr)
+				info.Raw = setUnitTiB(info.Raw, lineStr)
 			}
 			if strings.Contains(lineStr, "Committed: ") {
 				info.Committed, _ = strconv.ParseFloat(strings.Split(lineStr, " ")[1], 64)
-				setUnitTiB(info.Committed, lineStr)
+				info.Committed = setUnitTiB(info.Committed, lineStr)
 			}
 			if !inSectorState {
 				if strings.Contains(lineStr, "Proving: ") {
 					info.Proving, _ = strconv.ParseFloat(strings.Split(lineStr, " ")[1], 64)
-					setUnitTiB(info.Proving, lineStr)
+					info.Proving = setUnitTiB(info.Proving, lineStr)
 					if strings.Contains(lineStr, "Faulty, ") {
 						faulty := strings.Split(lineStr, "(")[1]
 						info.Faulty, _ = strconv.ParseFloat(strings.Split(faulty, " ")[0], 64)
-						setUnitTiB(info.Faulty, lineStr)
+						info.Faulty = setUnitTiB(info.Faulty, lineStr)
 					}
 				}
 			}
@@ -286,10 +286,11 @@ func GetWorkerInfos(ch chan WorkerInfos) {
 	}()
 }
 
-func setUnitTiB(value float64, line string) {
+func setUnitTiB(value float64, line string) float64 {
 	if strings.Contains(line, "Pi") {
 		value = value * 1024
 	} else if strings.Contains(line, "Gi") {
 		value = value / 1024
 	}
+	return value
 }
