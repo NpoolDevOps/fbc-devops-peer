@@ -1,8 +1,9 @@
 package devopsruntime
 
 import (
-	log "github.com/EntropyPool/entropy-logger"
 	"testing"
+
+	log "github.com/EntropyPool/entropy-logger"
 )
 
 func TestGetNvmeList(t *testing.T) {

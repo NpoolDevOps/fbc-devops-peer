@@ -3,6 +3,7 @@ package basemetrics
 import (
 	"bufio"
 	"encoding/binary"
+	"math"
 	"net"
 	"os"
 	"strconv"
@@ -31,7 +32,6 @@ type BaseMetrics struct {
 	pingBaiduDelayMs   int64
 	pingGatewayLost    float64
 	pingBaiduLost      float64
-	timeDiff           float64
 }
 
 func NewBaseMetrics() *BaseMetrics {
@@ -117,7 +117,8 @@ func (m *BaseMetrics) Describe(ch chan<- *prometheus.Desc) {
 }
 
 func (m *BaseMetrics) Collect(ch chan<- prometheus.Metric) {
-	ch <- prometheus.MustNewConstMetric(m.TimeDiff, prometheus.CounterValue, m.timeDiff)
+	timeDiff := getNtpTimeDiff()
+	ch <- prometheus.MustNewConstMetric(m.TimeDiff, prometheus.CounterValue, timeDiff)
 	ch <- prometheus.MustNewConstMetric(m.PingGatewayDelay, prometheus.CounterValue, float64(m.pingGatewayDelayMs))
 	ch <- prometheus.MustNewConstMetric(m.PingGatewayLost, prometheus.CounterValue, m.pingGatewayLost)
 	ch <- prometheus.MustNewConstMetric(m.PingBaiduDelay, prometheus.CounterValue, float64(m.pingBaiduDelayMs))
@@ -201,4 +202,12 @@ func getDefaultGateway() (string, error) {
 	}
 
 	return "", xerrors.Errorf("fail to read gateway")
+}
+
+func getNtpTimeDiff() float64 {
+	localTimeMS := time.Now().Local().UnixNano() / 1000000
+	worldTimeMS := time.Now().UTC().UnixNano() / 1000000
+
+	timeDiff := math.Abs(float64(worldTimeMS - localTimeMS))
+	return timeDiff
 }
