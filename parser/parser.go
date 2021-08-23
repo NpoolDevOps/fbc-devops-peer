@@ -640,6 +640,8 @@ func (p *Parser) GetApiHostByHostRole(myRole string) (string, error) {
 		return p.minerApiHost, nil
 	case types.FullNode:
 		return p.fullnodeApiHost, nil
+	case types.FullMinerNode:
+		return p.minerApiHost, nil
 	default:
 		return "", xerrors.Errorf("no api host for role: %v", myRole)
 	}

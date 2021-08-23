@@ -27,21 +27,23 @@ import (
 )
 
 type Basenode struct {
-	NodeDesc      *NodeDesc
-	Username      string
-	Password      string
-	NetworkType   string
-	Id            uuid.UUID
-	devopsClient  *devops.DevopsClient
-	parser        *parser.Parser
-	HasId         bool
-	TestMode      bool
-	Peer          *peer.Peer
-	hasPublicAddr bool
-	hasLocalAddr  bool
-	addrNotifier  func(string, string)
-	BaseMetrics   *basemetrics.BaseMetrics
-	Versions      []version.Version
+	NodeDesc         *NodeDesc
+	Username         string
+	Password         string
+	NetworkType      string
+	Id               uuid.UUID
+	devopsClient     *devops.DevopsClient
+	parser           *parser.Parser
+	HasId            bool
+	TestMode         bool
+	Peer             *peer.Peer
+	hasPublicAddr    bool
+	hasLocalAddr     bool
+	addrNotifier     func(string, string)
+	BaseMetrics      *basemetrics.BaseMetrics
+	Versions         []version.Version
+	EthLocalAddress  string
+	EthPublicAddress string
 }
 
 type NodeHardware struct {
@@ -98,6 +100,8 @@ func NewBasenode(config *BasenodeConfig, devopsClient *devops.DevopsClient) *Bas
 		hasLocalAddr: true,
 	}
 
+	basenode.EthLocalAddress, _ = basenode.GetApiHostByRole(config.NodeConfig.MainRole)
+
 	spec := machspec.NewMachineSpec()
 	spec.PrepareLowLevel()
 	basenode.NodeDesc.MySpec = spec.SN()
@@ -109,6 +113,10 @@ func NewBasenode(config *BasenodeConfig, devopsClient *devops.DevopsClient) *Bas
 
 	basenode.GetAddress()
 	basenode.AddressUpdater()
+	if basenode.NodeDesc.NodeConfig.LocalAddr != basenode.EthLocalAddress {
+		basenode.GetEthAddress()
+		basenode.EthAddressUpdater()
+	}
 
 	basenode.ReadOsSpec()
 
@@ -120,6 +128,13 @@ func NewBasenode(config *BasenodeConfig, devopsClient *devops.DevopsClient) *Bas
 	basenode.BaseMetrics = basemetrics.NewBaseMetrics()
 
 	basenode.startLicenseChecker()
+
+	if basenode.ToDeviceRegisterInput().LocalAddr != basenode.EthLocalAddress {
+		input := basenode.ToDeviceRegisterInput()
+		input.LocalAddr = basenode.EthLocalAddress
+		input.PublicAddr = basenode.EthPublicAddress
+		basenode.devopsClient.FeedMsg(types.DeviceRegisterAPI, input, true)
+	}
 	basenode.devopsClient.FeedMsg(types.DeviceRegisterAPI, basenode.ToDeviceRegisterInput(), true)
 
 	devopsClient.SetNode(basenode)
@@ -168,6 +183,12 @@ func (n *Basenode) WatchVersions(localAddr string, err error, versionGetter func
 
 			if updated {
 				n.Versions = vs
+				if n.ToDeviceRegisterInput().LocalAddr != n.EthLocalAddress {
+					input := n.ToDeviceRegisterInput()
+					input.LocalAddr = n.EthLocalAddress
+					input.PublicAddr = n.EthPublicAddress
+					n.devopsClient.FeedMsg(types.DeviceRegisterAPI, input, true)
+				}
 				n.devopsClient.FeedMsg(types.DeviceRegisterAPI, n.ToDeviceRegisterInput(), true)
 			}
 
@@ -210,9 +231,7 @@ func (n *Basenode) ReadOsSpec() {
 	n.NodeDesc.NodeConfig.OsSpec = string(out)
 }
 
-func (n *Basenode) getPublicAddr(url string) (string, error) {
-	localAddr := n.NodeDesc.NodeConfig.LocalAddr
-
+func (n *Basenode) getPublicAddr(localAddr, url string) (string, error) {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return "", err
@@ -274,7 +293,7 @@ func (n *Basenode) GetAddress() (string, string, error) {
 
 	log.Errorf(log.Fields{}, "cannot get public address with dig: %v", err)
 
-	publicAddr, err := n.getPublicAddr("http://inet-ip.info/ip")
+	publicAddr, err := n.getPublicAddr(localAddr, "http://inet-ip.info/ip")
 	if err == nil {
 		n.hasPublicAddr = true
 		return localAddr, publicAddr, err
@@ -282,7 +301,7 @@ func (n *Basenode) GetAddress() (string, string, error) {
 
 	log.Errorf(log.Fields{}, "cannot get public address: %v", err)
 
-	publicAddr, err = n.getPublicAddr("http://ipinfo.io/ip")
+	publicAddr, err = n.getPublicAddr(localAddr, "http://ipinfo.io/ip")
 	if err == nil {
 		n.hasPublicAddr = true
 		return localAddr, publicAddr, err
@@ -320,6 +339,78 @@ func (n *Basenode) AddressUpdater() {
 
 			if updated {
 				n.devopsClient.FeedMsg(types.DeviceRegisterAPI, n.ToDeviceRegisterInput(), true)
+				if n.addrNotifier != nil {
+					n.addrNotifier(localAddr, publicAddr)
+				}
+			}
+			<-ticker.C
+		}
+	}()
+}
+
+func (n *Basenode) GetEthAddress() (string, string, error) {
+	localAddr := n.EthLocalAddress
+
+	addr, err := exec.Command(
+		"dig", "+short", "myip.opendns.com",
+		"@resolver1.opendns.com", "-b", localAddr,
+	).Output()
+	if err == nil {
+		n.hasPublicAddr = true
+		return localAddr, string(addr), nil
+	}
+
+	log.Errorf(log.Fields{}, "cannot get public address with dig: %v", err)
+
+	publicAddr, err := n.getPublicAddr(localAddr, "http://inet-ip.info/ip")
+	if err == nil {
+		n.hasPublicAddr = true
+		return localAddr, publicAddr, err
+	}
+
+	log.Errorf(log.Fields{}, "cannot get public address: %v", err)
+
+	publicAddr, err = n.getPublicAddr(localAddr, "http://ipinfo.io/ip")
+	if err == nil {
+		n.hasPublicAddr = true
+		return localAddr, publicAddr, err
+	}
+
+	log.Errorf(log.Fields{}, "cannot get public address: %v", err)
+
+	return localAddr, "", err
+}
+
+func (n *Basenode) EthAddressUpdater() {
+	ticker := time.NewTicker(2 * time.Minute)
+	go func() {
+		for {
+			updated := false
+			localAddr, publicAddr, err := n.GetAddress()
+			if err != nil {
+				<-ticker.C
+				continue
+			}
+
+			if n.EthLocalAddress != localAddr {
+				log.Infof(log.Fields{}, "local address updated: %v -> %v",
+					n.EthLocalAddress, localAddr)
+				n.EthLocalAddress = localAddr
+				updated = true
+			}
+
+			if n.EthPublicAddress != publicAddr {
+				log.Infof(log.Fields{}, "public address updated: %v -> %v",
+					n.EthPublicAddress, publicAddr)
+				n.EthPublicAddress = publicAddr
+				updated = true
+			}
+
+			if updated {
+				input := n.ToDeviceRegisterInput()
+				input.LocalAddr = n.EthLocalAddress
+				input.PublicAddr = n.EthPublicAddress
+				n.devopsClient.FeedMsg(types.DeviceRegisterAPI, input, true)
 				if n.addrNotifier != nil {
 					n.addrNotifier(localAddr, publicAddr)
 				}
@@ -423,6 +514,13 @@ func (n *Basenode) NotifyParentSpec(spec string) {
 		}
 	}
 	n.NodeDesc.NodeConfig.ParentSpec = append(n.NodeDesc.NodeConfig.ParentSpec, spec)
+
+	if n.ToDeviceRegisterInput().LocalAddr != n.EthLocalAddress {
+		input := n.ToDeviceRegisterInput()
+		input.LocalAddr = n.EthLocalAddress
+		input.PublicAddr = n.EthPublicAddress
+		n.devopsClient.FeedMsg(types.DeviceRegisterAPI, input, true)
+	}
 	n.devopsClient.FeedMsg(types.DeviceRegisterAPI, n.ToDeviceRegisterInput(), true)
 }
 
@@ -451,6 +549,10 @@ func (n *Basenode) GetFullnodeApiHost(myRole string) (string, error) {
 }
 
 func (n *Basenode) GetMinerApiHost(myRole string) (string, error) {
+	return n.parser.GetApiHostByHostRole(myRole)
+}
+
+func (n *Basenode) GetApiHostByRole(myRole string) (string, error) {
 	return n.parser.GetApiHostByHostRole(myRole)
 }
 
