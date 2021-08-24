@@ -146,7 +146,7 @@ func GetEthernetList() []*EthernetInfo {
 	eths := []*EthernetInfo{}
 
 	br := bufio.NewReader(strings.NewReader(string(out)))
-	eth := EthernetInfo{}
+	eth := &EthernetInfo{}
 	parsed := false
 	hasNetwork := false
 
@@ -157,8 +157,8 @@ func GetEthernetList() []*EthernetInfo {
 		}
 
 		if strings.Contains(string(line), "*-network") && parsed {
-			eths = append(eths, &eth)
-			eth = EthernetInfo{}
+			eths = append(eths, eth)
+			eth = &EthernetInfo{}
 			hasNetwork = true
 		}
 
@@ -196,8 +196,20 @@ func GetEthernetList() []*EthernetInfo {
 	}
 
 	if hasNetwork {
-		eths = append(eths, &eth)
+		eths = append(eths, eth)
 	}
 
 	return eths
+}
+
+func GetIpList() []string {
+	var ipList []string
+	eths := GetEthernetList()
+	for _, eth := range eths {
+		if eth.Ip == "" {
+			continue
+		}
+		ipList = append(ipList, eth.Ip)
+	}
+	return ipList
 }
