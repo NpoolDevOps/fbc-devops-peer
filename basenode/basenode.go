@@ -12,6 +12,7 @@ import (
 
 	log "github.com/EntropyPool/entropy-logger"
 	machspec "github.com/EntropyPool/machine-spec"
+	"github.com/NpoolDevOps/fbc-devops-peer/api/systemapi"
 	devops "github.com/NpoolDevOps/fbc-devops-peer/devops"
 	exporter "github.com/NpoolDevOps/fbc-devops-peer/exporter"
 	basemetrics "github.com/NpoolDevOps/fbc-devops-peer/metrics/basemetrics"
@@ -261,7 +262,16 @@ func (n *Basenode) getPublicAddr(url string) (string, error) {
 }
 
 func (n *Basenode) GetAddress() (string, string, error) {
-	localAddr := n.NodeDesc.NodeConfig.LocalAddr
+	var localAddr string
+	deviceIp := systemapi.GetDeviceIps()
+	if deviceIp.GigabitIp.Ip != "" {
+		localAddr = deviceIp.GigabitIp.Ip
+	} else if deviceIp.TenGigabitIp.Ip != "" {
+		localAddr = deviceIp.TenGigabitIp.Ip
+	} else {
+		log.Errorf(log.Fields{}, "lost local address")
+		return "", "", xerrors.Errorf("lost local address")
+	}
 
 	addr, err := exec.Command(
 		"dig", "+short", "myip.opendns.com",

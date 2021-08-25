@@ -219,3 +219,34 @@ func DiskUsage(path string) DiskStatus {
 	disk.Used = float64(disk.All - disk.Free)
 	return disk
 }
+
+type GigabitIp struct {
+	Ip string
+}
+
+type TenGigabitIp struct {
+	Ip string
+}
+
+type DeviceIp struct {
+	GigabitIp    GigabitIp
+	TenGigabitIp TenGigabitIp
+}
+
+func GetDeviceIps() DeviceIp {
+	deviceIp := DeviceIp{}
+	eths := runtime.GetEthernetList()
+	for _, eth := range eths {
+		var capacityToFloat float64 = 0
+		if eth.Capacity != "" {
+			capacity := strings.TrimSpace(strings.Split(eth.Capacity, "Gbit/s")[0])
+			capacityToFloat, _ = strconv.ParseFloat(capacity, 64)
+		}
+		if strings.Contains(eth.LogicName, "bond") || capacityToFloat >= 10 {
+			deviceIp.TenGigabitIp.Ip = eth.Ip
+		} else if eth.Capacity == "1Gbit/s" {
+			deviceIp.GigabitIp.Ip = eth.Ip
+		}
+	}
+	return deviceIp
+}
