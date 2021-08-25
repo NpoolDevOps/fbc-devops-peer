@@ -3,6 +3,7 @@ package basemetrics
 import (
 	"bufio"
 	"encoding/binary"
+	"math"
 	"net"
 	"os"
 	"strconv"
@@ -11,6 +12,7 @@ import (
 
 	log "github.com/EntropyPool/entropy-logger"
 	"github.com/NpoolDevOps/fbc-devops-peer/api/systemapi"
+	"github.com/beevik/ntp"
 	"github.com/go-ping/ping"
 	"github.com/prometheus/client_golang/prometheus"
 	"golang.org/x/xerrors"
@@ -31,7 +33,6 @@ type BaseMetrics struct {
 	pingBaiduDelayMs   int64
 	pingGatewayLost    float64
 	pingBaiduLost      float64
-	timeDiff           float64
 }
 
 func NewBaseMetrics() *BaseMetrics {
@@ -117,7 +118,8 @@ func (m *BaseMetrics) Describe(ch chan<- *prometheus.Desc) {
 }
 
 func (m *BaseMetrics) Collect(ch chan<- prometheus.Metric) {
-	ch <- prometheus.MustNewConstMetric(m.TimeDiff, prometheus.CounterValue, m.timeDiff)
+	timeDiff, _ := getNtpDiff()
+	ch <- prometheus.MustNewConstMetric(m.TimeDiff, prometheus.CounterValue, timeDiff)
 	ch <- prometheus.MustNewConstMetric(m.PingGatewayDelay, prometheus.CounterValue, float64(m.pingGatewayDelayMs))
 	ch <- prometheus.MustNewConstMetric(m.PingGatewayLost, prometheus.CounterValue, m.pingGatewayLost)
 	ch <- prometheus.MustNewConstMetric(m.PingBaiduDelay, prometheus.CounterValue, float64(m.pingBaiduDelayMs))
@@ -201,4 +203,18 @@ func getDefaultGateway() (string, error) {
 	}
 
 	return "", xerrors.Errorf("fail to read gateway")
+}
+
+func getNtpDiff() (float64, error) {
+	ntpTime, err := ntp.Time("cn.pool.ntp.org")
+	if err != nil {
+		log.Errorf(log.Fields{}, "get ntp time error")
+		return -1, err
+	}
+
+	ntpTimeMs := ntpTime.UnixNano() / 1000000
+	nowTimeMs := time.Now().UnixNano() / 1000000
+
+	timeDiff := math.Abs(float64(ntpTimeMs - nowTimeMs))
+	return timeDiff, nil
 }
