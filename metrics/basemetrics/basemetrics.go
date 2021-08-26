@@ -144,11 +144,11 @@ func (m *BaseMetrics) Collect(ch chan<- prometheus.Metric) {
 		ch <- prometheus.MustNewConstMetric(m.NvmeTemperature, prometheus.CounterValue, temperature, nvmeName)
 	}
 
-	deviceIp := systemapi.GetDeviceIps()
-	if deviceIp.TenGigabitIp.Ip == "" {
+	deviceIps := systemapi.GetDeviceIps()
+	if deviceIps.TenGigabitIp.Ip == "" {
 		ch <- prometheus.MustNewConstMetric(m.TenGigabitIpExit, prometheus.CounterValue, 0, "null")
 	} else {
-		ch <- prometheus.MustNewConstMetric(m.TenGigabitIpExit, prometheus.CounterValue, 1, deviceIp.TenGigabitIp.Ip)
+		ch <- prometheus.MustNewConstMetric(m.TenGigabitIpExit, prometheus.CounterValue, 1, deviceIps.TenGigabitIp.Ip)
 	}
 }
 
