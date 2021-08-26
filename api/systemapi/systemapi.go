@@ -237,9 +237,12 @@ func GetDeviceIps() DeviceIp {
 	deviceIp := DeviceIp{}
 	eths := runtime.GetEthernetList()
 	for _, eth := range eths {
+		if eth.Ip == "" {
+			continue
+		}
 		if eth.Capacity == "1Gbit/s" {
 			deviceIp.GigabitIp.Ip = eth.Ip
-		} else if eth.Capacity != "" || strings.Contains(eth.LogicName, "bond") && eth.Ip != "" {
+		} else if eth.Capacity != "" || strings.Contains(eth.LogicName, "bond") {
 			deviceIp.TenGigabitIp.Ip = eth.Ip
 		}
 	}
