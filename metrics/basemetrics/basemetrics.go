@@ -209,32 +209,27 @@ var NtpServers = []string{"asia.pool.ntp.org", "cn.pool.ntp.org", "ae.pool.ntp.o
 
 func getNtpDiff() (float64, error) {
 	var err error
-	var timeDiff float64
-	var done chan struct{}
-	timeout := time.NewTimer(2 * time.Second)
+	var ntpTime time.Time
+	done := make(chan struct{})
 
 	for _, server := range NtpServers {
-		go func(server string) {
-			ms, _ := pingStatistic(server)
-			if ms >= 0 {
-				ntpServer := server
-				ntpTime, err := ntp.Time(ntpServer)
-				if err == nil {
-					ntpTimeMs := ntpTime.UnixNano() / 1000000
-					nowTimeMs := time.Now().Local().UnixNano() / 1000000
-
-					timeDiff = math.Abs(float64(ntpTimeMs - nowTimeMs))
-				}
-
-				done <- struct{}{}
-			}
-		}(server)
+		go func(server string, done chan struct{}) {
+			ntpTime, err = ntp.Time(server)
+			done <- struct{}{}
+		}(server, done)
 	}
 
 	select {
 	case <-done:
-		return timeDiff, nil
-	case <-timeout.C:
+		if err == nil {
+			ntpTimeMs := ntpTime.UnixNano() / 1000000
+			nowTimeMs := time.Now().Local().UnixNano() / 1000000
+
+			timeDiff := math.Abs(float64(ntpTimeMs - nowTimeMs))
+			return timeDiff, nil
+		}
 		return -1, err
+	case <-time.After(2 * time.Minute):
+		return -1, xerrors.Errorf("get ntp time beyond 2 seconds")
 	}
 }
