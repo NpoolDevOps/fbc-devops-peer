@@ -3,6 +3,7 @@ package basemetrics
 import (
 	"bufio"
 	"encoding/binary"
+	"math"
 	"net"
 	"os"
 	"strconv"
@@ -11,6 +12,7 @@ import (
 
 	log "github.com/EntropyPool/entropy-logger"
 	"github.com/NpoolDevOps/fbc-devops-peer/api/systemapi"
+	"github.com/beevik/ntp"
 	"github.com/go-ping/ping"
 	"github.com/prometheus/client_golang/prometheus"
 	"golang.org/x/xerrors"
@@ -31,7 +33,6 @@ type BaseMetrics struct {
 	pingBaiduDelayMs   int64
 	pingGatewayLost    float64
 	pingBaiduLost      float64
-	timeDiff           float64
 }
 
 func NewBaseMetrics() *BaseMetrics {
@@ -117,7 +118,8 @@ func (m *BaseMetrics) Describe(ch chan<- *prometheus.Desc) {
 }
 
 func (m *BaseMetrics) Collect(ch chan<- prometheus.Metric) {
-	ch <- prometheus.MustNewConstMetric(m.TimeDiff, prometheus.CounterValue, m.timeDiff)
+	timeDiff, _ := getNtpDiff()
+	ch <- prometheus.MustNewConstMetric(m.TimeDiff, prometheus.CounterValue, timeDiff)
 	ch <- prometheus.MustNewConstMetric(m.PingGatewayDelay, prometheus.CounterValue, float64(m.pingGatewayDelayMs))
 	ch <- prometheus.MustNewConstMetric(m.PingGatewayLost, prometheus.CounterValue, m.pingGatewayLost)
 	ch <- prometheus.MustNewConstMetric(m.PingBaiduDelay, prometheus.CounterValue, float64(m.pingBaiduDelayMs))
@@ -201,4 +203,30 @@ func getDefaultGateway() (string, error) {
 	}
 
 	return "", xerrors.Errorf("fail to read gateway")
+}
+
+var NtpServers = []string{"asia.pool.ntp.org", "cn.pool.ntp.org", "ae.pool.ntp.org", "in.pool.ntp.org", "sa.pool.ntp.org"}
+
+func getNtpDiff() (float64, error) {
+	done := make(chan time.Time)
+
+	for _, server := range NtpServers {
+		go func(server string) {
+			ntpTime, err := ntp.Time(server)
+			if err == nil {
+				done <- ntpTime
+			}
+		}(server)
+	}
+
+	select {
+	case ntpTime := <-done:
+		nowTimeMs := time.Now().Local().UnixNano() / int64(time.Millisecond)
+		ntpTimeMs := ntpTime.Local().UnixNano() / int64(time.Millisecond)
+		timeDiff := math.Abs(float64(ntpTimeMs - nowTimeMs))
+		return timeDiff, nil
+	case <-time.After(2 * time.Second):
+		return -1, xerrors.Errorf("get ntp time beyond 2 seconds")
+	}
+
 }

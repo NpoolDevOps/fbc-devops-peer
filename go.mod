@@ -9,6 +9,7 @@ require (
 	github.com/NpoolDevOps/fbc-license v0.0.0-20210408084724-dec53ab9682d
 	github.com/NpoolDevOps/fbc-license-service v0.0.0-20210328062839-d1527bc31f7e
 	github.com/NpoolRD/http-daemon v0.0.0-20210324100344-82fee56de8ac
+	github.com/beevik/ntp v0.3.0
 	github.com/deniswernert/go-fstab v0.0.0-20141204152952-eb4090f26517
 	github.com/docker/go-units v0.4.0
 	github.com/euank/go-kmsg-parser v2.0.0+incompatible
