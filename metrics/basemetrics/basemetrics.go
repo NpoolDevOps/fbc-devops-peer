@@ -208,29 +208,33 @@ func getDefaultGateway() (string, error) {
 var NtpServers = []string{"asia.pool.ntp.org", "cn.pool.ntp.org", "ae.pool.ntp.org", "in.pool.ntp.org", "sa.pool.ntp.org"}
 
 func getNtpDiff() (float64, error) {
-	ntpServer := ""
+	var err error
+	var timeDiff float64
+	var done chan struct{}
+	timeout := time.NewTimer(2 * time.Second)
+
 	for _, server := range NtpServers {
-		ms, _ := pingStatistic(server)
-		if ms >= 0 {
-			ntpServer = server
-			break
-		}
+		go func(server string) {
+			ms, _ := pingStatistic(server)
+			if ms >= 0 {
+				ntpServer := server
+				ntpTime, err := ntp.Time(ntpServer)
+				if err == nil {
+					ntpTimeMs := ntpTime.UnixNano() / 1000000
+					nowTimeMs := time.Now().Local().UnixNano() / 1000000
+
+					timeDiff = math.Abs(float64(ntpTimeMs - nowTimeMs))
+				}
+
+				done <- struct{}{}
+			}
+		}(server)
 	}
 
-	if ntpServer == "" {
-		log.Errorf(log.Fields{}, "cannot connect to ntp server")
-		return -1, xerrors.Errorf("cannot connect to ntp server")
-	}
-
-	ntpTime, err := ntp.Time(ntpServer)
-	if err != nil {
-		log.Errorf(log.Fields{}, "get ntp time error")
+	select {
+	case <-done:
+		return timeDiff, nil
+	case <-timeout.C:
 		return -1, err
 	}
-
-	ntpTimeMs := ntpTime.UnixNano() / 1000000
-	nowTimeMs := time.Now().Local().UnixNano() / 1000000
-
-	timeDiff := math.Abs(float64(ntpTimeMs - nowTimeMs))
-	return timeDiff, nil
 }
