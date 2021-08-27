@@ -264,11 +264,13 @@ func (n *Basenode) getPublicAddr(url string) (string, error) {
 func (n *Basenode) GetAddress() (string, string, error) {
 	var localAddr string
 	deviceIp := systemapi.GetDeviceIps()
-	if deviceIp.GigabitIp.Ip != "" {
+
+	switch {
+	case deviceIp.GigabitIp.Ip != "":
 		localAddr = deviceIp.GigabitIp.Ip
-	} else if deviceIp.TenGigabitIp.Ip != "" {
+	case deviceIp.TenGigabitIp.Ip != "":
 		localAddr = deviceIp.TenGigabitIp.Ip
-	} else {
+	default:
 		log.Errorf(log.Fields{}, "lost local address")
 		return "", "", xerrors.Errorf("lost local address")
 	}
