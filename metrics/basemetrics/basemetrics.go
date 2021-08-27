@@ -205,8 +205,24 @@ func getDefaultGateway() (string, error) {
 	return "", xerrors.Errorf("fail to read gateway")
 }
 
+var NtpServers = []string{"asia.pool.ntp.org", "cn.pool.ntp.org", "ae.pool.ntp.org", "in.pool.ntp.org", "sa.pool.ntp.org"}
+
 func getNtpDiff() (float64, error) {
-	ntpTime, err := ntp.Time("cn.pool.ntp.org")
+	ntpServer := ""
+	for _, server := range NtpServers {
+		ms, _ := pingStatistic(server)
+		if ms >= 0 {
+			ntpServer = server
+			break
+		}
+	}
+
+	if ntpServer == "" {
+		log.Errorf(log.Fields{}, "cannot connect to ntp server")
+		return -1, xerrors.Errorf("cannot connect to ntp server")
+	}
+
+	ntpTime, err := ntp.Time(ntpServer)
 	if err != nil {
 		log.Errorf(log.Fields{}, "get ntp time error")
 		return -1, err
