@@ -27,7 +27,8 @@ type BaseMetrics struct {
 	RootPermission   *prometheus.Desc
 	RootMountRW      *prometheus.Desc
 
-	NvmeTemperature *prometheus.Desc
+	NvmeTemperature  *prometheus.Desc
+	TenGigabitIpExit *prometheus.Desc
 
 	pingGatewayDelayMs int64
 	pingBaiduDelayMs   int64
@@ -77,6 +78,11 @@ func NewBaseMetrics() *BaseMetrics {
 			"show nvme temperature",
 			[]string{"nvme"}, nil,
 		),
+		TenGigabitIpExit: prometheus.NewDesc(
+			"base_ten_gigabit_exit",
+			"show whether device has tengigabit ip",
+			[]string{"ip"}, nil,
+		),
 	}
 
 	go metrics.updater()
@@ -115,6 +121,7 @@ func (m *BaseMetrics) Describe(ch chan<- *prometheus.Desc) {
 	ch <- m.RootPermission
 	ch <- m.RootMountRW
 	ch <- m.NvmeTemperature
+	ch <- m.TenGigabitIpExit
 }
 
 func (m *BaseMetrics) Collect(ch chan<- prometheus.Metric) {
@@ -137,6 +144,13 @@ func (m *BaseMetrics) Collect(ch chan<- prometheus.Metric) {
 	nvmeTemperatureList, _ := systemapi.GetNvmeTemperatureList()
 	for nvmeName, temperature := range nvmeTemperatureList {
 		ch <- prometheus.MustNewConstMetric(m.NvmeTemperature, prometheus.CounterValue, temperature, nvmeName)
+	}
+
+	deviceIps := systemapi.GetDeviceIps()
+	if deviceIps.TenGigabitIp.Ip == "" {
+		ch <- prometheus.MustNewConstMetric(m.TenGigabitIpExit, prometheus.CounterValue, 0, "null")
+	} else {
+		ch <- prometheus.MustNewConstMetric(m.TenGigabitIpExit, prometheus.CounterValue, 1, deviceIps.TenGigabitIp.Ip)
 	}
 }
 
