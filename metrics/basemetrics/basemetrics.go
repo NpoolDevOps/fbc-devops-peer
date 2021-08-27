@@ -208,30 +208,38 @@ func getDefaultGateway() (string, error) {
 
 var NtpServers = []string{"asia.pool.ntp.org", "cn.pool.ntp.org", "ae.pool.ntp.org", "in.pool.ntp.org", "sa.pool.ntp.org"}
 
+type NtpResponse struct {
+	NtpTime time.Time
+	Error   error
+}
+
 func getNtpDiff() (float64, error) {
-	ntpErrs := map[time.Time]error{}
-	done := make(chan time.Time)
+	ntpResponses := map[string]NtpResponse{}
+	done := make(chan string)
 	var mu sync.Mutex
 
 	for _, server := range NtpServers {
 		go func(server string) {
 			ntpTime, err := ntp.Time(server)
 			mu.Lock()
-			ntpErrs[ntpTime] = err
+			ntpResponses[server] = NtpResponse{
+				NtpTime: ntpTime,
+				Error:   err,
+			}
 			mu.Unlock()
-			done <- ntpTime
+			done <- server
 		}(server)
 	}
 
 	select {
-	case ntpTime := <-done:
+	case server := <-done:
 		nowTimeMs := time.Now().Local().UnixNano() / int64(time.Millisecond)
-		if ntpErrs[ntpTime] == nil {
-			ntpTimeMs := ntpTime.Local().UnixNano() / int64(time.Millisecond)
+		if ntpResponses[server].Error == nil {
+			ntpTimeMs := ntpResponses[server].NtpTime.Local().UnixNano() / int64(time.Millisecond)
 			timeDiff := math.Abs(float64(ntpTimeMs - nowTimeMs))
 			return timeDiff, nil
 		}
-		return -1, ntpErrs[ntpTime]
+		return -1, ntpResponses[server].Error
 	case <-time.After(2 * time.Second):
 		return -1, xerrors.Errorf("get ntp time beyond 2 seconds")
 	}
