@@ -213,23 +213,22 @@ func getNtpDiff() (float64, error) {
 	done := make(chan struct{})
 
 	for _, server := range NtpServers {
-		go func(server string, done chan struct{}) {
+		go func(server string) {
 			ntpTime, err = ntp.Time(server)
 			done <- struct{}{}
-		}(server, done)
+		}(server)
 	}
 
 	select {
 	case <-done:
+		nowTimeMs := time.Now().Local().UnixNano() / 1000000
 		if err == nil {
 			ntpTimeMs := ntpTime.UnixNano() / 1000000
-			nowTimeMs := time.Now().Local().UnixNano() / 1000000
-
 			timeDiff := math.Abs(float64(ntpTimeMs - nowTimeMs))
 			return timeDiff, nil
 		}
 		return -1, err
-	case <-time.After(2 * time.Minute):
+	case <-time.After(2 * time.Second):
 		return -1, xerrors.Errorf("get ntp time beyond 2 seconds")
 	}
 }
