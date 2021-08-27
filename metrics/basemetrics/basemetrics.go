@@ -8,6 +8,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	log "github.com/EntropyPool/entropy-logger"
@@ -208,26 +209,29 @@ func getDefaultGateway() (string, error) {
 var NtpServers = []string{"asia.pool.ntp.org", "cn.pool.ntp.org", "ae.pool.ntp.org", "in.pool.ntp.org", "sa.pool.ntp.org"}
 
 func getNtpDiff() (float64, error) {
-	var err error
-	var ntpTime time.Time
-	done := make(chan struct{})
+	ntpErrs := map[time.Time]error{}
+	done := make(chan time.Time)
+	var mu sync.Mutex
 
 	for _, server := range NtpServers {
 		go func(server string) {
-			ntpTime, err = ntp.Time(server)
-			done <- struct{}{}
+			ntpTime, err := ntp.Time(server)
+			mu.Lock()
+			ntpErrs[ntpTime] = err
+			mu.Unlock()
+			done <- ntpTime
 		}(server)
 	}
 
 	select {
-	case <-done:
+	case ntpTime := <-done:
 		nowTimeMs := time.Now().Local().UnixNano() / int64(time.Millisecond)
-		if err == nil {
+		if ntpErrs[ntpTime] == nil {
 			ntpTimeMs := ntpTime.Local().UnixNano() / int64(time.Millisecond)
 			timeDiff := math.Abs(float64(ntpTimeMs - nowTimeMs))
 			return timeDiff, nil
 		}
-		return -1, err
+		return -1, ntpErrs[ntpTime]
 	case <-time.After(2 * time.Second):
 		return -1, xerrors.Errorf("get ntp time beyond 2 seconds")
 	}
