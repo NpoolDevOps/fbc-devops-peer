@@ -223,7 +223,7 @@ func getNtpDiff() (float64, error) {
 	case <-done:
 		nowTimeMs := time.Now().Local().UnixNano() / 1000000
 		if err == nil {
-			ntpTimeMs := ntpTime.UnixNano() / 1000000
+			ntpTimeMs := ntpTime.Local().UnixNano() / 1000000
 			timeDiff := math.Abs(float64(ntpTimeMs - nowTimeMs))
 			return timeDiff, nil
 		}
