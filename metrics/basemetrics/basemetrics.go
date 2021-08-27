@@ -221,9 +221,9 @@ func getNtpDiff() (float64, error) {
 
 	select {
 	case <-done:
-		nowTimeMs := time.Now().Local().UnixNano() / 1000000
+		nowTimeMs := time.Now().Local().UnixNano() / int64(time.Millisecond)
 		if err == nil {
-			ntpTimeMs := ntpTime.Local().UnixNano() / 1000000
+			ntpTimeMs := ntpTime.Local().UnixNano() / int64(time.Millisecond)
 			timeDiff := math.Abs(float64(ntpTimeMs - nowTimeMs))
 			return timeDiff, nil
 		}
