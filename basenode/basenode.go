@@ -263,6 +263,12 @@ func (n *Basenode) getPublicAddr(url string) (string, error) {
 func (n *Basenode) GetAddress() (string, string, error) {
 	localAddr := n.NodeDesc.NodeConfig.LocalAddr
 
+	for _, eth := range runtime.GetEthernetList() {
+		if eth.IsExporter {
+			localAddr = eth.Ip
+		}
+	}
+
 	addr, err := exec.Command(
 		"dig", "+short", "myip.opendns.com",
 		"@resolver1.opendns.com", "-b", localAddr,

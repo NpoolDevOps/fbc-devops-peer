@@ -26,3 +26,7 @@ const (
 const (
 	ExporterPort = 52379
 )
+
+const (
+	ExporterCapacity = "1Gbit/s"
+)

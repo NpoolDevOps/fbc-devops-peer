@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	machspec "github.com/EntropyPool/machine-spec"
+	"github.com/NpoolDevOps/fbc-devops-peer/types"
 	"github.com/jaypipes/ghw"
 	block2 "github.com/jaypipes/ghw/pkg/block"
 	cpu2 "github.com/jaypipes/ghw/pkg/cpu"
@@ -135,6 +136,7 @@ type EthernetInfo struct {
 	Ip            string `json:"ip"`
 	BusInfo       string `json:"bus_info"`
 	Capacity      string `json:"capacity"`
+	IsExporter    bool   `json:"is_exporter"`
 }
 
 func GetEthernetList() []*EthernetInfo {
@@ -146,7 +148,7 @@ func GetEthernetList() []*EthernetInfo {
 	eths := []*EthernetInfo{}
 
 	br := bufio.NewReader(strings.NewReader(string(out)))
-	eth := EthernetInfo{}
+	eth := &EthernetInfo{}
 	parsed := false
 	hasNetwork := false
 
@@ -157,8 +159,8 @@ func GetEthernetList() []*EthernetInfo {
 		}
 
 		if strings.Contains(string(line), "*-network") && parsed {
-			eths = append(eths, &eth)
-			eth = EthernetInfo{}
+			eths = append(eths, eth)
+			eth = &EthernetInfo{}
 			hasNetwork = true
 		}
 
@@ -192,11 +194,15 @@ func GetEthernetList() []*EthernetInfo {
 			eth.Capacity = strings.Split(string(line), ": ")[1]
 		}
 
+		if eth.Capacity == types.ExporterCapacity && eth.Ip != "" {
+			eth.IsExporter = true
+		}
+
 		parsed = true
 	}
 
 	if hasNetwork {
-		eths = append(eths, &eth)
+		eths = append(eths, eth)
 	}
 
 	return eths
