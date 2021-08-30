@@ -265,7 +265,8 @@ func (n *Basenode) findExporter() {
 
 	for _, eth := range ethList {
 		if n.NodeDesc.NodeConfig.LocalAddr == eth.Ip {
-			eth.IsExporter = true
+			eth.Exporter = true
+			break
 		}
 	}
 

@@ -106,7 +106,7 @@ func (g *GatewayNode) updateTopology() {
 		for _, eth := range device.EthernetDesc {
 			ethList := runtime.EthernetInfo{}
 			json.Unmarshal([]byte(eth), &ethList)
-			if ethList.IsExporter {
+			if ethList.Exporter {
 				hasExporter = true
 				break
 			}

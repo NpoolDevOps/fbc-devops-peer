@@ -135,7 +135,7 @@ type EthernetInfo struct {
 	Ip            string `json:"ip"`
 	BusInfo       string `json:"bus_info"`
 	Capacity      string `json:"capacity"`
-	IsExporter    bool   `json:"is_exporter"`
+	Exporter      bool   `json:"exporter"`
 }
 
 func GetEthernetList() []*EthernetInfo {
