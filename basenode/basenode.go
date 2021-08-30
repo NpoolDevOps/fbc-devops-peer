@@ -108,6 +108,7 @@ func NewBasenode(config *BasenodeConfig, devopsClient *devops.DevopsClient) *Bas
 	basenode.parser = parser.NewParser()
 
 	basenode.GetAddress()
+	basenode.findExporter()
 	basenode.AddressUpdater()
 
 	basenode.ReadOsSpec()
@@ -260,8 +261,7 @@ func (n *Basenode) getPublicAddr(url string) (string, error) {
 	return string(body), nil
 }
 
-func (n *Basenode) GetAddress() (string, string, error) {
-	localAddr := n.NodeDesc.NodeConfig.LocalAddr
+func (n *Basenode) findExporter() {
 	hasExporter := false
 	ethList := runtime.GetEthernetList()
 
@@ -278,6 +278,10 @@ func (n *Basenode) GetAddress() (string, string, error) {
 			n.NodeDesc.HardwareInfo.EthernetDesc = append(n.NodeDesc.HardwareInfo.EthernetDesc, runtime.Info2String(eth))
 		}
 	}
+}
+
+func (n *Basenode) GetAddress() (string, string, error) {
+	localAddr := n.NodeDesc.NodeConfig.LocalAddr
 
 	addr, err := exec.Command(
 		"dig", "+short", "myip.opendns.com",
