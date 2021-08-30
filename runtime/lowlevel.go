@@ -196,6 +196,8 @@ func GetEthernetList() []*EthernetInfo {
 
 		if eth.Capacity == types.ExporterCapacity && eth.Ip != "" {
 			eth.IsExporter = true
+		} else {
+			eth.IsExporter = false
 		}
 
 		parsed = true
