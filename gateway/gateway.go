@@ -98,6 +98,19 @@ func (g *GatewayNode) updateTopology() {
 	for _, device := range output.Devices {
 		online := false
 		newCreated := false
+		hasExportIp := false
+
+		for _, eth := range device.EthernetDesc {
+			if strings.Contains(eth, "is exporter") {
+				hasExportIp = true
+				break
+			}
+		}
+
+		if !hasExportIp {
+			log.Errorf(log.Fields{}, "host %v lost export ip address", device.LocalAddr)
+			continue
+		}
 
 		if _, ok := g.hosts[device.LocalAddr]; !ok {
 			log.Infof(log.Fields{}, "Add host: %v | %v", device.LocalAddr, device.Role)

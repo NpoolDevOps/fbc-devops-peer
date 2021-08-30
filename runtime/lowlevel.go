@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	machspec "github.com/EntropyPool/machine-spec"
-	"github.com/NpoolDevOps/fbc-devops-peer/types"
 	"github.com/jaypipes/ghw"
 	block2 "github.com/jaypipes/ghw/pkg/block"
 	cpu2 "github.com/jaypipes/ghw/pkg/cpu"
@@ -136,7 +135,6 @@ type EthernetInfo struct {
 	Ip            string `json:"ip"`
 	BusInfo       string `json:"bus_info"`
 	Capacity      string `json:"capacity"`
-	IsExporter    bool   `json:"is_exporter"`
 }
 
 func GetEthernetList() []*EthernetInfo {
@@ -192,12 +190,6 @@ func GetEthernetList() []*EthernetInfo {
 		}
 		if strings.Contains(string(line), "size:") {
 			eth.Capacity = strings.Split(string(line), ": ")[1]
-		}
-
-		if eth.Capacity == types.ExporterCapacity && eth.Ip != "" {
-			eth.IsExporter = true
-		} else {
-			eth.IsExporter = false
 		}
 
 		parsed = true

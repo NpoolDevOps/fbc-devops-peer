@@ -262,10 +262,20 @@ func (n *Basenode) getPublicAddr(url string) (string, error) {
 
 func (n *Basenode) GetAddress() (string, string, error) {
 	localAddr := n.NodeDesc.NodeConfig.LocalAddr
+	hasExporter := false
+	ethList := runtime.GetEthernetList()
 
-	for _, eth := range runtime.GetEthernetList() {
-		if eth.IsExporter {
-			localAddr = eth.Ip
+	for _, eth := range ethList {
+		if n.NodeDesc.NodeConfig.LocalAddr == eth.Ip {
+			hasExporter = true
+			eth.Description += " is exporter"
+		}
+	}
+
+	if hasExporter {
+		n.NodeDesc.HardwareInfo.EthernetDesc = []string{}
+		for _, eth := range ethList {
+			n.NodeDesc.HardwareInfo.EthernetDesc = append(n.NodeDesc.HardwareInfo.EthernetDesc, runtime.Info2String(eth))
 		}
 	}
 
