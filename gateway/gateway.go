@@ -98,16 +98,16 @@ func (g *GatewayNode) updateTopology() {
 	for _, device := range output.Devices {
 		online := false
 		newCreated := false
-		hasExportIp := false
+		hasExporterIp := false
 
 		for _, eth := range device.EthernetDesc {
 			if strings.Contains(eth, "is exporter") {
-				hasExportIp = true
+				hasExporterIp = true
 				break
 			}
 		}
 
-		if !hasExportIp {
+		if !hasExporterIp {
 			log.Errorf(log.Fields{}, "host %v lost export ip address", device.LocalAddr)
 			continue
 		}
