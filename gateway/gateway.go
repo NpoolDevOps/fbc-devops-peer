@@ -3,6 +3,7 @@ package gateway
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -10,6 +11,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	runtime "github.com/NpoolDevOps/fbc-devops-peer/runtime"
 
 	log "github.com/EntropyPool/entropy-logger"
 	"github.com/NpoolDevOps/fbc-devops-peer/basenode"
@@ -98,6 +101,21 @@ func (g *GatewayNode) updateTopology() {
 	for _, device := range output.Devices {
 		online := false
 		newCreated := false
+		hasExporter := false
+
+		for _, eth := range device.EthernetDesc {
+			ethList := runtime.EthernetInfo{}
+			json.Unmarshal([]byte(eth), &ethList)
+			if ethList.Exporter {
+				hasExporter = true
+				break
+			}
+		}
+
+		if !hasExporter {
+			log.Errorf(log.Fields{}, "host %v lost export ip address", device.LocalAddr)
+			continue
+		}
 
 		if _, ok := g.hosts[device.LocalAddr]; !ok {
 			log.Infof(log.Fields{}, "Add host: %v | %v", device.LocalAddr, device.Role)

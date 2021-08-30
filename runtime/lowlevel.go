@@ -135,6 +135,7 @@ type EthernetInfo struct {
 	Ip            string `json:"ip"`
 	BusInfo       string `json:"bus_info"`
 	Capacity      string `json:"capacity"`
+	Exporter      bool   `json:"exporter"`
 }
 
 func GetEthernetList() []*EthernetInfo {
@@ -146,7 +147,7 @@ func GetEthernetList() []*EthernetInfo {
 	eths := []*EthernetInfo{}
 
 	br := bufio.NewReader(strings.NewReader(string(out)))
-	eth := EthernetInfo{}
+	eth := &EthernetInfo{}
 	parsed := false
 	hasNetwork := false
 
@@ -157,8 +158,8 @@ func GetEthernetList() []*EthernetInfo {
 		}
 
 		if strings.Contains(string(line), "*-network") && parsed {
-			eths = append(eths, &eth)
-			eth = EthernetInfo{}
+			eths = append(eths, eth)
+			eth = &EthernetInfo{}
 			hasNetwork = true
 		}
 
@@ -196,7 +197,7 @@ func GetEthernetList() []*EthernetInfo {
 	}
 
 	if hasNetwork {
-		eths = append(eths, &eth)
+		eths = append(eths, eth)
 	}
 
 	return eths
