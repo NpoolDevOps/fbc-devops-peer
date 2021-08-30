@@ -108,7 +108,6 @@ func NewBasenode(config *BasenodeConfig, devopsClient *devops.DevopsClient) *Bas
 	basenode.parser = parser.NewParser()
 
 	basenode.GetAddress()
-	basenode.findExporter()
 	basenode.AddressUpdater()
 
 	basenode.ReadOsSpec()
@@ -262,21 +261,17 @@ func (n *Basenode) getPublicAddr(url string) (string, error) {
 }
 
 func (n *Basenode) findExporter() {
-	hasExporter := false
 	ethList := runtime.GetEthernetList()
 
 	for _, eth := range ethList {
 		if n.NodeDesc.NodeConfig.LocalAddr == eth.Ip {
-			hasExporter = true
-			eth.Description += " is exporter"
+			eth.IsExporter = true
 		}
 	}
 
-	if hasExporter {
-		n.NodeDesc.HardwareInfo.EthernetDesc = []string{}
-		for _, eth := range ethList {
-			n.NodeDesc.HardwareInfo.EthernetDesc = append(n.NodeDesc.HardwareInfo.EthernetDesc, runtime.Info2String(eth))
-		}
+	n.NodeDesc.HardwareInfo.EthernetDesc = []string{}
+	for _, eth := range ethList {
+		n.NodeDesc.HardwareInfo.EthernetDesc = append(n.NodeDesc.HardwareInfo.EthernetDesc, runtime.Info2String(eth))
 	}
 }
 
@@ -337,6 +332,8 @@ func (n *Basenode) AddressUpdater() {
 				n.NodeDesc.NodeConfig.PublicAddr = publicAddr
 				updated = true
 			}
+
+			n.findExporter()
 
 			if updated {
 				n.devopsClient.FeedMsg(types.DeviceRegisterAPI, n.ToDeviceRegisterInput(), true)
