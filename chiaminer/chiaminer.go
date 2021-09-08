@@ -23,7 +23,7 @@ func NewChiaMinerNode(config *basenode.BasenodeConfig, devopsClient *devops.Devo
 	}
 
 	logfile, _ := chiaminer.GetLogFileByRole(types.ChiaMinerNode)
-	chiaminer.chiaMinerMetrics = metrics.NewChiaMinerMetrics(logfile)
+	chiaminer.chiaMinerMetrics = metrics.NewChiaMinerMetrics(logfile, chiaminer.Username)
 
 	chiaminer.SetAddrNotifier(chiaminer.addressNotifier)
 	return chiaminer

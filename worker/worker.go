@@ -20,7 +20,7 @@ func NewWorkerNode(config *basenode.BasenodeConfig, devopsClient *devops.DevopsC
 		basenode.NewBasenode(config, devopsClient),
 		nil,
 	}
-	worker.workermetrics = workermetrics.NewWorkerMetrics()
+	worker.workermetrics = workermetrics.NewWorkerMetrics(worker.Username)
 	return worker
 }
 

@@ -8,7 +8,7 @@ import (
 )
 
 func TestNewBaseMetrics(t *testing.T) {
-	NewBaseMetrics()
+	NewBaseMetrics("entropytest")
 	delay, lost := pingStatistic("www.baidu.com")
 	log.Infof(log.Fields{}, "DELAY : %v, LOST : %v", delay, lost)
 }
