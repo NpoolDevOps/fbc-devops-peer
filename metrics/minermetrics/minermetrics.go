@@ -12,6 +12,8 @@ import (
 	"github.com/NpoolDevOps/fbc-devops-peer/api/systemapi"
 	"github.com/NpoolDevOps/fbc-devops-peer/loganalysis/minerlog"
 	"github.com/prometheus/client_golang/prometheus"
+	dto "github.com/prometheus/client_model/go"
+	"google.golang.org/protobuf/proto"
 )
 
 type MinerMetricsConfig struct {
@@ -29,11 +31,12 @@ type MinerMetrics struct {
 	BlockTookMinMs *prometheus.Desc
 	Blocks         *prometheus.Desc
 
-	SectorTaskElapsed    *prometheus.Desc
-	SectorTaskDuration   *prometheus.Desc
-	SectorTaskConcurrent *prometheus.Desc
-	SectorTaskDones      *prometheus.Desc
-	SectorTaskProgress   *prometheus.Desc
+	SectorTaskElapsed        *prometheus.Desc
+	SectorTaskDuration       *prometheus.Desc
+	SectorTaskConcurrent     *prometheus.Desc
+	SectorTaskDones          *prometheus.Desc
+	SectorTaskProgress       *prometheus.Desc
+	SectorTaskProgressMetric *prometheus.MetricVec
 
 	MinerSectorTaskConcurrent *prometheus.Desc
 	MinerSectorTaskDones      *prometheus.Desc
@@ -117,11 +120,25 @@ type MinerMetrics struct {
 	sectorStat       map[string]uint64
 }
 
+type InfoVec struct {
+	*prometheus.MetricVec
+}
+
 func NewMinerMetrics(cfg MinerMetricsConfig, paths []string) *MinerMetrics {
+	desc := prometheus.NewDesc(
+		"miner_seal_sector_task_progress",
+		"Miner seal sector task progress",
+		[]string{"tasktype", "worker", "sector", "done"}, nil,
+	)
 	mm := &MinerMetrics{
 		ml:               minerlog.NewMinerLog(cfg.Logfile),
 		lotusStoragePath: paths,
 		config:           cfg,
+		SectorTaskProgressMetric: prometheus.NewMetricVec(
+			desc, func(lvs ...string) prometheus.Metric {
+				return Info{desc: desc, labelPairs: prometheus.MakeLabelPairs(desc, lvs)}
+			},
+		),
 		ForkBlocks: prometheus.NewDesc(
 			"miner_fork_blocks",
 			"Show miner fork blocks",
@@ -507,6 +524,21 @@ func NewMinerMetrics(cfg MinerMetricsConfig, paths []string) *MinerMetrics {
 	return mm
 }
 
+type Info struct {
+	desc       *prometheus.Desc
+	labelPairs []*dto.LabelPair
+}
+
+func (i Info) Desc() *prometheus.Desc {
+	return i.desc
+}
+
+func (i Info) Write(out *dto.Metric) error {
+	out.Label = i.labelPairs
+	out.Gauge = &dto.Gauge{Value: proto.Float64(1)}
+	return nil
+}
+
 func (m *MinerMetrics) SetHost(host string) {
 	m.host = host
 	m.hasHost = true
@@ -658,6 +690,13 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 		ch <- prometheus.MustNewConstMetric(m.MinerSectorTaskConcurrent, prometheus.CounterValue, float64(totalConcurrent), taskType)
 		ch <- prometheus.MustNewConstMetric(m.MinerSectorTaskDones, prometheus.CounterValue, float64(totalDones), taskType)
 	}
+
+	m.mutex.Lock()
+	deletedSectorNumberGroup := m.ml.GetDeletedSectorNumberGroup()
+	for _, sectorNumber := range deletedSectorNumberGroup {
+		m.SectorTaskProgressMetric.Delete(prometheus.Labels{"sector": sectorNumber})
+	}
+	m.mutex.Unlock()
 
 	m.mutex.Lock()
 	jobs := m.sealingJobs

@@ -157,6 +157,8 @@ type MinerLog struct {
 	timeStamp                  uint64
 	sectorGroup                []sectorTask
 	mutex                      sync.Mutex
+	deletedSectorNumberGroup   []string
+	use                        bool
 }
 
 func (ml *MinerLog) processMineOne(line logbase.LogLine) {
@@ -542,6 +544,9 @@ type SectorTaskStat struct {
 
 func (ml *MinerLog) GetSectorTasks() map[string]map[string][]SectorTaskStat {
 	tasks := map[string]map[string][]SectorTaskStat{}
+	if ml.use == true {
+		ml.deletedSectorNumberGroup = []string{}
+	}
 
 	ml.mutex.Lock()
 	for taskType, sectorTasks := range ml.sectorTasks {
@@ -568,6 +573,7 @@ func (ml *MinerLog) GetSectorTasks() map[string]map[string][]SectorTaskStat {
 				if len(ml.sectorGroup) <= 1000 {
 					break
 				}
+				ml.deletedSectorNumberGroup = append(ml.deletedSectorNumberGroup, ml.sectorGroup[0].SectorNumber)
 				delete(ml.sectorTasks[taskType], ml.sectorGroup[0].SectorNumber)
 				ml.sectorGroup = ml.sectorGroup[1:]
 			}
@@ -629,4 +635,11 @@ func (ml *MinerLog) GetMineOne() MineOne {
 	mineOne := ml.mineOne
 	ml.mutex.Unlock()
 	return mineOne
+}
+
+func (ml *MinerLog) GetDeletedSectorNumberGroup() []string {
+	ml.mutex.Lock()
+	group := ml.deletedSectorNumberGroup
+	ml.mutex.Unlock()
+	return group
 }
