@@ -11,22 +11,26 @@ type ChiaMinerMetrics struct {
 	ChiaMinerProcessCount *prometheus.Desc //chia miner服务状态
 	ChiaMinerTimeoutCount *prometheus.Desc //chia miner 扫盘超时
 
-	host    string
-	hasHost bool
+	host        string
+	hasHost     bool
+	username    string
+	networkType string
 }
 
-func NewChiaMinerMetrics(logfile string) *ChiaMinerMetrics {
+func NewChiaMinerMetrics(logfile, username, networkType string) *ChiaMinerMetrics {
 	cmm := &ChiaMinerMetrics{
-		cml: chiaminerlog.NewChiaMinerLog(logfile),
+		cml:         chiaminerlog.NewChiaMinerLog(logfile),
+		username:    username,
+		networkType: networkType,
 		ChiaMinerProcessCount: prometheus.NewDesc(
 			"chia_miner_process_count",
 			"show chia miner process count",
-			nil, nil,
+			[]string{"networktype", "user"}, nil,
 		),
 		ChiaMinerTimeoutCount: prometheus.NewDesc(
 			"chia_miner_timeout_count",
 			"show chia miner timeout count",
-			nil, nil,
+			[]string{"networktype", "user"}, nil,
 		),
 	}
 	return cmm
@@ -43,10 +47,13 @@ func (c *ChiaMinerMetrics) Describe(ch chan<- *prometheus.Desc) {
 }
 
 func (c *ChiaMinerMetrics) Collect(ch chan<- prometheus.Metric) {
+	username := c.username
+	networkType := c.networkType
+
 	chiaMinerProcessCount, _ := systemapi.GetProcessCount("/usr/local/bin/hpool-miner-chia -config")
 	chiaMinerTimeout := c.cml.GetChiaMinerTimeout()
 
-	ch <- prometheus.MustNewConstMetric(c.ChiaMinerProcessCount, prometheus.CounterValue, float64(chiaMinerProcessCount))
-	ch <- prometheus.MustNewConstMetric(c.ChiaMinerTimeoutCount, prometheus.CounterValue, float64(chiaMinerTimeout))
+	ch <- prometheus.MustNewConstMetric(c.ChiaMinerProcessCount, prometheus.CounterValue, float64(chiaMinerProcessCount), networkType, username)
+	ch <- prometheus.MustNewConstMetric(c.ChiaMinerTimeoutCount, prometheus.CounterValue, float64(chiaMinerTimeout), networkType, username)
 
 }

@@ -7,14 +7,19 @@ import (
 
 type WorkerMetrics struct {
 	OpenFileNumber *prometheus.Desc
+
+	username    string
+	networkType string
 }
 
-func NewWorkerMetrics() *WorkerMetrics {
+func NewWorkerMetrics(username, networkType string) *WorkerMetrics {
 	metrics := &WorkerMetrics{
+		username:    username,
+		networkType: networkType,
 		OpenFileNumber: prometheus.NewDesc(
 			"worker_open_file_number",
 			"show worker open file number",
-			nil, nil,
+			[]string{"networktype", "user"}, nil,
 		),
 	}
 	return metrics
@@ -25,8 +30,11 @@ func (m *WorkerMetrics) Describe(ch chan<- *prometheus.Desc) {
 }
 
 func (w *WorkerMetrics) Collect(ch chan<- prometheus.Metric) {
+	username := w.username
+	networkType := w.networkType
+
 	workerOpenFileNumber, err := systemapi.GetProcessOpenFileNumber("lotus-worker")
 	if err == nil {
-		ch <- prometheus.MustNewConstMetric(w.OpenFileNumber, prometheus.CounterValue, float64(workerOpenFileNumber))
+		ch <- prometheus.MustNewConstMetric(w.OpenFileNumber, prometheus.CounterValue, float64(workerOpenFileNumber), networkType, username)
 	}
 }

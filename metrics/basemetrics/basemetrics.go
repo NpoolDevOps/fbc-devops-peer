@@ -33,49 +33,54 @@ type BaseMetrics struct {
 	pingBaiduDelayMs   int64
 	pingGatewayLost    float64
 	pingBaiduLost      float64
+
+	username    string
+	networkType string
 }
 
-func NewBaseMetrics() *BaseMetrics {
+func NewBaseMetrics(username, networkType string) *BaseMetrics {
 	metrics := &BaseMetrics{
+		username:    username,
+		networkType: networkType,
 		PingGatewayDelay: prometheus.NewDesc(
 			"base_ping_gateway_delay",
 			"Show base ping gateway delay",
-			nil, nil,
+			[]string{"networktype", "user"}, nil,
 		),
 		PingGatewayLost: prometheus.NewDesc(
 			"base_ping_gateway_lost",
 			"Show base ping gateway lost",
-			nil, nil,
+			[]string{"networktype", "user"}, nil,
 		),
 		PingBaiduDelay: prometheus.NewDesc(
 			"base_ping_baidu_delay",
 			"Show base ping baidu lost",
-			nil, nil,
+			[]string{"networktype", "user"}, nil,
 		),
 		PingBaiduLost: prometheus.NewDesc(
 			"base_ping_baidu_lost",
 			"Show base ping baidu lost",
-			nil, nil,
+			[]string{"networktype", "user"}, nil,
 		),
 		TimeDiff: prometheus.NewDesc(
 			"base_ntp_time_diff",
 			"Show base ntp time diff",
-			nil, nil,
+			[]string{"networktype", "user"}, nil,
 		),
 		RootPermission: prometheus.NewDesc(
 			"base_root_permission",
 			"show whether the root is able to write and read",
-			nil, nil,
+			[]string{"networktype", "user"}, nil,
 		),
 		RootMountRW: prometheus.NewDesc(
 			"base_root_mount_rw",
 			"show whether root mount access is rw",
-			nil, nil,
+			[]string{"networktype", "user"}, nil,
 		),
 		NvmeTemperature: prometheus.NewDesc(
 			"base_nvme_temperature",
 			"show nvme temperature",
-			[]string{"nvme"}, nil,
+			[]string{"nvme", "networktype", "user"}, nil,
 		),
 	}
 
@@ -118,25 +123,28 @@ func (m *BaseMetrics) Describe(ch chan<- *prometheus.Desc) {
 }
 
 func (m *BaseMetrics) Collect(ch chan<- prometheus.Metric) {
+	username := m.username
+	networkType := m.networkType
+
 	timeDiff, _ := getNtpDiff()
-	ch <- prometheus.MustNewConstMetric(m.TimeDiff, prometheus.CounterValue, timeDiff)
-	ch <- prometheus.MustNewConstMetric(m.PingGatewayDelay, prometheus.CounterValue, float64(m.pingGatewayDelayMs))
-	ch <- prometheus.MustNewConstMetric(m.PingGatewayLost, prometheus.CounterValue, m.pingGatewayLost)
-	ch <- prometheus.MustNewConstMetric(m.PingBaiduDelay, prometheus.CounterValue, float64(m.pingBaiduDelayMs))
-	ch <- prometheus.MustNewConstMetric(m.PingBaiduLost, prometheus.CounterValue, m.pingBaiduLost)
+	ch <- prometheus.MustNewConstMetric(m.TimeDiff, prometheus.CounterValue, timeDiff, networkType, username)
+	ch <- prometheus.MustNewConstMetric(m.PingGatewayDelay, prometheus.CounterValue, float64(m.pingGatewayDelayMs), networkType, username)
+	ch <- prometheus.MustNewConstMetric(m.PingGatewayLost, prometheus.CounterValue, m.pingGatewayLost, networkType, username)
+	ch <- prometheus.MustNewConstMetric(m.PingBaiduDelay, prometheus.CounterValue, float64(m.pingBaiduDelayMs), networkType, username)
+	ch <- prometheus.MustNewConstMetric(m.PingBaiduLost, prometheus.CounterValue, m.pingBaiduLost, networkType, username)
 	rootPerm, _ := systemapi.FilePerm2Int("/")
-	ch <- prometheus.MustNewConstMetric(m.RootPermission, prometheus.CounterValue, float64(rootPerm))
+	ch <- prometheus.MustNewConstMetric(m.RootPermission, prometheus.CounterValue, float64(rootPerm), networkType, username)
 
 	mountpointWrittable, _ := systemapi.MountpointWrittable("/")
 	if mountpointWrittable {
-		ch <- prometheus.MustNewConstMetric(m.RootMountRW, prometheus.CounterValue, 1)
+		ch <- prometheus.MustNewConstMetric(m.RootMountRW, prometheus.CounterValue, 1, networkType, username)
 	} else {
-		ch <- prometheus.MustNewConstMetric(m.RootMountRW, prometheus.CounterValue, 0)
+		ch <- prometheus.MustNewConstMetric(m.RootMountRW, prometheus.CounterValue, 0, networkType, username)
 	}
 
 	nvmeTemperatureList, _ := systemapi.GetNvmeTemperatureList()
 	for nvmeName, temperature := range nvmeTemperatureList {
-		ch <- prometheus.MustNewConstMetric(m.NvmeTemperature, prometheus.CounterValue, temperature, nvmeName)
+		ch <- prometheus.MustNewConstMetric(m.NvmeTemperature, prometheus.CounterValue, temperature, nvmeName, networkType, username)
 	}
 }
 

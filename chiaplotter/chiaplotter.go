@@ -23,7 +23,7 @@ func NewPlotterNode(config *basenode.BasenodeConfig, devopsClient *devops.Devops
 	}
 
 	logfile, _ := plotter.GetLogFileByRole(types.ChiaPlotterNode)
-	plotter.plotterMetrics = metrics.NewChiaPlotterMetrics(logfile)
+	plotter.plotterMetrics = metrics.NewChiaPlotterMetrics(logfile, plotter.Username, plotter.NetworkType)
 
 	plotter.SetAddrNotifier(plotter.addressNotifier)
 	return plotter

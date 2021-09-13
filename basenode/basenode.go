@@ -117,7 +117,7 @@ func NewBasenode(config *BasenodeConfig, devopsClient *devops.DevopsClient) *Bas
 		basenode.NodeDesc.NodeConfig.SubRole = role
 	}
 
-	basenode.BaseMetrics = basemetrics.NewBaseMetrics()
+	basenode.BaseMetrics = basemetrics.NewBaseMetrics(basenode.Username, basenode.NetworkType)
 
 	basenode.startLicenseChecker()
 	basenode.devopsClient.FeedMsg(types.DeviceRegisterAPI, basenode.ToDeviceRegisterInput(), true)

@@ -10,6 +10,7 @@ require (
 	github.com/NpoolDevOps/fbc-license-service v0.0.0-20210328062839-d1527bc31f7e
 	github.com/NpoolRD/http-daemon v0.0.0-20210324100344-82fee56de8ac
 	github.com/beevik/ntp v0.3.0
+	github.com/coreos/bbolt v1.3.2 // indirect
 	github.com/deniswernert/go-fstab v0.0.0-20141204152952-eb4090f26517
 	github.com/docker/go-units v0.4.0
 	github.com/euank/go-kmsg-parser v2.0.0+incompatible
@@ -31,8 +32,10 @@ require (
 	github.com/rai-project/nvidia-smi v0.0.0-20190730061239-864eb441c9ae
 	github.com/rai-project/tegra v0.0.0-20181119122707-1d9901ca382b // indirect
 	github.com/shirou/gopsutil/v3 v3.21.5
+	github.com/tmc/grpc-websocket-proxy v0.0.0-20190109142713-0ad062ec5ee5 // indirect
 	github.com/urfave/cli/v2 v2.3.0
 	github.com/xjh22222228/ip v1.0.1
+	golang.org/x/sys v0.0.0-20210217105451-b926d437f341 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1
 	gopkg.in/yaml.v2 v2.3.0
 )

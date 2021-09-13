@@ -31,6 +31,8 @@ func NewMinerNode(config *basenode.BasenodeConfig, devopsClient *devops.DevopsCl
 	miner.minerMetrics = minermetrics.NewMinerMetrics(minermetrics.MinerMetricsConfig{
 		ShareStorageRoot: shareStorageRoot,
 		Logfile:          logfile,
+		Username:         config.Username,
+		NetworkType:      config.NetworkType,
 	}, paths)
 
 	miner.SetAddrNotifier(miner.addressNotifier)

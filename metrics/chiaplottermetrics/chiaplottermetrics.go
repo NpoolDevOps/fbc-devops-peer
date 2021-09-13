@@ -16,46 +16,50 @@ type ChiaPlotterMetrics struct {
 	StorageProxyProcessCount  *prometheus.Desc
 	StorageServerProcessCount *prometheus.Desc
 
-	host    string
-	hasHost bool
+	host        string
+	hasHost     bool
+	username    string
+	networkType string
 }
 
-func NewChiaPlotterMetrics(logfile string) *ChiaPlotterMetrics {
+func NewChiaPlotterMetrics(logfile, username, networkType string) *ChiaPlotterMetrics {
 	cpm := &ChiaPlotterMetrics{
+		username:    username,
+		networkType: networkType,
 		PlotterAvgTime: prometheus.NewDesc(
 			"plotter_average_time",
 			"show plotter average time",
-			nil, nil,
+			[]string{"networktype", "user"}, nil,
 		),
 		PlotterMaxTime: prometheus.NewDesc(
 			"plotter_max_time",
 			"show the max value of plotter time",
-			nil, nil,
+			[]string{"networktype", "user"}, nil,
 		),
 		PlotterMinTime: prometheus.NewDesc(
 			"plotter_min_time",
 			"show the min value of plotter time",
-			nil, nil,
+			[]string{"networktype", "user"}, nil,
 		),
 		PlotterPlotCount: prometheus.NewDesc(
 			"plotter_plot_count",
 			"show times parse plotter time",
-			nil, nil,
+			[]string{"networktype", "user"}, nil,
 		),
 		PlotterProcessCount: prometheus.NewDesc(
 			"plotter_process_count",
 			"show plotter status",
-			nil, nil,
+			[]string{"networktype", "user"}, nil,
 		),
 		StorageProxyProcessCount: prometheus.NewDesc(
 			"chia_storage_proxy_process_count",
 			"show chia storage proxy process count",
-			nil, nil,
+			[]string{"networktype", "user"}, nil,
 		),
 		StorageServerProcessCount: prometheus.NewDesc(
 			"storage_server_process_count",
 			"show chia storage server process count",
-			nil, nil,
+			[]string{"networktype", "user"}, nil,
 		),
 	}
 	return cpm
@@ -77,6 +81,9 @@ func (p *ChiaPlotterMetrics) Describe(ch chan<- *prometheus.Desc) {
 }
 
 func (p *ChiaPlotterMetrics) Collect(ch chan<- prometheus.Metric) {
+	username := p.username
+	networkType := p.networkType
+
 	plotterAvgTime := p.cpl.GetChiaPlotterAvgTime()
 	plotterMaxTime := p.cpl.GetChiaPlotterMaxTime()
 	plotterMinTime := p.cpl.GetChiaPlotterMinTime()
@@ -85,11 +92,11 @@ func (p *ChiaPlotterMetrics) Collect(ch chan<- prometheus.Metric) {
 	storageProxyStatus, _ := systemapi.GetProcessCount("chia-storage-proxy")
 	storageServerStatus, _ := systemapi.GetProcessCount("chia-storage-server")
 
-	ch <- prometheus.MustNewConstMetric(p.PlotterProcessCount, prometheus.CounterValue, float64(plotterProcessCount))
-	ch <- prometheus.MustNewConstMetric(p.StorageProxyProcessCount, prometheus.CounterValue, float64(storageProxyStatus))
-	ch <- prometheus.MustNewConstMetric(p.StorageServerProcessCount, prometheus.CounterValue, float64(storageServerStatus))
-	ch <- prometheus.MustNewConstMetric(p.PlotterAvgTime, prometheus.CounterValue, plotterAvgTime)
-	ch <- prometheus.MustNewConstMetric(p.PlotterMaxTime, prometheus.CounterValue, plotterMaxTime)
-	ch <- prometheus.MustNewConstMetric(p.PlotterMinTime, prometheus.CounterValue, plotterMinTime)
-	ch <- prometheus.MustNewConstMetric(p.PlotterPlotCount, prometheus.CounterValue, float64(PlotterPlotCount))
+	ch <- prometheus.MustNewConstMetric(p.PlotterProcessCount, prometheus.CounterValue, float64(plotterProcessCount), networkType, username)
+	ch <- prometheus.MustNewConstMetric(p.StorageProxyProcessCount, prometheus.CounterValue, float64(storageProxyStatus), networkType, username)
+	ch <- prometheus.MustNewConstMetric(p.StorageServerProcessCount, prometheus.CounterValue, float64(storageServerStatus), networkType, username)
+	ch <- prometheus.MustNewConstMetric(p.PlotterAvgTime, prometheus.CounterValue, plotterAvgTime, networkType, username)
+	ch <- prometheus.MustNewConstMetric(p.PlotterMaxTime, prometheus.CounterValue, plotterMaxTime, networkType, username)
+	ch <- prometheus.MustNewConstMetric(p.PlotterMinTime, prometheus.CounterValue, plotterMinTime, networkType, username)
+	ch <- prometheus.MustNewConstMetric(p.PlotterPlotCount, prometheus.CounterValue, float64(PlotterPlotCount), networkType, username)
 }
