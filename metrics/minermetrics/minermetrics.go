@@ -15,9 +15,10 @@ import (
 )
 
 type MinerMetricsConfig struct {
-	ShareStorageRoot string
-	Logfile          string
-	Username         string
+	ShareStorageRoot      string
+	Logfile               string
+	networkType, Username string
+	NetworkType           string
 }
 
 type MinerMetrics struct {
@@ -117,6 +118,7 @@ type MinerMetrics struct {
 	storageStat      map[string]error
 	sectorStat       map[string]uint64
 	username         string
+	networkType      string
 }
 
 func NewMinerMetrics(cfg MinerMetricsConfig, paths []string) *MinerMetrics {
@@ -125,335 +127,336 @@ func NewMinerMetrics(cfg MinerMetricsConfig, paths []string) *MinerMetrics {
 		lotusStoragePath: paths,
 		config:           cfg,
 		username:         cfg.Username,
+		networkType:      cfg.NetworkType,
 		ForkBlocks: prometheus.NewDesc(
 			"miner_fork_blocks",
 			"Show miner fork blocks",
-			[]string{"user"}, nil,
+			[]string{"networktype", "user"}, nil,
 		),
 		PastBlocks: prometheus.NewDesc(
 			"miner_block_in_past",
 			"Show miner block in past",
-			[]string{"user"}, nil,
+			[]string{"networktype", "user"}, nil,
 		),
 		FailedBlocks: prometheus.NewDesc(
 			"miner_block_failed",
 			"Show miner block failed",
-			[]string{"user"}, nil,
+			[]string{"networktype", "user"}, nil,
 		),
 		BlockTookAvgMs: prometheus.NewDesc(
 			"miner_block_took_average_ms",
 			"Show miner block took average ms",
-			[]string{"user"}, nil,
+			[]string{"networktype", "user"}, nil,
 		),
 		BlockTookMaxMs: prometheus.NewDesc(
 			"miner_block_took_max_ms",
 			"Show miner block took max ms",
-			[]string{"user"}, nil,
+			[]string{"networktype", "user"}, nil,
 		),
 		BlockTookMinMs: prometheus.NewDesc(
 			"miner_block_took_min_ms",
 			"Show miner block took min ms",
-			[]string{"user"}, nil,
+			[]string{"networktype", "user"}, nil,
 		),
 		Blocks: prometheus.NewDesc(
 			"miner_block_produced",
 			"Show miner block produced",
-			[]string{"user"}, nil,
+			[]string{"networktype", "user"}, nil,
 		),
 		SectorTaskElapsed: prometheus.NewDesc(
 			"miner_seal_sector_task_elapsed",
 			"Miner seal sector task elapsed",
-			[]string{"tasktype", "worker", "user"}, nil,
+			[]string{"tasktype", "worker", "networktype", "user"}, nil,
 		),
 		SectorTaskDuration: prometheus.NewDesc(
 			"miner_seal_sector_task_duration",
 			"Miner seal sector task duration",
-			[]string{"tasktype", "worker", "user"}, nil,
+			[]string{"tasktype", "worker", "networktype", "user"}, nil,
 		),
 		SectorTaskConcurrent: prometheus.NewDesc(
 			"miner_seal_sector_task_concurrent",
 			"Miner seal sector task concurrent",
-			[]string{"tasktype", "worker", "user"}, nil,
+			[]string{"tasktype", "worker", "networktype", "user"}, nil,
 		),
 		SectorTaskDones: prometheus.NewDesc(
 			"miner_seal_sector_task_dones",
 			"Miner seal sector task dones",
-			[]string{"tasktype", "worker", "user"}, nil,
+			[]string{"tasktype", "worker", "networktype", "user"}, nil,
 		),
 		SectorTaskProgress: prometheus.NewDesc(
 			"miner_seal_sector_task_progress",
 			"Miner seal sector task progress",
-			[]string{"tasktype", "worker", "sector", "done", "user"}, nil,
+			[]string{"tasktype", "worker", "sector", "done", "networktype", "user"}, nil,
 		),
 		MinerSectorTaskConcurrent: prometheus.NewDesc(
 			"miner_seal_sector_task_concurrent_total",
 			"Miner seal sector task concurrent total",
-			[]string{"tasktype", "user"}, nil,
+			[]string{"tasktype", "networktype", "user"}, nil,
 		),
 		MinerSectorTaskDones: prometheus.NewDesc(
 			"miner_seal_sector_task_dones_total",
 			"Miner seal sector task dones total",
-			[]string{"tasktype", "user"}, nil,
+			[]string{"tasktype", "networktype", "user"}, nil,
 		),
 		Power: prometheus.NewDesc(
 			"miner_power",
 			"Miner power",
-			[]string{"user"}, nil,
+			[]string{"networktype", "user"}, nil,
 		),
 		RawPower: prometheus.NewDesc(
 			"miner_raw_power",
 			"Miner raw power",
-			[]string{"user"}, nil,
+			[]string{"networktype", "user"}, nil,
 		),
 		CommittedPower: prometheus.NewDesc(
 			"miner_committed_power",
 			"Miner committed power",
-			[]string{"user"}, nil,
+			[]string{"networktype", "user"}, nil,
 		),
 		ProvingPower: prometheus.NewDesc(
 			"miner_proving_power",
 			"Miner proving power",
-			[]string{"user"}, nil,
+			[]string{"networktype", "user"}, nil,
 		),
 		FaultyPower: prometheus.NewDesc(
 			"miner_faulty_power",
 			"Miner faulty power",
-			[]string{"user"}, nil,
+			[]string{"networktype", "user"}, nil,
 		),
 		MinerBalance: prometheus.NewDesc(
 			"miner_balance",
 			"Miner balance",
-			[]string{"user"}, nil,
+			[]string{"networktype", "user"}, nil,
 		),
 		PrecommitDeposit: prometheus.NewDesc(
 			"miner_precommit_deposit",
 			"Miner precommit deposit",
-			[]string{"user"}, nil,
+			[]string{"networktype", "user"}, nil,
 		),
 		InitialPledge: prometheus.NewDesc(
 			"miner_initial_pledge",
 			"Miner initial pledge",
-			[]string{"user"}, nil,
+			[]string{"networktype", "user"}, nil,
 		),
 		Vesting: prometheus.NewDesc(
 			"miner_vesting",
 			"Miner vesting",
-			[]string{"user"}, nil,
+			[]string{"networktype", "user"}, nil,
 		),
 		Available: prometheus.NewDesc(
 			"miner_available",
 			"Miner available",
-			[]string{"user"}, nil,
+			[]string{"networktype", "user"}, nil,
 		),
 		WorkerBalance: prometheus.NewDesc(
 			"miner_worker_balance",
 			"Miner worker balance",
-			[]string{"user"}, nil,
+			[]string{"networktype", "user"}, nil,
 		),
 		ControlBalance: prometheus.NewDesc(
 			"miner_control_balance",
 			"Miner control balance",
-			[]string{"user"}, nil,
+			[]string{"networktype", "user"}, nil,
 		),
 		MinerTaskState: prometheus.NewDesc(
 			"miner_sector_state",
 			"Miner sector state",
-			[]string{"state", "user"}, nil,
+			[]string{"state", "networktype", "user"}, nil,
 		),
 		SectorTaskRunning: prometheus.NewDesc(
 			"miner_sector_task_running",
 			"Miner sector task running",
-			[]string{"tasktype", "worker", "user"}, nil,
+			[]string{"tasktype", "worker", "networktype", "user"}, nil,
 		),
 		SectorTaskRunningElapsed: prometheus.NewDesc(
 			"miner_sector_task_running_elapsed",
 			"Miner sector task running elapsed",
-			[]string{"tasktype", "worker", "user"}, nil,
+			[]string{"tasktype", "worker", "networktype", "user"}, nil,
 		),
 		SectorTaskWaiting: prometheus.NewDesc(
 			"miner_sector_task_waiting",
 			"Miner sector task waiting",
-			[]string{"tasktype", "worker", "user"}, nil,
+			[]string{"tasktype", "worker", "networktype", "user"}, nil,
 		),
 		SectorTaskWaitingElapsed: prometheus.NewDesc(
 			"miner_sector_task_waiting_elapsed",
 			"Miner sector task waiting elapsed",
-			[]string{"tasktype", "worker", "user"}, nil,
+			[]string{"tasktype", "worker", "networktype", "user"}, nil,
 		),
 		MinerSectorTaskRunning: prometheus.NewDesc(
 			"miner_sector_task_running_total",
 			"Miner sector task running total",
-			[]string{"tasktype", "user"}, nil,
+			[]string{"tasktype", "networktype", "user"}, nil,
 		),
 		MinerSectorTaskWaiting: prometheus.NewDesc(
 			"miner_sector_task_waiting_total",
 			"Miner sector task waiting total",
-			[]string{"tasktype", "user"}, nil,
+			[]string{"tasktype", "networktype", "user"}, nil,
 		),
 		MinerBaseFee: prometheus.NewDesc(
 			"miner_basefee",
 			"Miner basefee",
-			[]string{"user"}, nil,
+			[]string{"networktype", "user"}, nil,
 		),
 		MinerWorkers: prometheus.NewDesc(
 			"miner_workers",
 			"Miner workers",
-			[]string{"user"}, nil,
+			[]string{"networktype", "user"}, nil,
 		),
 		MinerWorkerGPUs: prometheus.NewDesc(
 			"miner_worker_gpus",
 			"Miner worker gpus",
-			[]string{"worker", "user"}, nil,
+			[]string{"worker", "networktype", "user"}, nil,
 		),
 		MinerGPUs: prometheus.NewDesc(
 			"miner_gpus",
 			"Miner gpus",
-			[]string{"user"}, nil,
+			[]string{"networktype", "user"}, nil,
 		),
 		MinerWorkerMaintaining: prometheus.NewDesc(
 			"miner_worker_maintaining",
 			"Miner worker maintaining",
-			[]string{"worker", "user"}, nil,
+			[]string{"worker", "networktype", "user"}, nil,
 		),
 		MinerWorkerRejectTask: prometheus.NewDesc(
 			"miner_worker_reject_task",
 			"Miner worker reject task",
-			[]string{"worker", "user"}, nil,
+			[]string{"worker", "networktype", "user"}, nil,
 		),
 		MinerCheckSectorsGood: prometheus.NewDesc(
 			"miner_check_sectors_good",
 			"Miner check sectors good",
-			[]string{"deadline", "user"}, nil,
+			[]string{"deadline", "networktype", "user"}, nil,
 		),
 		MinerCheckSectorsChecked: prometheus.NewDesc(
 			"miner_check_sectors_checked",
 			"Miner check sectors checked",
-			[]string{"deadline", "user"}, nil,
+			[]string{"deadline", "networktype", "user"}, nil,
 		),
 		ProvingDeadlineAllSectors: prometheus.NewDesc(
 			"miner_proving_deadline_all_sectors",
 			"Miner proving deadline all sectors",
-			[]string{"deadline", "user"}, nil,
+			[]string{"deadline", "networktype", "user"}, nil,
 		),
 		ProvingDeadlineFaultySectors: prometheus.NewDesc(
 			"miner_proving_deadline_faulty_sectors",
 			"Miner proving deadline faulty sectors",
-			[]string{"deadline", "user"}, nil,
+			[]string{"deadline", "networktype", "user"}, nil,
 		),
 		ProvingDeadlineCurrent: prometheus.NewDesc(
 			"miner_proving_deadline_current",
 			"Miner proving deadline current",
-			[]string{"deadline", "user"}, nil,
+			[]string{"deadline", "networktype", "user"}, nil,
 		),
 		ProvingDeadlinePartitions: prometheus.NewDesc(
 			"miner_proving_deadline_partitions",
 			"Miner proving deadline partitions",
-			[]string{"deadline", "user"}, nil,
+			[]string{"deadline", "networktype", "user"}, nil,
 		),
 		ProvingDeadlineProvenPartitions: prometheus.NewDesc(
 			"miner_proving_deadline_proven_partitions",
 			"Miner proving deadline proven partitions",
-			[]string{"deadline", "user"}, nil,
+			[]string{"deadline", "networktype", "user"}, nil,
 		),
 		LogFileSize: prometheus.NewDesc(
 			"miner_log_filesize",
 			"Miner log filesize",
-			[]string{"user"}, nil,
+			[]string{"networktype", "user"}, nil,
 		),
 		ChainSyncNotCompleted: prometheus.NewDesc(
 			"miner_chain_sync_not_completed",
 			"Miner chain sync not completed",
-			[]string{"fullnode", "user"}, nil,
+			[]string{"fullnode", "networktype", "user"}, nil,
 		),
 		ChainNotSuitable: prometheus.NewDesc(
 			"miner_chain_not_suitable",
 			"Miner chain not suitable",
-			[]string{"user"}, nil,
+			[]string{"networktype", "user"}, nil,
 		),
 		ChainHeadListen: prometheus.NewDesc(
 			"miner_chain_head_epoch",
 			"Miner chain head epoch",
-			[]string{"fullnode", "user"}, nil,
+			[]string{"fullnode", "networktype", "user"}, nil,
 		),
 		StorageMountpointPermission: prometheus.NewDesc(
 			"miner_storage_mount_point_permission",
 			"show miner storage's file mount point permission",
-			[]string{"filedir", "user"}, nil,
+			[]string{"filedir", "networktype", "user"}, nil,
 		),
 		StorageMountError: prometheus.NewDesc(
 			"miner_storage_mount_error",
 			"show storage mount error",
-			[]string{"filedir", "user"}, nil,
+			[]string{"filedir", "networktype", "user"}, nil,
 		),
 		MinerOpenFileNumber: prometheus.NewDesc(
 			"miner_open_file_number",
 			"show how many files miner opened",
-			[]string{"user"}, nil,
+			[]string{"networktype", "user"}, nil,
 		),
 		MinerProcessTcpConnectNumber: prometheus.NewDesc(
 			"miner_process_tcp_connect_number",
 			"show miner process tcp connect number",
-			[]string{"user"}, nil,
+			[]string{"networktype", "user"}, nil,
 		),
 		MinerAdjustGasFeecap: prometheus.NewDesc(
 			"miner_fee_adjust_gas_feecap",
 			"show miner fee adjust gas feecap",
-			[]string{"user"}, nil,
+			[]string{"networktype", "user"}, nil,
 		),
 		MinerAdjustBaseFee: prometheus.NewDesc(
 			"miner_fee_adjust_basefee",
 			"show miner fee adjust base fee",
-			[]string{"user"}, nil,
+			[]string{"networktype", "user"}, nil,
 		),
 		MinerSectorSizeGib: prometheus.NewDesc(
 			"miner_sector_size_gib",
 			"show miner sector size Gib",
-			[]string{"user"}, nil,
+			[]string{"networktype", "user"}, nil,
 		),
 		MinerIsMaster: prometheus.NewDesc(
 			"miner_is_master",
 			"show whether miner is master",
-			[]string{"user"}, nil,
+			[]string{"networktype", "user"}, nil,
 		),
 		MiningLateBase: prometheus.NewDesc(
 			"miner_mining_late_base",
 			"show mining late base",
-			[]string{"user"}, nil,
+			[]string{"networktype", "user"}, nil,
 		),
 		MiningLateBaseDeltaSecond: prometheus.NewDesc(
 			"miner_mining_late_base_delta_second",
 			"show mining late base delta second",
-			[]string{"user"}, nil,
+			[]string{"networktype", "user"}, nil,
 		),
 		MiningLateWinner: prometheus.NewDesc(
 			"miner_mining_late_winner",
 			"show mining late winner",
-			[]string{"user"}, nil,
+			[]string{"networktype", "user"}, nil,
 		),
 		MiningEligible: prometheus.NewDesc(
 			"miner_mining_eligible",
 			"show mining eligible",
-			[]string{"user"}, nil,
+			[]string{"networktype", "user"}, nil,
 		),
 		MiningNetworkPower: prometheus.NewDesc(
 			"miner_mining_network_power",
 			"show mining network power",
-			[]string{"user"}, nil,
+			[]string{"networktype", "user"}, nil,
 		),
 		MiningMinerPower: prometheus.NewDesc(
 			"miner_mining_miner_power",
 			"show mining miner power",
-			[]string{"user"}, nil,
+			[]string{"networktype", "user"}, nil,
 		),
 		MinerId: prometheus.NewDesc(
 			"miner_id",
 			"show miner id",
-			[]string{"minerid", "user"}, nil,
+			[]string{"minerid", "networktype", "user"}, nil,
 		),
 		MinerRepoDirUsage: prometheus.NewDesc(
 			"miner_repo_dir_usage",
 			"show miner repo dir usage",
-			[]string{"repodir", "totalcap", "user"}, nil,
+			[]string{"repodir", "totalcap", "networktype", "user"}, nil,
 		),
 	}
 
@@ -599,6 +602,7 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 	minerIsMaster := m.ml.GetMinerIsMaster()
 	mineOne := m.ml.GetMineOne()
 	username := m.username
+	networkType := m.networkType
 
 	avgMs := uint64(0)
 	maxMs := uint64(0)
@@ -617,14 +621,14 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 		avgMs = avgMs / uint64(len(tooks))
 	}
 
-	ch <- prometheus.MustNewConstMetric(m.ForkBlocks, prometheus.CounterValue, float64(forkBlocks), username)
-	ch <- prometheus.MustNewConstMetric(m.PastBlocks, prometheus.CounterValue, float64(pastBlocks), username)
-	ch <- prometheus.MustNewConstMetric(m.FailedBlocks, prometheus.CounterValue, float64(failedBlocks), username)
-	ch <- prometheus.MustNewConstMetric(m.BlockTookAvgMs, prometheus.CounterValue, float64(avgMs), username)
-	ch <- prometheus.MustNewConstMetric(m.BlockTookMaxMs, prometheus.CounterValue, float64(maxMs), username)
-	ch <- prometheus.MustNewConstMetric(m.BlockTookMinMs, prometheus.CounterValue, float64(minMs), username)
-	ch <- prometheus.MustNewConstMetric(m.Blocks, prometheus.CounterValue, float64(len(tooks)), username)
-	ch <- prometheus.MustNewConstMetric(m.MinerIsMaster, prometheus.CounterValue, minerIsMaster, username)
+	ch <- prometheus.MustNewConstMetric(m.ForkBlocks, prometheus.CounterValue, float64(forkBlocks), networkType, username)
+	ch <- prometheus.MustNewConstMetric(m.PastBlocks, prometheus.CounterValue, float64(pastBlocks), networkType, username)
+	ch <- prometheus.MustNewConstMetric(m.FailedBlocks, prometheus.CounterValue, float64(failedBlocks), networkType, username)
+	ch <- prometheus.MustNewConstMetric(m.BlockTookAvgMs, prometheus.CounterValue, float64(avgMs), networkType, username)
+	ch <- prometheus.MustNewConstMetric(m.BlockTookMaxMs, prometheus.CounterValue, float64(maxMs), networkType, username)
+	ch <- prometheus.MustNewConstMetric(m.BlockTookMinMs, prometheus.CounterValue, float64(minMs), networkType, username)
+	ch <- prometheus.MustNewConstMetric(m.Blocks, prometheus.CounterValue, float64(len(tooks)), networkType, username)
+	ch <- prometheus.MustNewConstMetric(m.MinerIsMaster, prometheus.CounterValue, minerIsMaster, networkType, username)
 
 	sectorTasks := m.ml.GetSectorTasks()
 	for taskType, typedTasks := range sectorTasks {
@@ -643,7 +647,7 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 						duration = task.Elapsed
 					}
 					ch <- prometheus.MustNewConstMetric(m.SectorTaskProgress, prometheus.CounterValue,
-						float64(task.Elapsed), taskType, worker, task.Sector, "1", username)
+						float64(task.Elapsed), taskType, worker, task.Sector, "1", networkType, username)
 				} else {
 					concurrent += 1
 					totalConcurrent += 1
@@ -651,16 +655,16 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 						elapsed = task.Elapsed
 					}
 					ch <- prometheus.MustNewConstMetric(m.SectorTaskProgress, prometheus.CounterValue,
-						float64(task.Elapsed), taskType, worker, task.Sector, "0", username)
+						float64(task.Elapsed), taskType, worker, task.Sector, "0", networkType, username)
 				}
 			}
-			ch <- prometheus.MustNewConstMetric(m.SectorTaskElapsed, prometheus.CounterValue, float64(elapsed), taskType, worker, username)
-			ch <- prometheus.MustNewConstMetric(m.SectorTaskDuration, prometheus.CounterValue, float64(duration), taskType, worker, username)
-			ch <- prometheus.MustNewConstMetric(m.SectorTaskConcurrent, prometheus.CounterValue, float64(concurrent), taskType, worker, username)
-			ch <- prometheus.MustNewConstMetric(m.SectorTaskDones, prometheus.CounterValue, float64(dones), taskType, worker, username)
+			ch <- prometheus.MustNewConstMetric(m.SectorTaskElapsed, prometheus.CounterValue, float64(elapsed), taskType, worker, networkType, username)
+			ch <- prometheus.MustNewConstMetric(m.SectorTaskDuration, prometheus.CounterValue, float64(duration), taskType, worker, networkType, username)
+			ch <- prometheus.MustNewConstMetric(m.SectorTaskConcurrent, prometheus.CounterValue, float64(concurrent), taskType, worker, networkType, username)
+			ch <- prometheus.MustNewConstMetric(m.SectorTaskDones, prometheus.CounterValue, float64(dones), taskType, worker, networkType, username)
 		}
-		ch <- prometheus.MustNewConstMetric(m.MinerSectorTaskConcurrent, prometheus.CounterValue, float64(totalConcurrent), taskType, username)
-		ch <- prometheus.MustNewConstMetric(m.MinerSectorTaskDones, prometheus.CounterValue, float64(totalDones), taskType, username)
+		ch <- prometheus.MustNewConstMetric(m.MinerSectorTaskConcurrent, prometheus.CounterValue, float64(totalConcurrent), taskType, networkType, username)
+		ch <- prometheus.MustNewConstMetric(m.MinerSectorTaskDones, prometheus.CounterValue, float64(totalDones), taskType, networkType, username)
 	}
 
 	m.mutex.Lock()
@@ -670,65 +674,65 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 		totalRunning := uint64(0)
 		totalWaiting := uint64(0)
 		for worker, job := range typedJobs {
-			ch <- prometheus.MustNewConstMetric(m.SectorTaskWaitingElapsed, prometheus.CounterValue, float64(job.MaxWaiting), taskType, worker, username)
-			ch <- prometheus.MustNewConstMetric(m.SectorTaskRunningElapsed, prometheus.CounterValue, float64(job.MaxRunning), taskType, worker, username)
-			ch <- prometheus.MustNewConstMetric(m.SectorTaskRunning, prometheus.CounterValue, float64(job.Running), taskType, worker, username)
-			ch <- prometheus.MustNewConstMetric(m.SectorTaskWaiting, prometheus.CounterValue, float64(job.Assigned), taskType, worker, username)
+			ch <- prometheus.MustNewConstMetric(m.SectorTaskWaitingElapsed, prometheus.CounterValue, float64(job.MaxWaiting), taskType, worker, networkType, username)
+			ch <- prometheus.MustNewConstMetric(m.SectorTaskRunningElapsed, prometheus.CounterValue, float64(job.MaxRunning), taskType, worker, networkType, username)
+			ch <- prometheus.MustNewConstMetric(m.SectorTaskRunning, prometheus.CounterValue, float64(job.Running), taskType, worker, networkType, username)
+			ch <- prometheus.MustNewConstMetric(m.SectorTaskWaiting, prometheus.CounterValue, float64(job.Assigned), taskType, worker, networkType, username)
 			totalRunning += job.Running
 			totalWaiting += job.Assigned
 		}
-		ch <- prometheus.MustNewConstMetric(m.MinerSectorTaskRunning, prometheus.CounterValue, float64(totalRunning), taskType, username)
-		ch <- prometheus.MustNewConstMetric(m.MinerSectorTaskWaiting, prometheus.CounterValue, float64(totalWaiting), taskType, username)
+		ch <- prometheus.MustNewConstMetric(m.MinerSectorTaskRunning, prometheus.CounterValue, float64(totalRunning), taskType, networkType, username)
+		ch <- prometheus.MustNewConstMetric(m.MinerSectorTaskWaiting, prometheus.CounterValue, float64(totalWaiting), taskType, networkType, username)
 	}
 
 	m.mutex.Lock()
 	info := m.minerInfo
 	m.mutex.Unlock()
-	ch <- prometheus.MustNewConstMetric(m.Power, prometheus.CounterValue, float64(info.Power), username)
-	ch <- prometheus.MustNewConstMetric(m.RawPower, prometheus.CounterValue, float64(info.Raw), username)
-	ch <- prometheus.MustNewConstMetric(m.CommittedPower, prometheus.CounterValue, float64(info.Committed), username)
-	ch <- prometheus.MustNewConstMetric(m.ProvingPower, prometheus.CounterValue, float64(info.Proving), username)
-	ch <- prometheus.MustNewConstMetric(m.FaultyPower, prometheus.CounterValue, float64(info.Faulty), username)
-	ch <- prometheus.MustNewConstMetric(m.MinerBalance, prometheus.CounterValue, float64(info.MinerBalance), username)
-	ch <- prometheus.MustNewConstMetric(m.PrecommitDeposit, prometheus.CounterValue, float64(info.PrecommitDeposit), username)
-	ch <- prometheus.MustNewConstMetric(m.InitialPledge, prometheus.CounterValue, float64(info.InitialPledge), username)
-	ch <- prometheus.MustNewConstMetric(m.Vesting, prometheus.CounterValue, float64(info.Vesting), username)
-	ch <- prometheus.MustNewConstMetric(m.Available, prometheus.CounterValue, float64(info.Available), username)
-	ch <- prometheus.MustNewConstMetric(m.WorkerBalance, prometheus.CounterValue, float64(info.WorkerBalance), username)
-	ch <- prometheus.MustNewConstMetric(m.ControlBalance, prometheus.CounterValue, float64(info.ControlBalance), username)
+	ch <- prometheus.MustNewConstMetric(m.Power, prometheus.CounterValue, float64(info.Power), networkType, username)
+	ch <- prometheus.MustNewConstMetric(m.RawPower, prometheus.CounterValue, float64(info.Raw), networkType, username)
+	ch <- prometheus.MustNewConstMetric(m.CommittedPower, prometheus.CounterValue, float64(info.Committed), networkType, username)
+	ch <- prometheus.MustNewConstMetric(m.ProvingPower, prometheus.CounterValue, float64(info.Proving), networkType, username)
+	ch <- prometheus.MustNewConstMetric(m.FaultyPower, prometheus.CounterValue, float64(info.Faulty), networkType, username)
+	ch <- prometheus.MustNewConstMetric(m.MinerBalance, prometheus.CounterValue, float64(info.MinerBalance), networkType, username)
+	ch <- prometheus.MustNewConstMetric(m.PrecommitDeposit, prometheus.CounterValue, float64(info.PrecommitDeposit), networkType, username)
+	ch <- prometheus.MustNewConstMetric(m.InitialPledge, prometheus.CounterValue, float64(info.InitialPledge), networkType, username)
+	ch <- prometheus.MustNewConstMetric(m.Vesting, prometheus.CounterValue, float64(info.Vesting), networkType, username)
+	ch <- prometheus.MustNewConstMetric(m.Available, prometheus.CounterValue, float64(info.Available), networkType, username)
+	ch <- prometheus.MustNewConstMetric(m.WorkerBalance, prometheus.CounterValue, float64(info.WorkerBalance), networkType, username)
+	ch <- prometheus.MustNewConstMetric(m.ControlBalance, prometheus.CounterValue, float64(info.ControlBalance), networkType, username)
 	for state, count := range m.sectorStat {
-		ch <- prometheus.MustNewConstMetric(m.MinerTaskState, prometheus.CounterValue, float64(count), state, username)
+		ch <- prometheus.MustNewConstMetric(m.MinerTaskState, prometheus.CounterValue, float64(count), state, networkType, username)
 	}
-	ch <- prometheus.MustNewConstMetric(m.MinerSectorSizeGib, prometheus.CounterValue, float64(info.SectorSize), username)
+	ch <- prometheus.MustNewConstMetric(m.MinerSectorSizeGib, prometheus.CounterValue, float64(info.SectorSize), networkType, username)
 
 	basefee, _ := lotusapi.ChainBaseFee(m.fullnodeHost)
-	ch <- prometheus.MustNewConstMetric(m.MinerBaseFee, prometheus.CounterValue, basefee, username)
+	ch <- prometheus.MustNewConstMetric(m.MinerBaseFee, prometheus.CounterValue, basefee, networkType, username)
 
 	m.mutex.Lock()
 	workerInfos := m.workerInfos
 	m.mutex.Unlock()
 
 	gpus := 0
-	ch <- prometheus.MustNewConstMetric(m.MinerWorkers, prometheus.CounterValue, float64(len(workerInfos.Infos)), username)
+	ch <- prometheus.MustNewConstMetric(m.MinerWorkers, prometheus.CounterValue, float64(len(workerInfos.Infos)), networkType, username)
 	for worker, info := range workerInfos.Infos {
-		ch <- prometheus.MustNewConstMetric(m.MinerWorkerGPUs, prometheus.CounterValue, float64(info.GPUs), worker, username)
-		ch <- prometheus.MustNewConstMetric(m.MinerWorkerMaintaining, prometheus.CounterValue, float64(info.Maintaining), worker, username)
-		ch <- prometheus.MustNewConstMetric(m.MinerWorkerRejectTask, prometheus.CounterValue, float64(info.RejectTask), worker, username)
+		ch <- prometheus.MustNewConstMetric(m.MinerWorkerGPUs, prometheus.CounterValue, float64(info.GPUs), worker, networkType, username)
+		ch <- prometheus.MustNewConstMetric(m.MinerWorkerMaintaining, prometheus.CounterValue, float64(info.Maintaining), worker, networkType, username)
+		ch <- prometheus.MustNewConstMetric(m.MinerWorkerRejectTask, prometheus.CounterValue, float64(info.RejectTask), worker, networkType, username)
 		gpus += info.GPUs
 	}
-	ch <- prometheus.MustNewConstMetric(m.MinerGPUs, prometheus.CounterValue, float64(gpus), username)
+	ch <- prometheus.MustNewConstMetric(m.MinerGPUs, prometheus.CounterValue, float64(gpus), networkType, username)
 
 	checkSectors := m.ml.GetCheckSectors()
 	for deadline, sectors := range checkSectors {
-		ch <- prometheus.MustNewConstMetric(m.MinerCheckSectorsGood, prometheus.CounterValue, float64(sectors.Good), fmt.Sprintf("%v", deadline), username)
-		ch <- prometheus.MustNewConstMetric(m.MinerCheckSectorsChecked, prometheus.CounterValue, float64(sectors.Checked), fmt.Sprintf("%v", deadline), username)
+		ch <- prometheus.MustNewConstMetric(m.MinerCheckSectorsGood, prometheus.CounterValue, float64(sectors.Good), fmt.Sprintf("%v", deadline), networkType, username)
+		ch <- prometheus.MustNewConstMetric(m.MinerCheckSectorsChecked, prometheus.CounterValue, float64(sectors.Checked), fmt.Sprintf("%v", deadline), networkType, username)
 	}
 	m.mutex.Lock()
 	minerId := m.minerInfo.MinerId
 	m.mutex.Unlock()
 
 	if 0 < len(minerId) {
-		ch <- prometheus.MustNewConstMetric(m.MinerId, prometheus.CounterValue, float64(1), minerId, username)
+		ch <- prometheus.MustNewConstMetric(m.MinerId, prometheus.CounterValue, float64(1), minerId, networkType, username)
 		deadlines, err := lotusapi.ProvingDeadlines(m.fullnodeHost, minerId)
 		if err == nil {
 			for dlIdx, deadline := range deadlines.Deadlines {
@@ -736,11 +740,11 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 				if deadline.Current {
 					current = 1
 				}
-				ch <- prometheus.MustNewConstMetric(m.ProvingDeadlineAllSectors, prometheus.CounterValue, float64(deadline.AllSectors), fmt.Sprintf("%v", dlIdx), username)
-				ch <- prometheus.MustNewConstMetric(m.ProvingDeadlineFaultySectors, prometheus.CounterValue, float64(deadline.FaultySectors), fmt.Sprintf("%v", dlIdx), username)
-				ch <- prometheus.MustNewConstMetric(m.ProvingDeadlineCurrent, prometheus.CounterValue, float64(current), fmt.Sprintf("%v", dlIdx), username)
-				ch <- prometheus.MustNewConstMetric(m.ProvingDeadlinePartitions, prometheus.CounterValue, float64(deadline.Partitions), fmt.Sprintf("%v", dlIdx), username)
-				ch <- prometheus.MustNewConstMetric(m.ProvingDeadlineProvenPartitions, prometheus.CounterValue, float64(deadline.ProvenPartitions), fmt.Sprintf("%v", dlIdx), username)
+				ch <- prometheus.MustNewConstMetric(m.ProvingDeadlineAllSectors, prometheus.CounterValue, float64(deadline.AllSectors), fmt.Sprintf("%v", dlIdx), networkType, username)
+				ch <- prometheus.MustNewConstMetric(m.ProvingDeadlineFaultySectors, prometheus.CounterValue, float64(deadline.FaultySectors), fmt.Sprintf("%v", dlIdx), networkType, username)
+				ch <- prometheus.MustNewConstMetric(m.ProvingDeadlineCurrent, prometheus.CounterValue, float64(current), fmt.Sprintf("%v", dlIdx), networkType, username)
+				ch <- prometheus.MustNewConstMetric(m.ProvingDeadlinePartitions, prometheus.CounterValue, float64(deadline.Partitions), fmt.Sprintf("%v", dlIdx), networkType, username)
+				ch <- prometheus.MustNewConstMetric(m.ProvingDeadlineProvenPartitions, prometheus.CounterValue, float64(deadline.ProvenPartitions), fmt.Sprintf("%v", dlIdx), networkType, username)
 			}
 		} else {
 			log.Errorf(log.Fields{}, "fail to get proving deadlines: %v", err)
@@ -748,72 +752,72 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 	}
 
 	filesize := m.ml.LogFileSize()
-	ch <- prometheus.MustNewConstMetric(m.LogFileSize, prometheus.CounterValue, float64(filesize), username)
+	ch <- prometheus.MustNewConstMetric(m.LogFileSize, prometheus.CounterValue, float64(filesize), networkType, username)
 
 	chainSyncNotCompletedHosts := m.ml.GetChainSyncNotCompletedHosts()
 	//
 	for host := range chainSyncNotCompletedHosts {
-		ch <- prometheus.MustNewConstMetric(m.ChainSyncNotCompleted, prometheus.CounterValue, float64(1), host, username)
+		ch <- prometheus.MustNewConstMetric(m.ChainSyncNotCompleted, prometheus.CounterValue, float64(1), host, networkType, username)
 	}
 	chainNotSuitable := m.ml.GetChainNotSuitable()
-	ch <- prometheus.MustNewConstMetric(m.ChainNotSuitable, prometheus.CounterValue, float64(chainNotSuitable), username)
+	ch <- prometheus.MustNewConstMetric(m.ChainNotSuitable, prometheus.CounterValue, float64(chainNotSuitable), networkType, username)
 
 	chainHeadListenSuccessHosts := m.ml.GetChainHeadListenSuccessHosts()
 	for host, epoch := range chainHeadListenSuccessHosts {
-		ch <- prometheus.MustNewConstMetric(m.ChainHeadListen, prometheus.CounterValue, float64(epoch), host, username)
+		ch <- prometheus.MustNewConstMetric(m.ChainHeadListen, prometheus.CounterValue, float64(epoch), host, networkType, username)
 	}
 
 	for k, v := range m.storageStat {
 		if v != nil {
-			ch <- prometheus.MustNewConstMetric(m.StorageMountError, prometheus.CounterValue, 1, k, username)
+			ch <- prometheus.MustNewConstMetric(m.StorageMountError, prometheus.CounterValue, 1, k, networkType, username)
 		} else {
-			ch <- prometheus.MustNewConstMetric(m.StorageMountError, prometheus.CounterValue, 0, k, username)
+			ch <- prometheus.MustNewConstMetric(m.StorageMountError, prometheus.CounterValue, 0, k, networkType, username)
 		}
 		filePerm, _ := systemapi.FilePerm2Int(k)
-		ch <- prometheus.MustNewConstMetric(m.StorageMountpointPermission, prometheus.CounterValue, float64(filePerm), k, username)
+		ch <- prometheus.MustNewConstMetric(m.StorageMountpointPermission, prometheus.CounterValue, float64(filePerm), k, networkType, username)
 	}
 
 	minerFileOpenNumber, _ := systemapi.GetProcessOpenFileNumber("lotus-miner")
-	ch <- prometheus.MustNewConstMetric(m.MinerOpenFileNumber, prometheus.CounterValue, float64(minerFileOpenNumber), username)
+	ch <- prometheus.MustNewConstMetric(m.MinerOpenFileNumber, prometheus.CounterValue, float64(minerFileOpenNumber), networkType, username)
 
 	tcpConnectNumber, _ := systemapi.GetProcessTcpConnectNumber("lotus-miner")
-	ch <- prometheus.MustNewConstMetric(m.MinerProcessTcpConnectNumber, prometheus.CounterValue, float64(tcpConnectNumber), username)
+	ch <- prometheus.MustNewConstMetric(m.MinerProcessTcpConnectNumber, prometheus.CounterValue, float64(tcpConnectNumber), networkType, username)
 
-	ch <- prometheus.MustNewConstMetric(m.MinerAdjustBaseFee, prometheus.CounterValue, minerAdjustBaseFee, username)
-	ch <- prometheus.MustNewConstMetric(m.MinerAdjustGasFeecap, prometheus.CounterValue, minerAdjustGasFeecap, username)
+	ch <- prometheus.MustNewConstMetric(m.MinerAdjustBaseFee, prometheus.CounterValue, minerAdjustBaseFee, networkType, username)
+	ch <- prometheus.MustNewConstMetric(m.MinerAdjustGasFeecap, prometheus.CounterValue, minerAdjustGasFeecap, networkType, username)
 
 	if mineOne.MiningEligible {
-		ch <- prometheus.MustNewConstMetric(m.MiningEligible, prometheus.CounterValue, float64(1), username)
+		ch <- prometheus.MustNewConstMetric(m.MiningEligible, prometheus.CounterValue, float64(1), networkType, username)
 	} else {
-		ch <- prometheus.MustNewConstMetric(m.MiningEligible, prometheus.CounterValue, float64(0), username)
+		ch <- prometheus.MustNewConstMetric(m.MiningEligible, prometheus.CounterValue, float64(0), networkType, username)
 	}
 	if mineOne.MiningLateBase {
-		ch <- prometheus.MustNewConstMetric(m.MiningLateBase, prometheus.CounterValue, float64(1), username)
+		ch <- prometheus.MustNewConstMetric(m.MiningLateBase, prometheus.CounterValue, float64(1), networkType, username)
 	} else {
-		ch <- prometheus.MustNewConstMetric(m.MiningLateBase, prometheus.CounterValue, float64(0), username)
+		ch <- prometheus.MustNewConstMetric(m.MiningLateBase, prometheus.CounterValue, float64(0), networkType, username)
 	}
 	if mineOne.MiningLateWinner {
-		ch <- prometheus.MustNewConstMetric(m.MiningLateWinner, prometheus.CounterValue, float64(1), username)
+		ch <- prometheus.MustNewConstMetric(m.MiningLateWinner, prometheus.CounterValue, float64(1), networkType, username)
 	} else {
-		ch <- prometheus.MustNewConstMetric(m.MiningLateWinner, prometheus.CounterValue, float64(0), username)
+		ch <- prometheus.MustNewConstMetric(m.MiningLateWinner, prometheus.CounterValue, float64(0), networkType, username)
 	}
 	switch mineOne.MiningLateBaseDeltaSecond.(type) {
 	case float64:
-		ch <- prometheus.MustNewConstMetric(m.MiningLateBaseDeltaSecond, prometheus.CounterValue, mineOne.MiningLateBaseDeltaSecond.(float64), username)
+		ch <- prometheus.MustNewConstMetric(m.MiningLateBaseDeltaSecond, prometheus.CounterValue, mineOne.MiningLateBaseDeltaSecond.(float64), networkType, username)
 	case int64:
-		ch <- prometheus.MustNewConstMetric(m.MiningLateBaseDeltaSecond, prometheus.CounterValue, float64(mineOne.MiningLateBaseDeltaSecond.(int64)), username)
+		ch <- prometheus.MustNewConstMetric(m.MiningLateBaseDeltaSecond, prometheus.CounterValue, float64(mineOne.MiningLateBaseDeltaSecond.(int64)), networkType, username)
 	case string:
 		miningLateBaseDeltaSecond, _ := strconv.ParseFloat(mineOne.MiningLateBaseDeltaSecond.(string), 64)
-		ch <- prometheus.MustNewConstMetric(m.MiningLateBaseDeltaSecond, prometheus.CounterValue, miningLateBaseDeltaSecond, username)
+		ch <- prometheus.MustNewConstMetric(m.MiningLateBaseDeltaSecond, prometheus.CounterValue, miningLateBaseDeltaSecond, networkType, username)
 	}
 	miningNetworkPower, _ := strconv.ParseFloat(mineOne.MiningNetworkPower, 64)
 	miningMinerPower, _ := strconv.ParseFloat(mineOne.MiningMinerPower, 64)
-	ch <- prometheus.MustNewConstMetric(m.MiningNetworkPower, prometheus.CounterValue, miningNetworkPower, username)
-	ch <- prometheus.MustNewConstMetric(m.MiningMinerPower, prometheus.CounterValue, miningMinerPower, username)
+	ch <- prometheus.MustNewConstMetric(m.MiningNetworkPower, prometheus.CounterValue, miningNetworkPower, networkType, username)
+	ch <- prometheus.MustNewConstMetric(m.MiningMinerPower, prometheus.CounterValue, miningMinerPower, networkType, username)
 
 	for _, path := range m.lotusStoragePath {
 		pathStatus := getMinerRepoDirUsage(path)
-		ch <- prometheus.MustNewConstMetric(m.MinerRepoDirUsage, prometheus.CounterValue, pathStatus.Used, fmt.Sprintf("%v", path), fmt.Sprintf("%v", pathStatus.All), username)
+		ch <- prometheus.MustNewConstMetric(m.MinerRepoDirUsage, prometheus.CounterValue, pathStatus.Used, fmt.Sprintf("%v", path), fmt.Sprintf("%v", pathStatus.All), networkType, username)
 	}
 }
 

@@ -34,12 +34,14 @@ type BaseMetrics struct {
 	pingGatewayLost    float64
 	pingBaiduLost      float64
 
-	username string
+	username    string
+	networkType string
 }
 
-func NewBaseMetrics(username string) *BaseMetrics {
+func NewBaseMetrics(username, networkType string) *BaseMetrics {
 	metrics := &BaseMetrics{
-		username: username,
+		username:    username,
+		networkType: networkType,
 		PingGatewayDelay: prometheus.NewDesc(
 			"base_ping_gateway_delay",
 			"Show base ping gateway delay",

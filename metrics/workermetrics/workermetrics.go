@@ -8,11 +8,14 @@ import (
 type WorkerMetrics struct {
 	OpenFileNumber *prometheus.Desc
 
-	username string
+	username    string
+	networkType string
 }
 
-func NewWorkerMetrics(username string) *WorkerMetrics {
+func NewWorkerMetrics(username, networkType string) *WorkerMetrics {
 	metrics := &WorkerMetrics{
+		username:    username,
+		networkType: networkType,
 		OpenFileNumber: prometheus.NewDesc(
 			"worker_open_file_number",
 			"show worker open file number",

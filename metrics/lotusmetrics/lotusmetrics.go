@@ -32,13 +32,15 @@ type LotusMetrics struct {
 	lotusRepoDir string
 	errors       int
 	username     string
+	networkType  string
 }
 
-func NewLotusMetrics(logfile, dir, username string) *LotusMetrics {
+func NewLotusMetrics(logfile, dir, username, networkType string) *LotusMetrics {
 	return &LotusMetrics{
 		ll:           lotuslog.NewLotusLog(logfile),
 		lotusRepoDir: dir,
 		username:     username,
+		networkType:  networkType,
 		HeightDiff: prometheus.NewDesc(
 			"lotus_chain_height_diff",
 			"Show lotus chain sync height diff",
