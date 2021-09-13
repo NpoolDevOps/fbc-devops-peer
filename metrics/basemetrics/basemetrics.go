@@ -45,42 +45,42 @@ func NewBaseMetrics(username, networkType string) *BaseMetrics {
 		PingGatewayDelay: prometheus.NewDesc(
 			"base_ping_gateway_delay",
 			"Show base ping gateway delay",
-			[]string{"user"}, nil,
+			[]string{"networktype", "user"}, nil,
 		),
 		PingGatewayLost: prometheus.NewDesc(
 			"base_ping_gateway_lost",
 			"Show base ping gateway lost",
-			[]string{"user"}, nil,
+			[]string{"networktype", "user"}, nil,
 		),
 		PingBaiduDelay: prometheus.NewDesc(
 			"base_ping_baidu_delay",
 			"Show base ping baidu lost",
-			[]string{"user"}, nil,
+			[]string{"networktype", "user"}, nil,
 		),
 		PingBaiduLost: prometheus.NewDesc(
 			"base_ping_baidu_lost",
 			"Show base ping baidu lost",
-			[]string{"user"}, nil,
+			[]string{"networktype", "user"}, nil,
 		),
 		TimeDiff: prometheus.NewDesc(
 			"base_ntp_time_diff",
 			"Show base ntp time diff",
-			[]string{"user"}, nil,
+			[]string{"networktype", "user"}, nil,
 		),
 		RootPermission: prometheus.NewDesc(
 			"base_root_permission",
 			"show whether the root is able to write and read",
-			[]string{"user"}, nil,
+			[]string{"networktype", "user"}, nil,
 		),
 		RootMountRW: prometheus.NewDesc(
 			"base_root_mount_rw",
 			"show whether root mount access is rw",
-			[]string{"user"}, nil,
+			[]string{"networktype", "user"}, nil,
 		),
 		NvmeTemperature: prometheus.NewDesc(
 			"base_nvme_temperature",
 			"show nvme temperature",
-			[]string{"nvme", "user"}, nil,
+			[]string{"nvme", "networktype", "user"}, nil,
 		),
 	}
 
@@ -124,26 +124,27 @@ func (m *BaseMetrics) Describe(ch chan<- *prometheus.Desc) {
 
 func (m *BaseMetrics) Collect(ch chan<- prometheus.Metric) {
 	username := m.username
+	networkType := m.networkType
 
 	timeDiff, _ := getNtpDiff()
-	ch <- prometheus.MustNewConstMetric(m.TimeDiff, prometheus.CounterValue, timeDiff, username)
-	ch <- prometheus.MustNewConstMetric(m.PingGatewayDelay, prometheus.CounterValue, float64(m.pingGatewayDelayMs), username)
-	ch <- prometheus.MustNewConstMetric(m.PingGatewayLost, prometheus.CounterValue, m.pingGatewayLost, username)
-	ch <- prometheus.MustNewConstMetric(m.PingBaiduDelay, prometheus.CounterValue, float64(m.pingBaiduDelayMs), username)
-	ch <- prometheus.MustNewConstMetric(m.PingBaiduLost, prometheus.CounterValue, m.pingBaiduLost, username)
+	ch <- prometheus.MustNewConstMetric(m.TimeDiff, prometheus.CounterValue, timeDiff, networkType, username)
+	ch <- prometheus.MustNewConstMetric(m.PingGatewayDelay, prometheus.CounterValue, float64(m.pingGatewayDelayMs), networkType, username)
+	ch <- prometheus.MustNewConstMetric(m.PingGatewayLost, prometheus.CounterValue, m.pingGatewayLost, networkType, username)
+	ch <- prometheus.MustNewConstMetric(m.PingBaiduDelay, prometheus.CounterValue, float64(m.pingBaiduDelayMs), networkType, username)
+	ch <- prometheus.MustNewConstMetric(m.PingBaiduLost, prometheus.CounterValue, m.pingBaiduLost, networkType, username)
 	rootPerm, _ := systemapi.FilePerm2Int("/")
-	ch <- prometheus.MustNewConstMetric(m.RootPermission, prometheus.CounterValue, float64(rootPerm), username)
+	ch <- prometheus.MustNewConstMetric(m.RootPermission, prometheus.CounterValue, float64(rootPerm), networkType, username)
 
 	mountpointWrittable, _ := systemapi.MountpointWrittable("/")
 	if mountpointWrittable {
-		ch <- prometheus.MustNewConstMetric(m.RootMountRW, prometheus.CounterValue, 1, username)
+		ch <- prometheus.MustNewConstMetric(m.RootMountRW, prometheus.CounterValue, 1, networkType, username)
 	} else {
-		ch <- prometheus.MustNewConstMetric(m.RootMountRW, prometheus.CounterValue, 0, username)
+		ch <- prometheus.MustNewConstMetric(m.RootMountRW, prometheus.CounterValue, 0, networkType, username)
 	}
 
 	nvmeTemperatureList, _ := systemapi.GetNvmeTemperatureList()
 	for nvmeName, temperature := range nvmeTemperatureList {
-		ch <- prometheus.MustNewConstMetric(m.NvmeTemperature, prometheus.CounterValue, temperature, nvmeName, username)
+		ch <- prometheus.MustNewConstMetric(m.NvmeTemperature, prometheus.CounterValue, temperature, nvmeName, networkType, username)
 	}
 }
 
