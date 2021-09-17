@@ -15,10 +15,10 @@ import (
 )
 
 type MinerMetricsConfig struct {
-	ShareStorageRoot      string
-	Logfile               string
-	networkType, Username string
-	NetworkType           string
+	ShareStorageRoot string
+	Logfile          string
+	Username         string
+	NetworkType      string
 }
 
 type MinerMetrics struct {
