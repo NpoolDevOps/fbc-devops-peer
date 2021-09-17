@@ -36,6 +36,8 @@ func NewFullMinerNode(config *basenode.BasenodeConfig, devopsClient *devops.Devo
 	fullminer.minerMetrics = minermetrics.NewMinerMetrics(minermetrics.MinerMetricsConfig{
 		ShareStorageRoot: shareStorageRoot,
 		Logfile:          logfile,
+		Username:         fullminer.Username,
+		NetworkType:      fullminer.NetworkType,
 	}, paths)
 
 	fullminer.SetAddrNotifier(fullminer.addressNotifier)
