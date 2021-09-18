@@ -213,6 +213,7 @@ func (p *Parser) parseStoragePaths() {
 	for _, storagePath := range p.storageConfig.StoragePaths {
 		if storagePath.Path == p.minerRepoDir {
 			equal = true
+			break
 		}
 	}
 
