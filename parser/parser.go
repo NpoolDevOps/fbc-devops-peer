@@ -208,6 +208,20 @@ func (p *Parser) parseStoragePaths() {
 		log.Errorf(log.Fields{}, "fail to parse %v: %v", storageCfg, err)
 		return
 	}
+
+	equal := false
+	for _, storagePath := range p.storageConfig.StoragePaths {
+		if storagePath.Path == p.minerRepoDir {
+			equal = true
+			break
+		}
+	}
+
+	if !equal {
+		var newStoragePath LocalPath
+		newStoragePath.Path = p.minerRepoDir
+		p.storageConfig.StoragePaths = append(p.storageConfig.StoragePaths, newStoragePath)
+	}
 	p.validStorageConfig = true
 }
 
@@ -648,7 +662,6 @@ func (p *Parser) GetApiHostByHostRole(myRole string) (string, error) {
 
 func (p *Parser) GetMinerStoragePath() []string {
 	var paths []string
-	paths = append(paths, p.minerRepoDir)
 	for _, path := range p.storageConfig.StoragePaths {
 		paths = append(paths, path.Path)
 	}
