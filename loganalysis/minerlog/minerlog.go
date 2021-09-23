@@ -26,6 +26,7 @@ const (
 	RegGetFeeMiner           = "adjust fee for nonce"
 	RegMinerIsMaster         = "play as master"
 	RegMineOne               = "\"msg\":\"completed mineOne\""
+	RegBatchDeadlineElapsed  = "\"msg\":\"computing window post\""
 )
 
 const (
@@ -41,6 +42,7 @@ const (
 	keyGetFeeMiner           = RegGetFeeMiner
 	keyMinerIsMaster         = RegMinerIsMaster
 	keyMineOne               = RegMineOne
+	keyBatchDeadlineElapsed  = RegBatchDeadlineElapsed
 )
 
 type LogRegKey struct {
@@ -97,6 +99,10 @@ var logRegKeys = []LogRegKey{
 		RegName:  RegMineOne,
 		ItemName: keyMineOne,
 	},
+	{
+		RegName:  RegBatchDeadlineElapsed,
+		ItemName: keyBatchDeadlineElapsed,
+	},
 }
 
 type minedBlock struct {
@@ -134,6 +140,12 @@ type MineOne struct {
 	MiningMinerPower          string      `json:"minerPowerAtLookback"`
 }
 
+type DeadlineBatchProving struct {
+	Batch    uint    `json:"batch"`
+	Elapsed  float64 `json:"elapsed"`
+	Deadline uint64  `json:"deadline"`
+}
+
 type MinerLog struct {
 	logbase                    *logbase.Logbase
 	newline                    chan logbase.LogLine
@@ -154,9 +166,22 @@ type MinerLog struct {
 	minerAdjustBaseFee         float64
 	minerIsMaster              bool
 	mineOne                    MineOne
+	deadlineBatchProving       DeadlineBatchProving
 	timeStamp                  uint64
 	sectorGroup                []sectorTask
 	mutex                      sync.Mutex
+}
+
+func (ml *MinerLog) processDeadlineBatchProving(line logbase.LogLine) {
+	deadlineBatchProving := DeadlineBatchProving{}
+	err := json.Unmarshal([]byte(line.Line), &deadlineBatchProving)
+	if err != nil {
+		log.Errorf(log.Fields{}, "fail to unmarshal %v: %v", line.Line, err)
+		return
+	}
+	ml.mutex.Lock()
+	ml.deadlineBatchProving = deadlineBatchProving
+	ml.mutex.Unlock()
 }
 
 func (ml *MinerLog) processMineOne(line logbase.LogLine) {
@@ -407,6 +432,8 @@ func (ml *MinerLog) processLine(line logbase.LogLine) {
 			ml.processMinerIsMaster(line)
 		case RegMineOne:
 			ml.processMineOne(line)
+		case RegBatchDeadlineElapsed:
+			ml.processDeadlineBatchProving(line)
 		}
 
 		break
@@ -629,4 +656,11 @@ func (ml *MinerLog) GetMineOne() MineOne {
 	mineOne := ml.mineOne
 	ml.mutex.Unlock()
 	return mineOne
+}
+
+func (ml *MinerLog) GetDeadlineBatchProving() DeadlineBatchProving {
+	ml.mutex.Lock()
+	deadlineBatchProving := ml.deadlineBatchProving
+	ml.mutex.Unlock()
+	return deadlineBatchProving
 }

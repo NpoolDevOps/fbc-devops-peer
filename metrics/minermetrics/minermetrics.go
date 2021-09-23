@@ -103,6 +103,8 @@ type MinerMetrics struct {
 	MiningNetworkPower        *prometheus.Desc
 	MiningMinerPower          *prometheus.Desc
 
+	DeadlineBatchProving *prometheus.Desc
+
 	minerInfo   minerapi.MinerInfo
 	sealingJobs minerapi.SealingJobs
 	workerInfos minerapi.WorkerInfos
@@ -458,6 +460,11 @@ func NewMinerMetrics(cfg MinerMetricsConfig, paths []string) *MinerMetrics {
 			"show miner repo dir usage",
 			[]string{"repodir", "totalcap", "networktype", "user"}, nil,
 		),
+		DeadlineBatchProving: prometheus.NewDesc(
+			"miner_deadline_batch_proving",
+			"show miner proving elapsed og deadline in batch",
+			[]string{"batch", "deadline", "networktype", "user"}, nil,
+		),
 	}
 
 	go func() {
@@ -589,6 +596,7 @@ func (m *MinerMetrics) Describe(ch chan<- *prometheus.Desc) {
 	ch <- m.MiningMinerPower
 	ch <- m.MiningNetworkPower
 	ch <- m.MinerId
+	ch <- m.DeadlineBatchProving
 
 }
 
@@ -601,6 +609,7 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 	minerAdjustBaseFee := m.ml.GetMinerAdjustBaseFee()
 	minerIsMaster := m.ml.GetMinerIsMaster()
 	mineOne := m.ml.GetMineOne()
+	deadlineBatchProving := m.ml.GetDeadlineBatchProving()
 	username := m.username
 	networkType := m.networkType
 
@@ -620,6 +629,8 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 	if 0 < len(tooks) {
 		avgMs = avgMs / uint64(len(tooks))
 	}
+
+	ch <- prometheus.MustNewConstMetric(m.DeadlineBatchProving, prometheus.CounterValue, float64(deadlineBatchProving.Elapsed), fmt.Sprintf("%v", deadlineBatchProving.Batch), fmt.Sprintf("%v", deadlineBatchProving.Deadline), networkType, username)
 
 	ch <- prometheus.MustNewConstMetric(m.ForkBlocks, prometheus.CounterValue, float64(forkBlocks), networkType, username)
 	ch <- prometheus.MustNewConstMetric(m.PastBlocks, prometheus.CounterValue, float64(pastBlocks), networkType, username)
