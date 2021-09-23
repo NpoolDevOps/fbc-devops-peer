@@ -166,7 +166,7 @@ type MinerLog struct {
 	minerAdjustBaseFee         float64
 	minerIsMaster              bool
 	mineOne                    MineOne
-	deadlineBatchProving       DeadlineBatchProving
+	deadlineBatchProvingGroup  []DeadlineBatchProving
 	timeStamp                  uint64
 	sectorGroup                []sectorTask
 	mutex                      sync.Mutex
@@ -180,7 +180,16 @@ func (ml *MinerLog) processDeadlineBatchProving(line logbase.LogLine) {
 		return
 	}
 	ml.mutex.Lock()
-	ml.deadlineBatchProving = deadlineBatchProving
+	has := false
+	for index, provingGroup := range ml.deadlineBatchProvingGroup {
+		if provingGroup.Batch == deadlineBatchProving.Batch && provingGroup.Deadline == deadlineBatchProving.Deadline {
+			ml.deadlineBatchProvingGroup[index].Elapsed = deadlineBatchProving.Elapsed
+			has = true
+		}
+	}
+	if !has {
+		ml.deadlineBatchProvingGroup = append(ml.deadlineBatchProvingGroup, deadlineBatchProving)
+	}
 	ml.mutex.Unlock()
 }
 
@@ -658,9 +667,9 @@ func (ml *MinerLog) GetMineOne() MineOne {
 	return mineOne
 }
 
-func (ml *MinerLog) GetDeadlineBatchProving() DeadlineBatchProving {
+func (ml *MinerLog) GetDeadlineBatchProving() []DeadlineBatchProving {
 	ml.mutex.Lock()
-	deadlineBatchProving := ml.deadlineBatchProving
+	deadlineBatchProvingGroup := ml.deadlineBatchProvingGroup
 	ml.mutex.Unlock()
-	return deadlineBatchProving
+	return deadlineBatchProvingGroup
 }

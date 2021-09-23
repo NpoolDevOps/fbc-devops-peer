@@ -609,7 +609,7 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 	minerAdjustBaseFee := m.ml.GetMinerAdjustBaseFee()
 	minerIsMaster := m.ml.GetMinerIsMaster()
 	mineOne := m.ml.GetMineOne()
-	deadlineBatchProving := m.ml.GetDeadlineBatchProving()
+	deadlineBatchProvingGroup := m.ml.GetDeadlineBatchProving()
 	username := m.username
 	networkType := m.networkType
 
@@ -630,7 +630,9 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 		avgMs = avgMs / uint64(len(tooks))
 	}
 
-	ch <- prometheus.MustNewConstMetric(m.DeadlineBatchProving, prometheus.CounterValue, float64(deadlineBatchProving.Elapsed), fmt.Sprintf("%v", deadlineBatchProving.Batch), fmt.Sprintf("%v", deadlineBatchProving.Deadline), networkType, username)
+	for _, provingGroup := range deadlineBatchProvingGroup {
+		ch <- prometheus.MustNewConstMetric(m.DeadlineBatchProving, prometheus.CounterValue, float64(provingGroup.Elapsed), fmt.Sprintf("%v", provingGroup.Batch), fmt.Sprintf("%v", provingGroup.Deadline), networkType, username)
+	}
 
 	ch <- prometheus.MustNewConstMetric(m.ForkBlocks, prometheus.CounterValue, float64(forkBlocks), networkType, username)
 	ch <- prometheus.MustNewConstMetric(m.PastBlocks, prometheus.CounterValue, float64(pastBlocks), networkType, username)
