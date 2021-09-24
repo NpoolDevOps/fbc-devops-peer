@@ -651,7 +651,7 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 				} else {
 					concurrent += 1
 					totalConcurrent += 1
-					if elapsed < task.Elapsed {
+					if elapsed < task.Elapsed && task.Elapsed < uint64(24*time.Hour.Seconds()) {
 						elapsed = task.Elapsed
 					}
 					ch <- prometheus.MustNewConstMetric(m.SectorTaskProgress, prometheus.CounterValue,
