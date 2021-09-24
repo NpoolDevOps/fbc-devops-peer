@@ -26,6 +26,7 @@ const (
 	RegGetFeeMiner           = "adjust fee for nonce"
 	RegMinerIsMaster         = "play as master"
 	RegMineOne               = "\"msg\":\"completed mineOne\""
+	RegComputingWindowPost   = "\"msg\":\"computing window post\""
 )
 
 const (
@@ -41,6 +42,7 @@ const (
 	keyGetFeeMiner           = RegGetFeeMiner
 	keyMinerIsMaster         = RegMinerIsMaster
 	keyMineOne               = RegMineOne
+	keyComputingWindowPost   = RegComputingWindowPost
 )
 
 type LogRegKey struct {
@@ -97,6 +99,10 @@ var logRegKeys = []LogRegKey{
 		RegName:  RegMineOne,
 		ItemName: keyMineOne,
 	},
+	{
+		RegName:  RegComputingWindowPost,
+		ItemName: keyComputingWindowPost,
+	},
 }
 
 type minedBlock struct {
@@ -134,6 +140,12 @@ type MineOne struct {
 	MiningMinerPower          string      `json:"minerPowerAtLookback"`
 }
 
+type ComputingWindowPost struct {
+	Batch    uint    `json:"batch"`
+	Elapsed  float64 `json:"elapsed"`
+	Deadline uint64  `json:"deadline"`
+}
+
 type MinerLog struct {
 	logbase                    *logbase.Logbase
 	newline                    chan logbase.LogLine
@@ -154,9 +166,31 @@ type MinerLog struct {
 	minerAdjustBaseFee         float64
 	minerIsMaster              bool
 	mineOne                    MineOne
+	computingWindowPostGroup   []ComputingWindowPost
 	timeStamp                  uint64
 	sectorGroup                []sectorTask
 	mutex                      sync.Mutex
+}
+
+func (ml *MinerLog) processComputingWindowPost(line logbase.LogLine) {
+	computingWindowPost := ComputingWindowPost{}
+	err := json.Unmarshal([]byte(line.Line), &computingWindowPost)
+	if err != nil {
+		log.Errorf(log.Fields{}, "fail to unmarshal %v: %v", line.Line, err)
+		return
+	}
+	ml.mutex.Lock()
+	has := false
+	for index, provingGroup := range ml.computingWindowPostGroup {
+		if provingGroup.Batch == computingWindowPost.Batch && provingGroup.Deadline == computingWindowPost.Deadline {
+			ml.computingWindowPostGroup[index].Elapsed = computingWindowPost.Elapsed
+			has = true
+		}
+	}
+	if !has {
+		ml.computingWindowPostGroup = append(ml.computingWindowPostGroup, computingWindowPost)
+	}
+	ml.mutex.Unlock()
 }
 
 func (ml *MinerLog) processMineOne(line logbase.LogLine) {
@@ -416,6 +450,8 @@ func (ml *MinerLog) processLine(line logbase.LogLine) {
 			ml.processMinerIsMaster(line)
 		case RegMineOne:
 			ml.processMineOne(line)
+		case RegComputingWindowPost:
+			ml.processComputingWindowPost(line)
 		}
 
 		break
@@ -630,4 +666,11 @@ func (ml *MinerLog) GetMineOne() MineOne {
 	mineOne := ml.mineOne
 	ml.mutex.Unlock()
 	return mineOne
+}
+
+func (ml *MinerLog) GetWindowPostProving() []ComputingWindowPost {
+	ml.mutex.Lock()
+	computingwindowPostGroup := ml.computingWindowPostGroup
+	ml.mutex.Unlock()
+	return computingwindowPostGroup
 }
