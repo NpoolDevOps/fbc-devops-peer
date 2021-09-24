@@ -272,13 +272,13 @@ func (ml *MinerLog) processSectorTask(line logbase.LogLine, end bool) {
 		mline.Worker = "miner"
 	}
 
-	var exit bool
+	finish := false
 	for _, sector := range ml.sectorGroup {
-		if sector.SectorNumber == mline.SectorNumber && sector.TaskType == mline.SectorNumber {
-			exit = false
+		if sector.SectorNumber == mline.SectorNumber && sector.TaskType == mline.TaskType {
+			finish = true
 		}
 	}
-	if !exit {
+	if !finish {
 		ml.sectorGroup = append(ml.sectorGroup, mline)
 	}
 	sectorTasks[mline.SectorNumber] = mline
@@ -564,14 +564,6 @@ func (ml *MinerLog) GetSectorTasks() map[string]map[string][]SectorTaskStat {
 				}
 			}
 
-			for {
-				if len(ml.sectorGroup) <= 1000 {
-					break
-				}
-				delete(ml.sectorTasks[taskType], ml.sectorGroup[0].SectorNumber)
-				ml.sectorGroup = ml.sectorGroup[1:]
-			}
-
 			workerTasks = append(workerTasks, SectorTaskStat{
 				Worker:  task.Worker,
 				Elapsed: elapsed,
@@ -581,7 +573,18 @@ func (ml *MinerLog) GetSectorTasks() map[string]map[string][]SectorTaskStat {
 			typedTasks[task.Worker] = workerTasks
 		}
 		tasks[taskType] = typedTasks
+
+		sectorGroup := ml.sectorGroup
+		for {
+			if len(sectorGroup) <= 1000 {
+				break
+			}
+			delete(ml.sectorTasks[taskType], sectorGroup[0].SectorNumber)
+			sectorGroup = sectorGroup[1:]
+		}
 	}
+	sectorGroupLength := len(ml.sectorGroup)
+	ml.sectorGroup = ml.sectorGroup[sectorGroupLength-1000:]
 	ml.mutex.Unlock()
 
 	return tasks
