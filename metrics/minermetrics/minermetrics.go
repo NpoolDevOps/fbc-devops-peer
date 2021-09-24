@@ -103,7 +103,7 @@ type MinerMetrics struct {
 	MiningNetworkPower        *prometheus.Desc
 	MiningMinerPower          *prometheus.Desc
 
-	WindowPostProving *prometheus.Desc
+	ComputingWindowPost *prometheus.Desc
 
 	minerInfo   minerapi.MinerInfo
 	sealingJobs minerapi.SealingJobs
@@ -460,9 +460,9 @@ func NewMinerMetrics(cfg MinerMetricsConfig, paths []string) *MinerMetrics {
 			"show miner repo dir usage",
 			[]string{"repodir", "totalcap", "networktype", "user"}, nil,
 		),
-		WindowPostProving: prometheus.NewDesc(
-			"miner_window_post_proving",
-			"show miner repo dir usage",
+		ComputingWindowPost: prometheus.NewDesc(
+			"miner_computing_window_post",
+			"show miner computing window post",
 			[]string{"batch", "deadline", "networktype", "user"}, nil,
 		),
 	}
@@ -596,7 +596,7 @@ func (m *MinerMetrics) Describe(ch chan<- *prometheus.Desc) {
 	ch <- m.MiningMinerPower
 	ch <- m.MiningNetworkPower
 	ch <- m.MinerId
-	ch <- m.WindowPostProving
+	ch <- m.ComputingWindowPost
 }
 
 func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
@@ -608,7 +608,7 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 	minerAdjustBaseFee := m.ml.GetMinerAdjustBaseFee()
 	minerIsMaster := m.ml.GetMinerIsMaster()
 	mineOne := m.ml.GetMineOne()
-	windowPostProvingGroup := m.ml.GetWindowPostProving()
+	computingWindowPostGroup := m.ml.GetWindowPostProving()
 	username := m.username
 	networkType := m.networkType
 
@@ -638,8 +638,8 @@ func (m *MinerMetrics) Collect(ch chan<- prometheus.Metric) {
 	ch <- prometheus.MustNewConstMetric(m.Blocks, prometheus.CounterValue, float64(len(tooks)), networkType, username)
 	ch <- prometheus.MustNewConstMetric(m.MinerIsMaster, prometheus.CounterValue, minerIsMaster, networkType, username)
 
-	for _, windowPostProving := range windowPostProvingGroup {
-		ch <- prometheus.MustNewConstMetric(m.WindowPostProving, prometheus.CounterValue, float64(windowPostProving.Elapsed), fmt.Sprintf("%v", windowPostProving.Batch), fmt.Sprintf("%v", windowPostProving.Deadline), networkType, username)
+	for _, computingWindowPost := range computingWindowPostGroup {
+		ch <- prometheus.MustNewConstMetric(m.ComputingWindowPost, prometheus.CounterValue, float64(computingWindowPost.Elapsed), fmt.Sprintf("%v", computingWindowPost.Batch), fmt.Sprintf("%v", computingWindowPost.Deadline), networkType, username)
 	}
 
 	sectorTasks := m.ml.GetSectorTasks()

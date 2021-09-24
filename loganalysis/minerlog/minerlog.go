@@ -26,7 +26,7 @@ const (
 	RegGetFeeMiner           = "adjust fee for nonce"
 	RegMinerIsMaster         = "play as master"
 	RegMineOne               = "\"msg\":\"completed mineOne\""
-	RegWindowPostProving     = "\"msg\":\"computing window post\""
+	RegComputingWindowPost   = "\"msg\":\"computing window post\""
 )
 
 const (
@@ -42,7 +42,7 @@ const (
 	keyGetFeeMiner           = RegGetFeeMiner
 	keyMinerIsMaster         = RegMinerIsMaster
 	keyMineOne               = RegMineOne
-	keyWindowPostProving     = RegWindowPostProving
+	keyComputingWindowPost   = RegComputingWindowPost
 )
 
 type LogRegKey struct {
@@ -100,8 +100,8 @@ var logRegKeys = []LogRegKey{
 		ItemName: keyMineOne,
 	},
 	{
-		RegName:  RegWindowPostProving,
-		ItemName: keyWindowPostProving,
+		RegName:  RegComputingWindowPost,
+		ItemName: keyComputingWindowPost,
 	},
 }
 
@@ -140,7 +140,7 @@ type MineOne struct {
 	MiningMinerPower          string      `json:"minerPowerAtLookback"`
 }
 
-type WindowPostProving struct {
+type ComputingWindowPost struct {
 	Batch    uint    `json:"batch"`
 	Elapsed  float64 `json:"elapsed"`
 	Deadline uint64  `json:"deadline"`
@@ -166,29 +166,29 @@ type MinerLog struct {
 	minerAdjustBaseFee         float64
 	minerIsMaster              bool
 	mineOne                    MineOne
-	windowPostProvingGroup     []WindowPostProving
+	computingWindowPostGroup   []ComputingWindowPost
 	timeStamp                  uint64
 	sectorGroup                []sectorTask
 	mutex                      sync.Mutex
 }
 
-func (ml *MinerLog) processWindowPostProving(line logbase.LogLine) {
-	windowPostProving := WindowPostProving{}
-	err := json.Unmarshal([]byte(line.Line), &windowPostProving)
+func (ml *MinerLog) processComputingWindowPost(line logbase.LogLine) {
+	computingWindowPost := ComputingWindowPost{}
+	err := json.Unmarshal([]byte(line.Line), &computingWindowPost)
 	if err != nil {
 		log.Errorf(log.Fields{}, "fail to unmarshal %v: %v", line.Line, err)
 		return
 	}
 	ml.mutex.Lock()
 	has := false
-	for index, provingGroup := range ml.windowPostProvingGroup {
-		if provingGroup.Batch == windowPostProving.Batch && provingGroup.Deadline == windowPostProving.Deadline {
-			ml.windowPostProvingGroup[index].Elapsed = windowPostProving.Elapsed
+	for index, provingGroup := range ml.computingWindowPostGroup {
+		if provingGroup.Batch == computingWindowPost.Batch && provingGroup.Deadline == computingWindowPost.Deadline {
+			ml.computingWindowPostGroup[index].Elapsed = computingWindowPost.Elapsed
 			has = true
 		}
 	}
 	if !has {
-		ml.windowPostProvingGroup = append(ml.windowPostProvingGroup, windowPostProving)
+		ml.computingWindowPostGroup = append(ml.computingWindowPostGroup, computingWindowPost)
 	}
 	ml.mutex.Unlock()
 }
@@ -450,8 +450,8 @@ func (ml *MinerLog) processLine(line logbase.LogLine) {
 			ml.processMinerIsMaster(line)
 		case RegMineOne:
 			ml.processMineOne(line)
-		case RegWindowPostProving:
-			ml.processWindowPostProving(line)
+		case RegComputingWindowPost:
+			ml.processComputingWindowPost(line)
 		}
 
 		break
@@ -668,9 +668,9 @@ func (ml *MinerLog) GetMineOne() MineOne {
 	return mineOne
 }
 
-func (ml *MinerLog) GetWindowPostProving() []WindowPostProving {
+func (ml *MinerLog) GetWindowPostProving() []ComputingWindowPost {
 	ml.mutex.Lock()
-	windowPostProvingGroup := ml.windowPostProvingGroup
+	computingwindowPostGroup := ml.computingWindowPostGroup
 	ml.mutex.Unlock()
-	return windowPostProvingGroup
+	return computingwindowPostGroup
 }
