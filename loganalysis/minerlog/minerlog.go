@@ -283,6 +283,15 @@ func (ml *MinerLog) processSectorTask(line logbase.LogLine, end bool) {
 	}
 	sectorTasks[mline.SectorNumber] = mline
 	ml.sectorTasks[mline.TaskType] = sectorTasks
+
+	for {
+		if len(ml.sectorGroup) <= 1000 {
+			break
+		}
+		delete(ml.sectorTasks[ml.sectorGroup[0].TaskType], ml.sectorGroup[0].SectorNumber)
+		ml.sectorGroup = ml.sectorGroup[1:]
+	}
+
 	ml.mutex.Unlock()
 }
 
@@ -573,18 +582,7 @@ func (ml *MinerLog) GetSectorTasks() map[string]map[string][]SectorTaskStat {
 			typedTasks[task.Worker] = workerTasks
 		}
 		tasks[taskType] = typedTasks
-
-		sectorGroup := ml.sectorGroup
-		for {
-			if len(sectorGroup) <= 1000 {
-				break
-			}
-			delete(ml.sectorTasks[taskType], sectorGroup[0].SectorNumber)
-			sectorGroup = sectorGroup[1:]
-		}
 	}
-	sectorGroupLength := len(ml.sectorGroup)
-	ml.sectorGroup = ml.sectorGroup[sectorGroupLength-1000:]
 	ml.mutex.Unlock()
 
 	return tasks
