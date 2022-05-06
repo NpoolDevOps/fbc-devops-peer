@@ -179,7 +179,7 @@ func (p *Peer) NotifyParentSpec(childPeer string) error {
 }
 
 func (p *Peer) Heartbeat(childPeer string) error {
-	resp, err := httpdaemon.R().
+	resp, err := httpdaemon.Cli().SetTimeout(1 * time.Second).R().
 		SetHeader("Content-Type", "application/json").
 		Get(fmt.Sprintf("http://%v:%v%v", childPeer, peerHttpPort, types.HeartbeatAPI))
 	if err != nil {

@@ -41,5 +41,6 @@ require (
 )
 
 replace github.com/NpoolDevOps/fbc-license => ../fbc-license
+replace github.com/NpoolRD/http-daemon => ../http-daemon
 
 replace google.golang.org/grpc => google.golang.org/grpc v1.26.0

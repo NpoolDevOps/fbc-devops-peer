@@ -3,7 +3,6 @@ package gateway
 import (
 	"crypto/sha256"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -11,8 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
-
-	runtime "github.com/NpoolDevOps/fbc-devops-peer/runtime"
+	"net"
 
 	log "github.com/EntropyPool/entropy-logger"
 	"github.com/NpoolDevOps/fbc-devops-peer/basenode"
@@ -75,12 +73,13 @@ func (g *GatewayNode) handler() {
 		select {
 		case <-g.topologyTicker.C:
 			g.updateTopology()
-		case <-g.addressWaiter:
+		// case <-g.addressWaiter:
 			g.waitForAddr()
-		case <-g.onlineChecker:
-			g.onlineCheck()
-		case <-g.configGenerator:
-			g.generateConfig()
+		// case <-g.onlineChecker:
+			if g.onlineCheck() {
+		// case <-g.configGenerator:
+				g.generateConfig()
+			}
 		}
 	}
 }
@@ -101,24 +100,17 @@ func (g *GatewayNode) updateTopology() {
 	for _, device := range output.Devices {
 		online := false
 		newCreated := false
-		hasExporter := false
 
-		for _, eth := range device.EthernetDesc {
-			ethList := runtime.EthernetInfo{}
-			json.Unmarshal([]byte(eth), &ethList)
-			if ethList.Exporter {
-				hasExporter = true
-				break
-			}
-		}
+		device.LocalAddr = strings.TrimSpace(device.LocalAddr)
+		device.PublicAddr = strings.TrimSpace(device.PublicAddr)
 
-		if !hasExporter {
-			log.Errorf(log.Fields{}, "host %v lost export ip address", device.LocalAddr)
+		if net.ParseIP(device.LocalAddr) == nil || net.ParseIP(device.PublicAddr) == nil {
+			log.Debugf(log.Fields{}, "lost public addr or local addr public: %v, local: %v", device.PublicAddr, device.LocalAddr)
 			continue
 		}
 
 		if _, ok := g.hosts[device.LocalAddr]; !ok {
-			log.Infof(log.Fields{}, "Add host: %v | %v", device.LocalAddr, device.Role)
+			log.Infof(log.Fields{}, "Add host: %v | %v | %v", device.LocalAddr, device.PublicAddr, device.Role)
 			newCreated = true
 		} else {
 			online = g.hosts[device.LocalAddr].online
@@ -145,7 +137,7 @@ func (g *GatewayNode) updateTopology() {
 
 	g.hosts = hosts
 
-	go func() { g.addressWaiter <- struct{}{} }()
+	// go func() { g.addressWaiter <- struct{}{} }()
 }
 
 func (g *GatewayNode) waitForAddr() {
@@ -153,7 +145,7 @@ func (g *GatewayNode) waitForAddr() {
 	if err != nil {
 		log.Errorf(log.Fields{}, "public address is not ready: %v", err)
 		time.Sleep(10 * time.Second)
-		go func() { g.addressWaiter <- struct{}{} }()
+		// go func() { g.addressWaiter <- struct{}{} }()
 		return
 	}
 
@@ -161,14 +153,14 @@ func (g *GatewayNode) waitForAddr() {
 	if err != nil {
 		log.Errorf(log.Fields{}, "local address is not ready: %v", err)
 		time.Sleep(10 * time.Second)
-		go func() { g.addressWaiter <- struct{}{} }()
+		// go func() { g.addressWaiter <- struct{}{} }()
 		return
 	}
 
-	go func() { g.onlineChecker <- struct{}{} }()
+	// go func() { g.onlineChecker <- struct{}{} }()
 }
 
-func (g *GatewayNode) onlineCheck() {
+func (g *GatewayNode) onlineCheck() bool {
 	myPublicAddr, _ := g.MyPublicAddr()
 
 	updated := false
@@ -191,7 +183,7 @@ func (g *GatewayNode) onlineCheck() {
 		hostPrefix := monitor.publicAddr[:lastIndex]
 		myAddrPrefix := myPublicAddr[:myLastIndex]
 		if hostPrefix != myAddrPrefix {
-			log.Infof(log.Fields{}, "public address prefix %v != %v", hostPrefix, myAddrPrefix)
+			log.Infof(log.Fields{}, "local address %v public address %v prefix %v != %v", monitor.localAddr, monitor.publicAddr, hostPrefix, myAddrPrefix)
 			continue
 		}
 
@@ -212,8 +204,10 @@ func (g *GatewayNode) onlineCheck() {
 
 	if updated {
 		log.Infof(log.Fields{}, "topology updated, generate monitor configuration")
-		go func() { g.configGenerator <- struct{}{} }()
+		// go func() { g.configGenerator <- struct{}{} }()
 	}
+
+	return updated
 }
 
 type staticConfig struct {
