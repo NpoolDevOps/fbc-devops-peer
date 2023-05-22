@@ -436,7 +436,7 @@ func (p *Parser) parseRepoDirFromService(file string) (string, error) {
 		if err != nil {
 			break
 		}
-		if !strings.HasPrefix(string(line), "ExecStart=/usr/local/bin") {
+		if !strings.HasPrefix(string(line), "ExecStart=") {
 			continue
 		}
 		s := strings.Split(string(line), "-repo=")
