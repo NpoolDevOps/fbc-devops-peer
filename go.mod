@@ -1,40 +1,190 @@
 module github.com/NpoolDevOps/fbc-devops-peer
 
-go 1.15
+go 1.19
 
 require (
 	github.com/EntropyPool/entropy-logger v0.0.0-20210320022718-3091537e035f
 	github.com/EntropyPool/machine-spec v0.0.0-20210408033101-2db09d058812
 	github.com/NpoolDevOps/fbc-devops-service v0.0.0-20210413053955-6d57518351f4
 	github.com/NpoolDevOps/fbc-license v0.0.0-20210408084724-dec53ab9682d
-	github.com/NpoolDevOps/fbc-license-service v0.0.0-20210328062839-d1527bc31f7e
 	github.com/NpoolRD/http-daemon v0.0.0-20210324100344-82fee56de8ac
 	github.com/beevik/ntp v0.3.0
-	github.com/deniswernert/go-fstab v0.0.0-20141204152952-eb4090f26517
-	github.com/docker/go-units v0.4.0
+	github.com/docker/go-units v0.5.0
 	github.com/euank/go-kmsg-parser v2.0.0+incompatible
-	github.com/facebookgo/stack v0.0.0-20160209184415-751773369052 // indirect
-	github.com/filecoin-project/go-state-types v0.1.0
-	github.com/filecoin-project/lotus v1.5.3
+	github.com/filecoin-project/go-state-types v0.12.8
+	github.com/filecoin-project/lotus v1.24.1
 	github.com/go-ping/ping v0.0.0-20210327002015-80a511380375
-	github.com/google/uuid v1.2.0
+	github.com/google/uuid v1.3.0
 	github.com/gosnmp/gosnmp v1.30.0
 	github.com/hpcloud/tail v1.0.0
-	github.com/ipfs/go-cid v0.0.7
 	github.com/jaypipes/ghw v0.7.0
-	github.com/libp2p/go-libp2p-core v0.7.0
-	github.com/mailru/easyjson v0.7.7 // indirect
+	github.com/libp2p/go-libp2p v0.30.0
 	github.com/moby/sys/mountinfo v0.4.1
-	github.com/prometheus/client_golang v1.6.0
-	github.com/rai-project/config v0.0.0-20190926180509-3bd01e698aad // indirect
-	github.com/rai-project/logger v0.0.0-20190701163301-49978a80bf96 // indirect
-	github.com/rai-project/nvidia-smi v0.0.0-20190730061239-864eb441c9ae
-	github.com/rai-project/tegra v0.0.0-20181119122707-1d9901ca382b // indirect
-	github.com/shirou/gopsutil/v3 v3.21.5
-	github.com/urfave/cli/v2 v2.3.0
-	github.com/xjh22222228/ip v1.0.1
-	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1
-	gopkg.in/yaml.v2 v2.3.0
+	github.com/prometheus/client_golang v1.14.0
+	github.com/urfave/cli/v2 v2.25.5
+	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2
+	gopkg.in/yaml.v2 v2.4.0
+)
+
+require (
+	github.com/DataDog/zstd v1.4.5 // indirect
+	github.com/GeertJohan/go.incremental v1.0.0 // indirect
+	github.com/GeertJohan/go.rice v1.0.3 // indirect
+	github.com/NpoolDevOps/fbc-license-service v0.0.0-20210328062839-d1527bc31f7e // indirect
+	github.com/StackExchange/wmi v1.2.1 // indirect
+	github.com/akavel/rsrc v0.8.0 // indirect
+	github.com/benbjohnson/clock v1.3.5 // indirect
+	github.com/beorn7/perks v1.0.1 // indirect
+	github.com/cespare/xxhash/v2 v2.2.0 // indirect
+	github.com/coreos/bbolt v1.3.2 // indirect
+	github.com/coreos/etcd v3.3.25+incompatible // indirect
+	github.com/coreos/go-semver v0.3.0 // indirect
+	github.com/coreos/go-systemd v0.0.0-20191104093116-d3cd4ed1dbcf // indirect
+	github.com/coreos/pkg v0.0.0-20180928190104-399ea9e2e55f // indirect
+	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
+	github.com/crackcomm/go-gitignore v0.0.0-20170627025303-887ab5e44cc3 // indirect
+	github.com/daaku/go.zipexe v1.0.2 // indirect
+	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.2.0 // indirect
+	github.com/dselans/dmidecode v0.0.0-20180814053009-65c3f9d81910 // indirect
+	github.com/filecoin-project/go-address v1.1.0 // indirect
+	github.com/filecoin-project/go-amt-ipld/v2 v2.1.0 // indirect
+	github.com/filecoin-project/go-amt-ipld/v3 v3.1.0 // indirect
+	github.com/filecoin-project/go-amt-ipld/v4 v4.2.0 // indirect
+	github.com/filecoin-project/go-bitfield v0.2.4 // indirect
+	github.com/filecoin-project/go-cbor-util v0.0.1 // indirect
+	github.com/filecoin-project/go-crypto v0.0.1 // indirect
+	github.com/filecoin-project/go-data-transfer/v2 v2.0.0-rc7 // indirect
+	github.com/filecoin-project/go-fil-markets v1.28.3 // indirect
+	github.com/filecoin-project/go-hamt-ipld v0.1.5 // indirect
+	github.com/filecoin-project/go-hamt-ipld/v2 v2.0.0 // indirect
+	github.com/filecoin-project/go-hamt-ipld/v3 v3.1.0 // indirect
+	github.com/filecoin-project/go-jsonrpc v0.3.1 // indirect
+	github.com/filecoin-project/go-padreader v0.0.1 // indirect
+	github.com/filecoin-project/go-statemachine v1.0.3 // indirect
+	github.com/filecoin-project/go-statestore v0.2.0 // indirect
+	github.com/filecoin-project/kubo-api-client v0.0.1 // indirect
+	github.com/filecoin-project/specs-actors v0.9.15 // indirect
+	github.com/filecoin-project/specs-actors/v2 v2.3.6 // indirect
+	github.com/filecoin-project/specs-actors/v3 v3.1.2 // indirect
+	github.com/filecoin-project/specs-actors/v4 v4.0.2 // indirect
+	github.com/filecoin-project/specs-actors/v5 v5.0.6 // indirect
+	github.com/filecoin-project/specs-actors/v6 v6.0.2 // indirect
+	github.com/filecoin-project/specs-actors/v7 v7.0.1 // indirect
+	github.com/gbrlsnchs/jwt/v3 v3.0.1 // indirect
+	github.com/ghodss/yaml v1.0.0 // indirect
+	github.com/go-logr/logr v1.2.4 // indirect
+	github.com/go-logr/stdr v1.2.2 // indirect
+	github.com/go-ole/go-ole v1.2.5 // indirect
+	github.com/go-resty/resty/v2 v2.4.0 // indirect
+	github.com/gogo/protobuf v1.3.2 // indirect
+	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
+	github.com/golang/mock v1.6.0 // indirect
+	github.com/golang/protobuf v1.5.3 // indirect
+	github.com/google/btree v1.0.0 // indirect
+	github.com/gorilla/websocket v1.5.0 // indirect
+	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0 // indirect
+	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0 // indirect
+	github.com/grpc-ecosystem/grpc-gateway v1.8.5 // indirect
+	github.com/hannahhoward/cbor-gen-for v0.0.0-20230214144701-5d17c9d5243c // indirect
+	github.com/hannahhoward/go-pubsub v0.0.0-20200423002714-8d62886cc36e // indirect
+	github.com/hashicorp/golang-lru v0.6.0 // indirect
+	github.com/hashicorp/golang-lru/v2 v2.0.5 // indirect
+	github.com/icza/backscanner v0.0.0-20210726202459-ac2ffc679f94 // indirect
+	github.com/ipfs/bbloom v0.0.4 // indirect
+	github.com/ipfs/boxo v0.10.1 // indirect
+	github.com/ipfs/go-block-format v0.1.2 // indirect
+	github.com/ipfs/go-blockservice v0.5.1 // indirect
+	github.com/ipfs/go-cid v0.4.1 // indirect
+	github.com/ipfs/go-datastore v0.6.0 // indirect
+	github.com/ipfs/go-graphsync v0.14.6 // indirect
+	github.com/ipfs/go-ipfs-blockstore v1.3.0 // indirect
+	github.com/ipfs/go-ipfs-cmds v0.9.0 // indirect
+	github.com/ipfs/go-ipfs-ds-help v1.1.0 // indirect
+	github.com/ipfs/go-ipfs-exchange-interface v0.2.0 // indirect
+	github.com/ipfs/go-ipfs-util v0.0.3 // indirect
+	github.com/ipfs/go-ipld-cbor v0.0.6 // indirect
+	github.com/ipfs/go-ipld-format v0.5.0 // indirect
+	github.com/ipfs/go-ipld-legacy v0.2.1 // indirect
+	github.com/ipfs/go-log v1.0.5 // indirect
+	github.com/ipfs/go-log/v2 v2.5.1 // indirect
+	github.com/ipfs/go-merkledag v0.11.0 // indirect
+	github.com/ipfs/go-metrics-interface v0.0.1 // indirect
+	github.com/ipfs/go-verifcid v0.0.2 // indirect
+	github.com/ipld/go-car v0.6.1 // indirect
+	github.com/ipld/go-codec-dagpb v1.6.0 // indirect
+	github.com/ipld/go-ipld-prime v0.20.0 // indirect
+	github.com/ipsn/go-secp256k1 v0.0.0-20180726113642-9d62b9f0bc52 // indirect
+	github.com/jaypipes/pcidb v0.6.0 // indirect
+	github.com/jbenet/goprocess v0.1.4 // indirect
+	github.com/jessevdk/go-flags v1.4.0 // indirect
+	github.com/jonboulle/clockwork v0.1.0 // indirect
+	github.com/jpillora/backoff v1.0.0 // indirect
+	github.com/klauspost/cpuid/v2 v2.2.5 // indirect
+	github.com/libp2p/go-buffer-pool v0.1.0 // indirect
+	github.com/libp2p/go-flow-metrics v0.1.0 // indirect
+	github.com/libp2p/go-libp2p-pubsub v0.9.3 // indirect
+	github.com/libp2p/go-msgio v0.3.0 // indirect
+	github.com/magefile/mage v1.9.0 // indirect
+	github.com/mattn/go-isatty v0.0.19 // indirect
+	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
+	github.com/miekg/dns v1.1.55 // indirect
+	github.com/minio/blake2b-simd v0.0.0-20160723061019-3f5f724cb5b1 // indirect
+	github.com/minio/sha256-simd v1.0.1 // indirect
+	github.com/mitchellh/go-homedir v1.1.0 // indirect
+	github.com/mr-tron/base58 v1.2.0 // indirect
+	github.com/multiformats/go-base32 v0.1.0 // indirect
+	github.com/multiformats/go-base36 v0.2.0 // indirect
+	github.com/multiformats/go-multiaddr v0.11.0 // indirect
+	github.com/multiformats/go-multiaddr-dns v0.3.1 // indirect
+	github.com/multiformats/go-multibase v0.2.0 // indirect
+	github.com/multiformats/go-multicodec v0.9.0 // indirect
+	github.com/multiformats/go-multihash v0.2.3 // indirect
+	github.com/multiformats/go-multistream v0.4.1 // indirect
+	github.com/multiformats/go-varint v0.0.7 // indirect
+	github.com/nkovacs/streamquote v1.0.0 // indirect
+	github.com/opentracing/opentracing-go v1.2.0 // indirect
+	github.com/pkg/errors v0.9.1 // indirect
+	github.com/polydawn/refmt v0.89.0 // indirect
+	github.com/prometheus/client_model v0.4.0 // indirect
+	github.com/prometheus/common v0.42.0 // indirect
+	github.com/prometheus/procfs v0.9.0 // indirect
+	github.com/raulk/clock v1.1.0 // indirect
+	github.com/rs/cors v1.7.0 // indirect
+	github.com/russross/blackfriday/v2 v2.1.0 // indirect
+	github.com/shirou/gopsutil v2.18.12+incompatible // indirect
+	github.com/sirupsen/logrus v1.9.0 // indirect
+	github.com/soheilhy/cmux v0.1.4 // indirect
+	github.com/spaolacci/murmur3 v1.1.0 // indirect
+	github.com/tmc/grpc-websocket-proxy v0.0.0-20190109142713-0ad062ec5ee5 // indirect
+	github.com/valyala/bytebufferpool v1.0.0 // indirect
+	github.com/valyala/fasttemplate v1.0.1 // indirect
+	github.com/whyrusleeping/bencher v0.0.0-20190829221104-bb6607aa8bba // indirect
+	github.com/whyrusleeping/cbor-gen v0.0.0-20230923211252-36a87e1ba72f // indirect
+	github.com/xiang90/probing v0.0.0-20190116061207-43a291ad63a2 // indirect
+	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
+	go.opencensus.io v0.24.0 // indirect
+	go.opentelemetry.io/otel v1.16.0 // indirect
+	go.opentelemetry.io/otel/metric v1.16.0 // indirect
+	go.opentelemetry.io/otel/trace v1.16.0 // indirect
+	go.uber.org/atomic v1.11.0 // indirect
+	go.uber.org/multierr v1.11.0 // indirect
+	go.uber.org/zap v1.25.0 // indirect
+	golang.org/x/crypto v0.12.0 // indirect
+	golang.org/x/exp v0.0.0-20230817173708-d852ddb80c63 // indirect
+	golang.org/x/mod v0.12.0 // indirect
+	golang.org/x/net v0.14.0 // indirect
+	golang.org/x/sync v0.3.0 // indirect
+	golang.org/x/sys v0.11.0 // indirect
+	golang.org/x/text v0.12.0 // indirect
+	golang.org/x/tools v0.12.1-0.20230815132531-74c255bcf846 // indirect
+	google.golang.org/genproto v0.0.0-20230306155012-7f2fa6fef1f4 // indirect
+	google.golang.org/grpc v1.55.0 // indirect
+	google.golang.org/protobuf v1.30.0 // indirect
+	gopkg.in/fsnotify.v1 v1.4.7 // indirect
+	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
+	howett.net/plist v0.0.0-20181124034731-591f970eefbb // indirect
+	lukechampine.com/blake3 v1.2.1 // indirect
+	sigs.k8s.io/yaml v1.4.0 // indirect
 )
 
 replace github.com/NpoolDevOps/fbc-license => ../fbc-license
