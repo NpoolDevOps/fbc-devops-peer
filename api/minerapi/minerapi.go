@@ -59,7 +59,6 @@ func GetMinerInfo(ch chan MinerInfo, sectors bool) {
 			ch <- info
 			return
 		}
-
 		br := bufio.NewReader(bytes.NewReader(out))
 
 		for {
@@ -69,6 +68,9 @@ func GetMinerInfo(ch chan MinerInfo, sectors bool) {
 			}
 
 			lineStr := strings.TrimSpace(string(line))
+			if lineStr == "" {
+				continue
+			}
 
 			if strings.Contains(lineStr, "Miner: ") {
 				info.MinerId = strings.Split(lineStr, " ")[1]
